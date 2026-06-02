@@ -1,0 +1,928 @@
+{
+  "title": "Captive Portal v4.0.6 Support Guide (Scenic / Emerald)",
+  "description": "A 60-minute technical-support training course covering the Scenic/Emerald Captive Portal v4.0.6 setup: access, architecture, authentication and traffic flows, configuration, and monitoring/troubleshooting. PII (guest/crew names, booking IDs) from the source has been excluded; sample script outputs are summarized, not reproduced.",
+  "source": "Confluence page 1548222468, space \"Captive Portal\" (CP) - \"CP v4.0.6 - Scenic / Emerald - Support Guide\" by Luis Pico, last modified May 13, 2026.",
+  "language": "en",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Fundamentals, Access and Scope",
+      "summary": "What the Captive Portal does, the two authentication methods, how to access the systems, which vessels are in scope, and the core service restrictions.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What the Captive Portal Is and Does",
+          "content": "A captive portal is the web page / gatekeeper a user must pass (accept terms, authenticate) before being granted internet access on a network.\n\nThe **main functionality of the Scenic/Emerald Captive Portal is to manage internet access and consumption for users** across both the crew and guest networks.\n\nThere are **two authentication methods**:\n\n- **Authentication using the PMS server (Cruisepal or MXP):** users authenticate through the captive portal using credentials stored locally in the PMS server. They use **cabin number, first name and last name**.\n- **Authentication using a Voucher (PMS server NOT needed):** users authenticate with a **username and password** provided by reception or the Hotel Manager. The username/password combination is generated on Unity.\n\n⚠️ Important: The **MAIN** method Scenic/Emerald want to use is **Authentication using the PMS server**. Vouchers are an **alternative**, used for example when the PMS server fails, when a guest struggles to connect with the PMS method (give a voucher while troubleshooting), or when the Hotel Manager / Scenic-Emerald personnel request one. The voucher is used **to avoid bypassing the Captive Portal**.\n\nThe Captive Portal also **collects guest email information**. Scenic/Emerald use these emails to send Satisfaction Surveys after the cruise - a key service. The **Hotel Manager has a web interface** to access and collect these emails.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "What is the main functionality of the Scenic/Emerald Captive Portal?",
+              "answers": [
+                "To replace the Fortigate firewall for the vessel",
+                "To manage internet access and consumption for users on the crew and guest networks",
+                "To act as the vessel's primary DNS server for all internal services",
+                "To store passenger booking and payment records"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The guide states the main functionality of the Captive Portal is to manage internet access and consumption for users in both the crew and guest networks."
+            },
+            {
+              "id": "q2",
+              "question": "Which two authentication methods does the Captive Portal support?",
+              "answers": [
+                "PMS server authentication and Voucher authentication",
+                "RADIUS certificates and MAC whitelisting",
+                "PIN reset and biometric login",
+                "LDAP and OAuth single sign-on"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The two methods are authentication using the PMS server (Cruisepal or MXP) and authentication using a Voucher (which does not need the PMS server)."
+            },
+            {
+              "id": "q3",
+              "question": "Which credentials does a guest use when authenticating via the PMS server method?",
+              "answers": [
+                "A username and password generated on Unity",
+                "An email address and a one-time PIN",
+                "Cabin number, first name and last name",
+                "Their booking ID and date of birth"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "PMS server authentication uses cabin number, first name and last name; username/password is the Voucher method."
+            },
+            {
+              "id": "q4",
+              "question": "Why does the Captive Portal collect guest email addresses?",
+              "answers": [
+                "To use them as the login username for future cruises",
+                "So Scenic/Emerald can send Satisfaction Surveys after the cruise",
+                "To bill the guest for internet usage",
+                "To register the device MAC address in Ucopia"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The portal collects emails so Scenic/Emerald can send guests Satisfaction Surveys after the cruise, a key service for them; the Hotel Manager has a web interface to collect these emails."
+            },
+            {
+              "id": "q5",
+              "question": "The PMS server is unavailable and several guests cannot register. What is the recommended temporary action?",
+              "answers": [
+                "Disable the Captive Portal so traffic flows freely",
+                "Tell guests to wait until the PMS server is restored",
+                "Provide vouchers as the alternative authentication method",
+                "Reset every guest's PIN in Ucopia"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Vouchers are explicitly described as the alternative used when the PMS server fails, allowing access without bypassing the Captive Portal."
+            }
+          ]
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Accessing the Systems and Vessel Scope",
+          "content": "Access endpoints (the **X octet changes between vessels**):\n\n| System | Address | Credentials |\n| --- | --- | --- |\n| Captive Portal | `10.245.X.161` | usual omni credentials |\n| Ucopia | `10.245.X.160/admin` | password in Keeper |\n| Hotel Manager web interface | `https://10.245.X.161/survey_list` | admin / Scenic2026?! |\n| Read/Write info on DB | Rundeck | - |\n\n**Scope - this guide is for Scenic and Emerald River Cruises and Oceans with the Cruise Portal setup (NOT yacht).**\n\nExceptions:\n- **Scenic/Emerald River Cruises from Portugal** (Scenic Azure and Emerald Radiance) have the CP setup installed but **disabled** (CP VM down and SD-WANs disabled). They use a different internal network with only one SSID for both Guest and Crew. The current CP version cannot work with this setup, so it was agreed not to enable it.\n- **Scenic/Emerald Ocean Cruises** Sakara, Azzurra and Eclipse have **YACHT CP** setup (out of scope for this guide).\n\nOcean vessels overview:\n- Emerald Kaia - Cruise CP integrated with MXP\n- Emerald Sakara, Emerald Azzurra, Scenic Eclipse - Yacht CP\n- Scenic Eclipse II - not yet commissioned\n\n⚠️ Important: This is **NOT a Ucopia manual**. It is a Captive Portal setup support guide; for specific Ucopia settings/commands consult the Ucopia manuals.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Which address and credentials are used for the Hotel Manager web interface?",
+              "answers": [
+                "`10.245.X.160/admin`, password in Keeper",
+                "`https://10.245.X.161/survey_list`, admin / Scenic2026?!",
+                "`10.245.X.161`, usual omni credentials",
+                "Rundeck, usual omni credentials"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Hotel Manager web interface is at https://10.245.X.161/survey_list with credentials admin / Scenic2026?!."
+            },
+            {
+              "id": "q2",
+              "question": "In the access addresses (e.g. `10.245.X.161`), what does the X represent?",
+              "answers": [
+                "A wildcard that is always 0",
+                "The octet that changes between vessels",
+                "The user's cabin number",
+                "The VRF identifier"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The guide states the X octet changes between vessels."
+            },
+            {
+              "id": "q3",
+              "question": "Why is the Captive Portal kept disabled on Scenic Azure and Emerald Radiance (Portugal river cruises)?",
+              "answers": [
+                "Those vessels have no internet uplink at all",
+                "They use a different internal network with a single SSID for Guest and Crew, which the current CP version cannot support",
+                "Their PMS server uses MXP instead of Cruisepal",
+                "They are still waiting to be commissioned"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Those vessels have a different internal network with only one SSID for both Guest and Crew users; the current CP version cannot work with this setup, so it was agreed not to enable it."
+            },
+            {
+              "id": "q4",
+              "question": "Which statement about this support guide's scope is correct?",
+              "answers": [
+                "It documents every Ucopia setting and command in full",
+                "It covers Yacht CP vessels such as Emerald Sakara and Scenic Eclipse",
+                "It covers Scenic/Emerald River and Ocean cruises with the Cruise Portal (non-yacht) setup",
+                "It applies only to vessels in Portugal"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The guide is for Scenic and Emerald River Cruises and Oceans with the Cruise Portal setup (not yacht); it is explicitly not a Ucopia manual and yacht vessels are out of scope."
+            }
+          ]
+        },
+        {
+          "id": "lesson-1-3",
+          "title": "Service Restrictions",
+          "content": "Two core service restrictions govern whether a user can get online:\n\n- **Correct SSID per group:** Each user must connect to the **SSID corresponding to their group**, otherwise access will not work. A crew member on the guest portal (or a guest on the crew portal) will have credentials that **do not work**.\n- **Active account in the PMS server:** To gain internet access during initial login, the user (crew or guest) **must have an active account in the PMS server** (Cruisepal or MXP). If the account has **expired** (the current date is past the account's end date in the PMS server), the user can no longer log in. The **Hotel Manager must recreate the user account in the PMS server** to restore access.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "A crew member connects to the Guest SSID and their credentials are rejected. What is the most likely cause?",
+              "answers": [
+                "Their device MAC is blacklisted in Ucopia",
+                "They must connect to the SSID corresponding to their group (Crew), not the Guest SSID",
+                "The Captive Portal VM is down",
+                "Their voucher has expired"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Each user must connect to the SSID corresponding to their group; a crew member on the guest portal (or vice versa) will have credentials that do not work."
+            },
+            {
+              "id": "q2",
+              "question": "A guest's PMS account end date has passed and they can no longer log in. Who must act and how?",
+              "answers": [
+                "Support must delete the user from Ucopia",
+                "The guest must reset their PIN on the portal",
+                "The Hotel Manager must recreate the user account in the PMS server",
+                "Support must extend the device lifetime in the CP database"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "If an account is expired (current date past the end date in the PMS server), the Hotel Manager must recreate the user account in the PMS server to restore access."
+            },
+            {
+              "id": "q3",
+              "question": "What does an 'expired' PMS account mean in this context?",
+              "answers": [
+                "The Ucopia certificate has lapsed",
+                "The current date is past the account's end date in the PMS server",
+                "The user reached their bandwidth quota",
+                "The device limit for the cabin was reached"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "An account is expired when the current date is past the account's end date in the PMS server, after which the user can no longer log in."
+            },
+            {
+              "id": "q4",
+              "question": "Which condition is required for any user to gain internet access during initial login?",
+              "answers": [
+                "An active account in the PMS server (Cruisepal or MXP)",
+                "A valid voucher generated on Fortigate",
+                "A static IP reservation in Mikrotik",
+                "Membership in the HostBypass profile"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "To gain internet access during initial login, the user must have an active (non-expired) account in the PMS server."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "System Architecture and Components",
+      "summary": "The ProxMox environment, the network elements (Fortigate, Ucopia, CP host and database, Mikrotik, PMS server), and Unity Local Admin.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "ProxMox Environment and Network Layout",
+          "content": "**ProxMox environment:**\n- Ucopia -> VM 140\n- Captive Portal host -> VM 145\n\n**Network diagram:** For all Scenic/Emerald **River** Cruises the IPs in the diagram are exactly the same across vessels - even the Crew and Guest LAN IPs. The **only IP that differs between vessels is the PMS Server IP (Cruisepal or MXP).**\n\n⚠️ Important: Scenic/Emerald **Ocean** vessels have different IPs:\n- For some vessels, CP-related interfaces are `10.255.X.X` instead of `10.254.X.X`.\n- Guest/Crew ranges are ad-hoc for each vessel.\n\nThe Mikrotik (customer internal network side) requires a **DHCP Relay** on Guest and Crew interfaces pointing to our Fortigate IP in the Transit VLAN, `10.254.199.1`.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "In the ProxMox environment, which VM hosts the Captive Portal host?",
+              "answers": [
+                "VM 140",
+                "VM 145",
+                "VM 199",
+                "VM 222"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Ucopia is VM 140 and the Captive Portal host is VM 145."
+            },
+            {
+              "id": "q2",
+              "question": "For Scenic/Emerald River Cruises, which IP differs between vessels?",
+              "answers": [
+                "The Crew LAN IP",
+                "The Guest LAN IP",
+                "The PMS Server (Cruisepal or MXP) IP",
+                "The Ucopia management IP"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "For River Cruises the diagram IPs are identical across vessels (including Crew and Guest LAN IPs); the only IP that differs between vessels is the PMS Server IP."
+            },
+            {
+              "id": "q3",
+              "question": "What DHCP configuration must the Mikrotik provide, and where does it point?",
+              "answers": [
+                "A DHCP server on the WAN interface pointing to Ucopia",
+                "A DHCP Relay on Guest and Crew interfaces pointing to the Fortigate Transit VLAN IP 10.254.199.1",
+                "A DHCP Relay on the Transit interface pointing to the PMS server",
+                "A static DHCP reservation per cabin pointing to 10.254.149.1"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Mikrotik's required config is a DHCP Relay on Guest and Crew interfaces pointing to our Fortigate IP in the Transit VLAN, 10.254.199.1."
+            },
+            {
+              "id": "q4",
+              "question": "How do CP-related interface IPs differ on some Scenic/Emerald Ocean vessels?",
+              "answers": [
+                "They use 10.255.X.X instead of 10.254.X.X, with ad-hoc Guest/Crew ranges",
+                "They use public IPs only",
+                "They are identical to the River cruise IPs",
+                "They use IPv6 exclusively"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "On some Ocean vessels CP-related interfaces are 10.255.X.X instead of 10.254.X.X and Guest/Crew ranges are ad-hoc per vessel."
+            }
+          ]
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Core Components and Their Roles",
+          "content": "**Fortigate** - the main **networking** element. Allows/denies traffic between parts, routes Guest and Crew traffic to Ucopia when the CP is enabled, and provides final access to the WANs. Defines allowed applications, SD-WAN rules, application recognition, and traffic shaping per network.\n\n**Ucopia** - a **controller software** that defines policies per access network and applies profiles per user. It manages **quotas per user** (applying restrictions once quotas expire), manages **validity of users** (removing a user once no longer valid), and also acts as the **DHCP server** for guest and crew networks.\n\n**Captive Portal host** - a **Linux Debian server**, the **brain of the system**. It hosts all CP code and configuration and runs the logic to authenticate users: it checks credential validity, creates/updates users on Ucopia, modifies passwords, and stores all information in the Database.\n\n**Captive Portal database** (on the same Debian server) has two main functions:\n- **Store all information** from clients, devices and survey emails when users connect (used to apply logic such as removing expired users, and to show info in Unity Local Admin and the Hotel Manager web).\n- **Configuration tables** - the main point of CP configuration and personalization (e.g. IP range allowed per network, view package to use, type of logs to display).\n\n**Mikrotik** - the router on the customer's internal network side; its required config is a DHCP Relay (see previous lesson).\n\n**PMS server (Cruisepal or MXP)** - the Property Management System storing guest and crew information:\n- Scenic/Emerald **River** Cruises -> **CruisePAL** (third-party vendor).\n- Scenic/Emerald **Ocean** Cruises -> **MXP** (third-party vendor).",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Which component is described as the 'brain of the system' that runs the authentication logic?",
+              "answers": [
+                "Fortigate",
+                "Ucopia",
+                "The Captive Portal host (Linux Debian server)",
+                "The Mikrotik router"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The Captive Portal host is a Linux Debian server, the brain of the system: it checks credentials, creates/updates Ucopia users, modifies passwords, and stores info in the database."
+            },
+            {
+              "id": "q2",
+              "question": "Which component acts as the DHCP server for the guest and crew networks and manages per-user quotas and validity?",
+              "answers": [
+                "Fortigate",
+                "Ucopia",
+                "The PMS server",
+                "The Captive Portal database"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Ucopia is the controller software that manages quotas and user validity and also acts as the DHCP server for guest and crew networks."
+            },
+            {
+              "id": "q3",
+              "question": "Which PMS server is used on Scenic/Emerald River Cruises versus Ocean Cruises?",
+              "answers": [
+                "River uses MXP; Ocean uses CruisePAL",
+                "River uses CruisePAL; Ocean uses MXP",
+                "Both use CruisePAL",
+                "Both use MXP"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "River Cruises use CruisePAL and Ocean Cruises use MXP; both are managed by third-party vendors."
+            },
+            {
+              "id": "q4",
+              "question": "Which networking tasks does the Fortigate perform in this setup?",
+              "answers": [
+                "Storing survey emails and client device records",
+                "Acting as DHCP server for guest and crew",
+                "Allowing/denying traffic, routing Guest/Crew traffic to Ucopia, and providing WAN access with SD-WAN rules and traffic shaping",
+                "Authenticating users against the PMS server"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Fortigate is the main networking element: it allows/denies traffic, routes Guest/Crew traffic to Ucopia when CP is enabled, provides WAN access, and defines SD-WAN rules, application recognition and traffic shaping."
+            },
+            {
+              "id": "q5",
+              "question": "What are the two main functions of the Captive Portal database?",
+              "answers": [
+                "Acting as DHCP server and applying SD-WAN rules",
+                "Storing client/device/survey information and holding the CP configuration tables",
+                "Routing traffic to the WAN and shaping bandwidth",
+                "Generating vouchers and resetting PINs"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The database stores all client/device/survey information and also holds the configuration tables that are the main point of CP configuration and personalization."
+            }
+          ]
+        },
+        {
+          "id": "lesson-2-3",
+          "title": "Unity Local Admin",
+          "content": "**Unity Local Admin** is a dashboard in Unity intended as a **point of visibility and control of the Captive Portal**.\n\nIt requires at least **Unity version 4.1.8** to install the Local Admin.\n\nThe data shown in Unity Local Admin (and in the Hotel Manager web) is sourced from the information the Captive Portal database stores about clients, devices and survey emails when users connect.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "What is Unity Local Admin used for?",
+              "answers": [
+                "As the DHCP server for the crew network",
+                "As a dashboard for visibility and control of the Captive Portal",
+                "As the PMS server backup",
+                "As the SD-WAN rule editor on Fortigate"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Unity Local Admin is a dashboard in Unity intended as a point of visibility and control of the Captive Portal."
+            },
+            {
+              "id": "q2",
+              "question": "What is the minimum Unity version required to install the Local Admin?",
+              "answers": [
+                "Unity 4.0.6",
+                "Unity 4.1.8",
+                "Unity 3.9.0",
+                "Unity 5.0.0"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The guide states at least Unity version 4.1.8 is required to install the Local Admin."
+            },
+            {
+              "id": "q3",
+              "question": "Where does the information displayed in Unity Local Admin originate?",
+              "answers": [
+                "Directly from the Fortigate session table",
+                "From the client/device/survey data stored in the Captive Portal database",
+                "From the Mikrotik DHCP leases",
+                "From the Keeper password vault"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The CP database stores client/device/survey info that is used to show information in Unity Local Admin and the Hotel Manager web."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Captive Portal Flows",
+      "summary": "How traffic and authentication move through the system: the PMS guest and crew flows, the voucher flow, the device-limit case, deprecated-user cleanup, and the VRF loop.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "End-User Flow - PMS Server (Guest and Crew)",
+          "content": "Guest flow using the PMS server (Cruisepal or MXP):\n1. The guest checks in at reception; the receptionist/Hotel Manager enters his data into the **PMS server**. Once registered in PMS, he can register on the captive portal.\n2. The guest connects his first device to the **Guests Wi-Fi SSID** and negotiates an IP: Mikrotik forwards the DHCP request via relay to Fortigate, which forwards it to Ucopia (the DHCP server); Ucopia replies.\n3-5. The client tries to use the internet; on any DNS request Ucopia intercepts it and checks whether the device MAC is already assigned to a user.\n6. **If the MAC is NOT stored (new user):** Ucopia replies 'moved temporarily' to the captive portal URL; the client resolves and loads the welcome screen (Scenic or Emerald view depending on vessel). The guest accepts Terms and Policies, clicks Continue, and the registration form appears. He fills it with the data entered in the PMS server.\n\n⚠️ Important (name matching): If in the PMS server the receptionist configured Firstname = \"Esteban Ivan\" and Lastname = \"Krumrick\", the guest must enter \"Esteban Ivan\" in the Firstname field on the form, otherwise an error pops up. The form fields must exactly match the PMS fields, including multi-word first names.\n\nAfter valid credentials are checked against the PMS server: the **Guest Satisfaction Survey** screen appears (guest enters email and may tick Marketing preferences); then Client/Device/Survey data is written to the CP database. The portal then validates by stage:\n- **Registration:** searches the user in the PMS server; if valid, creates a new user in Ucopia, enables the session, and logs each action to the DB.\n- **Login:** searches the user in the PMS server; if still present, enables the session and logs to the DB.\n\nOn success the browser is redirected to the 'Connected to Internet' screen (connection details, link to edit settings in the Survey screen, button to refresh data).\n\n7. **If the MAC IS already assigned:** the user is automatically enabled for internet (provided the simultaneous device count and total simultaneous sessions are below their maximums). Via `cp.sailwifi.com` users can access the portal and see internet status.\n\n**Crew flow** is exactly the same as Guest, EXCEPT crew members are **not** shown the Guest Satisfaction Survey screen and are **not** asked for their email.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "A guest's PMS record has Firstname = \"Esteban Ivan\" and Lastname = \"Krumrick\". What must the guest enter in the Firstname field of the registration form?",
+              "answers": [
+                "Esteban",
+                "Ivan",
+                "Esteban Ivan",
+                "Krumrick"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The form fields must exactly match the PMS fields; since Firstname was set to \"Esteban Ivan\", the guest must enter \"Esteban Ivan\" or an error pops up."
+            },
+            {
+              "id": "q2",
+              "question": "In the PMS flow, which component acts as the DHCP server that ultimately replies to the client's DHCP request?",
+              "answers": [
+                "Mikrotik",
+                "Fortigate",
+                "Ucopia",
+                "The Captive Portal host"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Mikrotik relays the DHCP request to Fortigate, which forwards it to Ucopia, the DHCP server, which replies."
+            },
+            {
+              "id": "q3",
+              "question": "How does the crew PMS flow differ from the guest PMS flow?",
+              "answers": [
+                "Crew use vouchers instead of PMS credentials",
+                "Crew are not prompted with the Guest Satisfaction Survey screen and are not asked for their email",
+                "Crew authenticate against MXP while guests use Cruisepal",
+                "Crew connect to the same SSID as guests"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The crew PMS flow is identical to the guest flow except crew are not shown the Guest Satisfaction Survey screen and are not asked for their email."
+            },
+            {
+              "id": "q4",
+              "question": "At the Registration stage, what does the Captive Portal do after finding a valid user in the PMS server?",
+              "answers": [
+                "Generates a voucher and emails it to the guest",
+                "Creates a new user in Ucopia, enables the session, and logs each action to the database",
+                "Adds a static route on Fortigate for the device",
+                "Resets the user's PIN"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "On Registration, if the PMS user is valid the CP creates a new user in Ucopia, enables the user session, and logs each action to the DB."
+            },
+            {
+              "id": "q5",
+              "question": "A device whose MAC is already assigned to a user reconnects but is NOT automatically granted internet. What is the most likely reason per the flow?",
+              "answers": [
+                "The Captive Portal host is the DHCP server and is down",
+                "The simultaneous device count or total simultaneous sessions has reached its maximum",
+                "The guest forgot to accept Terms and Policies",
+                "The vessel is using the Emerald view instead of the Scenic view"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "When the MAC is already assigned, the user is automatically enabled only if the number of simultaneously connected MAC devices and total simultaneous sessions have not reached their maximums."
+            }
+          ]
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Voucher Flow and Device-Limit Handling",
+          "content": "**Voucher flow (Guest and Crew):**\n1. With this method the user does **not** need to be registered in the PMS server.\n2. The user connects to the proper Wi-Fi SSID and negotiates an IP (same DHCP relay path: Mikrotik -> Fortigate -> Ucopia).\n3-5. Same DNS interception and MAC check as the PMS flow.\n6. **If the MAC is NOT stored (new user):** same captive-portal redirect and welcome screen; the user accepts Terms and Policies and clicks Continue, then clicks the **\"Login via Voucher\"** link. The form changes to ask only username and password. The user enters the voucher username/password. The Captive Portal checks against the **CP Database** for an existing username/password combination matching the entered values.\n   - **Registration:** if valid, creates a new user in Ucopia, enables the session, and logs to the DB.\n   - **Login:** enables the session in Ucopia and logs to the DB.\n   On success, redirected to the 'Connected to Internet' screen.\n7. **If the MAC IS already assigned:** automatically enabled (subject to device/session limits). Via `wifiaccess.co` users can access the portal and see internet status.\n\nNote the portal status URLs differ by method: **PMS flow uses `cp.sailwifi.com`; voucher flow uses `wifiaccess.co`.**\n\n**Device limit reached:** If a user tries to connect a device but has reached his allowed device limit, after completing the register form an **intermediate screen** is shown to **disconnect one device** out of the Captive Portal.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Against what does the Captive Portal validate the voucher username/password combination?",
+              "answers": [
+                "The PMS server (Cruisepal or MXP)",
+                "The Captive Portal Database",
+                "The Fortigate user table",
+                "The Keeper vault"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "For vouchers, the CP checks against the CP Database for an existing username/password combination matching the entered values; the PMS server is not needed."
+            },
+            {
+              "id": "q2",
+              "question": "Which statement about the voucher flow is correct?",
+              "answers": [
+                "The user must first be registered in the PMS server",
+                "The user does NOT need to be registered in the PMS server",
+                "Vouchers bypass the Captive Portal entirely",
+                "Vouchers require a different Wi-Fi SSID than PMS users"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "With the voucher method the user does not need to be registered in the PMS server; they connect to the proper SSID and authenticate against the CP database."
+            },
+            {
+              "id": "q3",
+              "question": "When a user has reached their allowed device limit, what does the portal show after the register form?",
+              "answers": [
+                "A voucher generation screen",
+                "An intermediate screen to disconnect one device out of the Captive Portal",
+                "An error that blocks all the user's devices",
+                "A request to contact Ucopia support"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "When the device limit is reached, after completing the register form an intermediate screen is shown to disconnect one device out of the Captive Portal."
+            },
+            {
+              "id": "q4",
+              "question": "Which portal status URL is associated with the voucher flow?",
+              "answers": [
+                "cp.sailwifi.com",
+                "wifiaccess.co",
+                "10.245.X.161/survey_list",
+                "kaiamxpia.kaia.internal"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "In the voucher flow, when the MAC is already assigned, users access the portal and see internet status via wifiaccess.co (the PMS flow uses cp.sailwifi.com)."
+            }
+          ]
+        },
+        {
+          "id": "lesson-3-3",
+          "title": "Deprecated Users and the VRF Loop",
+          "content": "**The invisible flow of deprecated users:** Users created in the DB and in Ucopia both have an expiration date.\n- In **Ucopia**, the user is cleared the **day after** the expiration date.\n- In the **Captive Portal database**, the user is cleared by an internal process once the expiration date has passed. This appears in the CP logs near 12 AM each day, for example:\n```\n<200>1 2026-03-11T00:00:01Z localhost script-cp INFO Cronjob delete-outdated-client started\n<200>1 2026-03-11T00:00:01Z localhost script-cp INFO Syncing PMS data\n<200>1 2026-03-11T00:45:01Z localhost script-cp INFO Cronjob remove-expired-devices started\n```\n\n**VRF Loop explanation:** Incoming internet traffic from the Crew and Guest networks arrives from the Transit to the Mikrotik interface and is sent to Ucopia via the **uc_in** interface using an SD-WAN rule on Fortigate (**CPEnablerCrew** or **CPEnablerGuest**). Ucopia applies quotas and rate limits, then forwards traffic to **VRF 30** via its WAN interface. This traffic enters VRF 30 through the **uc_out** interface and is routed to **VRF 0** via **transit2vrf_0**.\n\nA **NAT** is applied to this outgoing traffic as it leaves interface **transit2vrf_0** to prevent routing conflicts - without it, traffic would enter the Fortigate with the same source IP via two different interfaces within the same VRF. Finally, Fortigate applies firewall policies and SD-WAN definitions; if permitted, traffic is forwarded to the internet.\n\nL3 routes: in the VRF30 routing table the **uc_out** interface is the gateway to reach the Guest and Crew networks, ensuring traffic satisfies the **RPC (Reverse Path Check)** on Fortigate and is not dropped. Static routes are added to VRF0 to reach the NAT IPs so incoming traffic via Transit2vrf_30 also satisfies the RPC.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "When is an expired user cleared from Ucopia?",
+              "answers": [
+                "Immediately at the expiration time",
+                "The day after the expiration date",
+                "One week after the expiration date",
+                "Only when manually removed by support"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "In Ucopia the user is cleared the day after the expiration date; in the CP database the user is cleared by an internal process once the expiration date has passed (logged near 12 AM)."
+            },
+            {
+              "id": "q2",
+              "question": "Why is a NAT applied to traffic leaving the transit2vrf_0 interface in the VRF loop?",
+              "answers": [
+                "To hide the guest's email address",
+                "To prevent routing conflicts, since otherwise traffic would enter Fortigate with the same source IP via two different interfaces within the same VRF",
+                "To assign each device a public IP",
+                "To bypass the Reverse Path Check entirely"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The NAT prevents routing conflicts; without it, traffic would enter the Fortigate with the same source IP via two different interfaces within the same VRF."
+            },
+            {
+              "id": "q3",
+              "question": "Which SD-WAN rules on Fortigate send Crew and Guest internet traffic to Ucopia via the uc_in interface?",
+              "answers": [
+                "CPEnablerCrew or CPEnablerGuest",
+                "MGMT-to-ALL",
+                "transit2vrf_0 and transit2vrf_30",
+                "HostBypass and Guest VIP"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "Traffic is sent to Ucopia via the uc_in interface using the SD-WAN rule CPEnablerCrew or CPEnablerGuest."
+            },
+            {
+              "id": "q4",
+              "question": "In the VRF30 routing table, what role does the uc_out interface play?",
+              "answers": [
+                "It is the DHCP relay target",
+                "It is the gateway to reach the Guest and Crew networks so traffic satisfies the Reverse Path Check (RPC) and is not dropped",
+                "It is the PMS server's WAN uplink",
+                "It is the management interface for Unity"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "In the VRF30 routing table the uc_out interface is the gateway to reach the Guest and Crew networks, ensuring traffic satisfies the RPC on Fortigate and avoids being dropped."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-4",
+      "title": "Configuration",
+      "summary": "How Fortigate, Ucopia, the Captive Portal host, and the Captive Portal database are configured - including the key warnings and the configuration tables edited via Rundeck.",
+      "lessons": [
+        {
+          "id": "lesson-4-1",
+          "title": "Fortigate and Ucopia Configuration",
+          "content": "**Fortigate** has two clear parts:\n- **The Captive Portal setup itself** - communication between CP, Ucopia and Fortigate.\n- **The LANs to work over the Captive Portal** - getting traffic from a LAN (Guest, Crew) routed over Ucopia.\n\nCaptive Portal Setup includes: interfaces (**uc_in** created as a WAN interface), address objects (PMS Server / Cruisepal IP differs between vessels), an SD-WAN zone (uc_in must be an SD-WAN zone member), FW policies, Central SNAT, DNAT (NATs the internal IPs of Ucopia and CP to IPs in VLAN 222 / System), static routes, and SD-WAN rules (adding **uc_out** to MGMT->ALL SDWAN).\n\nLAN to work over Captive Portal (in Scenic only 2 LANs - Guest and Crew): DHCP relay on the proper interface - in Scenic, **Fusion_Transit** - so all DHCP requests on this interface are forwarded to `10.254.149.1` (Ucopia). Plus address objects, IP pools, static routes, Central SNAT, and SD-WAN rules (these are what enable traffic to flow to Ucopia).\n\n**Ucopia** network config: controller name and domain name, incoming networks (Guest, Crew), outgoing networks, static routes (Guest/Crew traffic routes are the relevant ones), DNS server. Other important config: certificates (`*.sailwifi.com` is the default certificate), portals, open access URLs (`cp.sailwifi.com` = Captive Portal IP), and logging.\n\nProfiles share common configuration: validity, recognition of user equipment, traffic filtering, password policies, automatic account purging, advanced options.\n\n⚠️ Important: In profile **HostBypass**, \"Limit the storage duration at 14 days\" should be **UNCHECKED**.\n\n⚠️ Important: Scenic/Emerald **Ocean** vessels have different IPs (CP interfaces 10.255.X.X instead of the usual range; Guest/Crew ranges ad-hoc).\n\n**Bandwidth limitation and quotas - there are 5 profiles** defined for Scenic/Emerald Cruises CP: **Guest, Guest VIP, Crew, Crew Executive, Host Bypass** (profile names in Ruby, Dawn, Sun and Amber are not exactly those shown in the reference image).",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "On the HostBypass profile in Ucopia, what must be done with the 'Limit the storage duration at 14 days' option?",
+              "answers": [
+                "It must be checked (enabled)",
+                "It must be unchecked (disabled)",
+                "It must be set to 30 days",
+                "It must be deleted from the profile"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The guide warns that in profile HostBypass, 'Limit the storage duration at 14 days' should be UNCHECKED."
+            },
+            {
+              "id": "q2",
+              "question": "How many profiles are defined for the Scenic/Emerald Cruises CP, and which are they?",
+              "answers": [
+                "3 - Guest, Crew, Host Bypass",
+                "4 - Guest, Guest VIP, Crew, Crew Executive",
+                "5 - Guest, Guest VIP, Crew, Crew Executive, Host Bypass",
+                "6 - Guest, Guest VIP, Crew, Crew Executive, Host Bypass, Admin"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "There are 5 profiles: Guest, Guest VIP, Crew, Crew Executive, and Host Bypass."
+            },
+            {
+              "id": "q3",
+              "question": "On the Fortigate, where (in Scenic) is the DHCP relay configured and to which IP are requests forwarded?",
+              "answers": [
+                "On uc_in, forwarded to 10.254.199.1",
+                "On Fusion_Transit, forwarded to 10.254.149.1 (Ucopia)",
+                "On uc_out, forwarded to 10.245.X.161",
+                "On VLAN 222, forwarded to the PMS server"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The LAN-over-CP config uses a DHCP relay on the Fusion_Transit interface in Scenic, forwarding all DHCP requests on that interface to 10.254.149.1 (Ucopia)."
+            },
+            {
+              "id": "q4",
+              "question": "Which interface is created as a WAN interface in the Fortigate Captive Portal setup?",
+              "answers": [
+                "Fusion_Transit",
+                "uc_in",
+                "transit2vrf_0",
+                "uc_out"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "In the Captive Portal setup, uc_in is created as a WAN interface and must be an SD-WAN zone member."
+            },
+            {
+              "id": "q5",
+              "question": "What is the default certificate configured in Ucopia, and which open access URL maps to the Captive Portal IP?",
+              "answers": [
+                "*.sailwifi.com certificate; cp.sailwifi.com open access URL",
+                "*.wifiaccess.co certificate; wifiaccess.co open access URL",
+                "*.scenic.internal certificate; survey_list open access URL",
+                "*.kaia.internal certificate; kaiamxpia open access URL"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The default Ucopia certificate is *.sailwifi.com and the open access URL cp.sailwifi.com maps to the Captive Portal IP."
+            }
+          ]
+        },
+        {
+          "id": "lesson-4-2",
+          "title": "Captive Portal Host Files",
+          "content": "⚠️ Important: This section is **informative only**, to understand CP host config. These settings **must not be edited under any circumstance**.\n\nKey paths on the Captive Portal host:\n- **/etc/hosts** - system file for local hostname resolution; maps hostnames to IPs without external DNS. (Ocean Cruises have MXP addresses that differ per vessel, e.g. Kaia -> `kaiamxpia.kaia.internal`.)\n- **/var/www/html** - in a Laravel deployment, the root directory where the application is installed (framework, config, dependencies, source code).\n- **/var/www/html/.env** - configuration file with environment variables (credentials, API keys, DB parameters, app settings). Most important parameters to check:\n  1. **RESCO URL** - Cruisepal URL defined in /etc/hosts (MXP_URL in Oceans).\n  2. **APP URL** - the Captive Portal URL users use to authenticate.\n  3. **CONTROLLER URL** - Ucopia controller URL.\n  4. **UCOPIA URL** - Ucopia API URL.\n  5. **Unity IP** in **ADMIN_API_WHITELIST**.\n- **/var/www/html/storage/logs/** - the **most important folder for troubleshooting**; stores CP logs (usage logs and Laravel logs). Tier 1 and Tier 2 usually only need the **usage logs** (registers, logins, deleting users). **Laravel logs** are checked when an application bug / unexpected behavior is suspected - usually caused by an unexpected response from the PMS server (bad field format, etc.).\n- **/var/www/html/VERSION** - the current version of the CP.\n- **/home/omniaccess/RESCO_scripts** - Python scripts to print information stored in the PMS server (Cruisepal).",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "What is the policy regarding editing the Captive Portal host configuration files described in this section?",
+              "answers": [
+                "Edit them whenever a guest cannot connect",
+                "They are informative only and must not be edited under any circumstance",
+                "Only the .env file may be edited freely",
+                "They should be edited daily to sync PMS data"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The section is informative only, to understand CP host config; these settings must not be edited under any circumstance."
+            },
+            {
+              "id": "q2",
+              "question": "Which folder on the CP host is the most important for troubleshooting?",
+              "answers": [
+                "/etc/hosts",
+                "/var/www/html/VERSION",
+                "/var/www/html/storage/logs/",
+                "/home/omniaccess/RESCO_scripts"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "/var/www/html/storage/logs/ is the most important folder for troubleshooting; it stores the usage logs and Laravel logs."
+            },
+            {
+              "id": "q3",
+              "question": "When are Laravel logs (rather than usage logs) typically consulted?",
+              "answers": [
+                "For every normal login and register event",
+                "When an application bug or unexpected behavior is suspected, often from a bad PMS server response",
+                "Only to check the current CP version",
+                "To view DHCP lease assignments"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Tier 1/Tier 2 usually use usage logs; Laravel logs are checked when an application bug or unexpected behavior is suspected, usually caused by an unexpected response from the PMS server."
+            },
+            {
+              "id": "q4",
+              "question": "Which .env parameter holds the Cruisepal URL (defined in /etc/hosts)?",
+              "answers": [
+                "APP URL",
+                "CONTROLLER URL",
+                "RESCO URL",
+                "UCOPIA URL"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "RESCO URL is the Cruisepal URL defined in /etc/hosts (it is MXP_URL in Oceans); APP URL is the Captive Portal URL, CONTROLLER URL is the Ucopia controller URL, and UCOPIA URL is the Ucopia API URL."
+            }
+          ]
+        },
+        {
+          "id": "lesson-4-3",
+          "title": "Captive Portal Database Configuration Tables",
+          "content": "The CP database is on the same Debian server. Configuration tables are **edited via Rundeck**.\n\n**portal_configs** - main CP configuration; only a few parameters are editable:\n- **kick devices on pin reset** - when a PIN is reset, disconnect all devices on the account. **Scenic DO NOT use PIN.**\n- **show logs pms** - disabled by default; prints the API calls to the PMS server (to authenticate users).\n- **show logs ucopia** - enabled by default; prints the API calls to Ucopia (create/update/delete users).\n- **show logs cms** - Scenic DO NOT use.\n- **show logs weather** - Scenic DO NOT use.\n\n**profiles** - profile configuration; should match the Ucopia profiles:\n- **quota** - bandwidth limit before applying restrictions.\n- **num of devices** - number of devices allowed connected at the same time per user profile.\n\n⚠️ Important: The device limit that is **really applied** is the one configured in **this profiles table**, NOT the limit in the Ucopia profile. Condition: the Ucopia **multidevice** field must be **>=** the `num_of_devices` field in the CP database profiles table.\n\n**role_features** - **device lifetime**: default values Guest=30, Crew=10. Logs devices out of the portal after this period of being logged in.\n\n**role_views** - end-user view configuration: **visible quota** (quota visible on the 'Connected to internet' screen), **hide connection details**, **show lang selector** (language selector on the first screen), **show weather** (weather on first screen), **voucher auth** (show the 'Login via voucher' link on the registration form).",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Where does the device limit that is actually enforced come from?",
+              "answers": [
+                "The Ucopia profile's multidevice field",
+                "The num_of_devices field in the CP database profiles table",
+                "The role_features device lifetime value",
+                "The Fortigate SD-WAN rule"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The device limit really applied is the num_of_devices in the CP database profiles table, not the Ucopia profile limit; the Ucopia multidevice field must be >= num_of_devices."
+            },
+            {
+              "id": "q2",
+              "question": "The CP profiles table has num_of_devices = 4 for a profile. What is the required relationship with the Ucopia multidevice field?",
+              "answers": [
+                "Ucopia multidevice must be exactly 4",
+                "Ucopia multidevice must be >= 4",
+                "Ucopia multidevice must be <= 4",
+                "Ucopia multidevice is irrelevant and can be 0"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The condition is that the Ucopia multidevice field must be >= the num_of_devices field in the CP database profiles table."
+            },
+            {
+              "id": "q3",
+              "question": "What are the default device lifetime values in the role_features table for Guest and Crew?",
+              "answers": [
+                "Guest=10, Crew=30",
+                "Guest=30, Crew=10",
+                "Guest=14, Crew=14",
+                "Guest=5, Crew=5"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "role_features device lifetime defaults are Guest=30 and Crew=10; it logs devices out of the portal after this period of being logged in."
+            },
+            {
+              "id": "q4",
+              "question": "Which role_views setting controls whether the 'Login via voucher' link appears on the registration form?",
+              "answers": [
+                "visible quota",
+                "show lang selector",
+                "voucher auth",
+                "hide connection details"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The voucher auth setting in role_views shows the 'Login via voucher' link on the registration form."
+            },
+            {
+              "id": "q5",
+              "question": "In portal_configs, which logging option is enabled by default and prints API calls to Ucopia?",
+              "answers": [
+                "show logs pms",
+                "show logs ucopia",
+                "show logs cms",
+                "show logs weather"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "show logs ucopia is enabled by default and prints the API calls to Ucopia (create/update/delete users); show logs pms is disabled by default, and cms/weather are not used by Scenic."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-5",
+      "title": "Monitoring, Logs and Troubleshooting",
+      "summary": "Using Ucopia monitoring tabs, Rundeck, the PMS parser scripts, and the log commands to investigate issues - plus the common troubleshooting touch-points.",
+      "lessons": [
+        {
+          "id": "lesson-5-1",
+          "title": "Ucopia Monitoring Tabs",
+          "content": "Most useful Ucopia tabs for support:\n\n- **Management -> User & Devices -> Accounts** - a database of all registered users who are not expired. **If a user appears here, they have been able to register at some point.** The CP creates users with these correspondences:\n\n| Ucopia field | Cruisepal field | CP database Clientes table |\n| --- | --- | --- |\n| Login | guest_id | cli_guest_id |\n| Last name | room | cli_room |\n| Expiration date | debark_date | cli_bookend |\n\n  Useful tools: edit displayed columns (relevant: Login, Profile, Last name); search filter (by profile, room, login, and combine filters). Example: Profile = EmeraldCrew and Room (Last name) = C12.\n\n  ⚠️ Important: The **Login field format differs by creation method** - PMS register uses `guest_id`, Voucher uses `lu-...`.\n- **Monitoring -> Real-time -> DHCP leases** - see IP addresses mapped to MAC addresses.\n- **Monitoring -> Usage logs -> Sessions** - see sessions filtered by date/range, how they authenticated, and duration, with many filters. Useful to differentiate:\n  - **MAC Authentication sessions** - device already registered; the CP register form is NOT prompted.\n  - **Portal or Mobile Portal sessions** - device IS prompted with the CP register form.\n- **Monitoring -> System logs -> Resources usage** - Ucopia's resource usage.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Which Ucopia tab confirms that a user has been able to register at some point (a database of all non-expired registered users)?",
+              "answers": [
+                "Monitoring -> Real-time -> DHCP leases",
+                "Management -> User & Devices -> Accounts",
+                "Monitoring -> Usage logs -> Sessions",
+                "Monitoring -> System logs -> Resources usage"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Accounts tab is a database of all registered, non-expired users; if a user appears there, they have been able to register at some point."
+            },
+            {
+              "id": "q2",
+              "question": "In the Ucopia Accounts mapping, which Cruisepal field corresponds to the Ucopia 'Last name' field?",
+              "answers": [
+                "guest_id",
+                "room",
+                "debark_date",
+                "account_id"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The mapping is Login=guest_id, Last name=room, Expiration date=debark_date."
+            },
+            {
+              "id": "q3",
+              "question": "How can you tell from the Ucopia Login field whether a user was created by PMS register or by voucher?",
+              "answers": [
+                "PMS uses a guest_id; voucher uses a login starting with lu-",
+                "PMS uses lu-; voucher uses guest_id",
+                "Both formats are identical",
+                "PMS users have no Login value"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The Login field format differs: PMS register uses guest_id, while Voucher uses lu-..."
+            },
+            {
+              "id": "q4",
+              "question": "In the Sessions tab, what distinguishes a 'MAC Authentication' session from a 'Portal' session?",
+              "answers": [
+                "MAC Authentication means the register form WAS prompted; Portal means it was not",
+                "MAC Authentication means the device was already registered and the register form was NOT prompted; Portal means the form WAS prompted",
+                "There is no difference; they are the same session type",
+                "MAC Authentication only applies to crew, Portal only to guests"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "MAC Authentication sessions are for already-registered devices where the CP register form is not prompted; Portal or Mobile Portal sessions are where the device is prompted with the register form."
+            }
+          ]
+        },
+        {
+          "id": "lesson-5-2",
+          "title": "Rundeck and PMS Server Scripts",
+          "content": "**Rundeck - Captive Portal Database:** interact with the CP database via Rundeck scripts (project OA_Services -> CaptivePortal/SolutionsArchitect).\n\n**Export main configuration to compare to baseline:** a CP configuration baseline `.yaml` exists for Scenic/Emerald river cruises. A Rundeck job generates this file in `/home/omniaccess/configs_exported` on the CP host and can also compare directly from Rundeck (it prints all configuration).\n\n**PMS Server scripts:**\n- **Cruisepal (Scenic/Emerald River):** `/home/omniaccess/RESCO_scripts` holds Python scripts to print PMS (Cruisepal) info. The main script is **`xpal_parser.py`**, which prints cruise information, guests registered in PMS, crew registered in PMS, and possible duplicated users that can cause errors.\n  - NOTE: A user may appear duplicated in the Cruisepal backend but look OK on the frontend GUI used onboard. In those cases they should contact Cruisepal to review; report the duplicated users you see.\n  - After working with Cruisepal and Scenic, it was agreed the ID to authenticate users must be **account_id (AccountID in Cruisepal)** - it is unique and present even if the user is created manually in Cruisepal.\n- **MXP (Scenic/Emerald Ocean, same as Viking):** `/home/omniaccess/MXP_scripts` holds Python scripts (e.g. **`sc_mxp_parser.py`**) to print MXP cruise/guest/crew info.\n  - ⚠️ Important: the **checkedIn field must be True** for users to be able to authenticate.\n\n(PII note: actual passenger/crew names and IDs from the sample outputs are excluded from this course.)",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Which script prints Cruisepal PMS information (cruise info, guests, crew, possible duplicates) for River cruises?",
+              "answers": [
+                "sc_mxp_parser.py",
+                "xpal_parser.py",
+                "showLogs",
+                "delete-outdated-client"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The main Cruisepal script in /home/omniaccess/RESCO_scripts is xpal_parser.py; sc_mxp_parser.py is the MXP (Ocean) parser."
+            },
+            {
+              "id": "q2",
+              "question": "On MXP (Ocean) vessels, what must be true for a user to be able to authenticate?",
+              "answers": [
+                "Their tariff field must be set",
+                "Their checkedIn field must be True",
+                "Their PersonId must start with lu-",
+                "Their room_no must match the SSID"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The guide notes the checkedIn field must be True for MXP users to be able to authenticate."
+            },
+            {
+              "id": "q3",
+              "question": "Which ID was agreed as the unique authentication ID in Cruisepal, present even when a user is created manually?",
+              "answers": [
+                "guest_id",
+                "booking_id",
+                "account_id (AccountID)",
+                "room"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "It was agreed the ID to authenticate users must be account_id (AccountID in Cruisepal), which is unique and present even if the user is created manually."
+            },
+            {
+              "id": "q4",
+              "question": "A user appears duplicated in the Cruisepal backend (via xpal_parser.py) but looks fine on the onboard GUI. What should you do?",
+              "answers": [
+                "Delete one of the duplicates directly in the CP database",
+                "Ignore it because the GUI is authoritative",
+                "Report the duplicated users and have them contact Cruisepal to review",
+                "Recreate the user in Ucopia"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "In duplicate cases they should contact Cruisepal to review, and you should report the duplicated users you see."
+            }
+          ]
+        },
+        {
+          "id": "lesson-5-3",
+          "title": "Log Visualization and Common Troubleshooting",
+          "content": "**Ucopia logs (SSH only):** main command is **`showLogs`** with filters:\n```\nshowLogs [type] [-n number] [-d day]\n  type     Word to search (e.g. radius, dhcp) or a pattern\n  -n number  Search in the last 'number' log events [default 1000]\n  -d day     Specific day (0=today, 1=yesterday, range x-y; a day starts at 6:25 AM) [0]\n```\nFilter by date example (today 13-Mar from 06:00): `showLogs -n 1000000 \"13 06:00\"`. NOTE: use a very large line count (at least 1000000) so Ucopia actually prints the logs. Filter by type example: `showLogs dhcp` (shows DHCPDISCOVER/OFFER/REQUEST/ACK lines with IP, MAC, device name).\n\n**CP host logs:**\n- **Rundeck by room:** a Rundeck job (OA_Services -> CaptivePortal/SolutionsArchitect/Logs) returns the users in a room with their CP-database info and the raw logs for those users; scrolling down shows them in a user-friendly format.\n- **Raw log files:** via SSH or WinSCP at **`/var/www/html/storage/logs/`** - a new file is created each day. They show registration attempts, API calls to Ucopia, users not present in the PMS server, incorrect input data, and failed/successful connections.\n- **Real-time:** best for live troubleshooting - tail the logs, e.g. `tail -f -n 50 /var/www/html/storage/logs/usage-2026-03-13.log`.\n\n**Common troubleshooting touch-points:**\n- Cannot register/login -> confirm the user exists and is active (not expired) in the PMS server; for MXP, **checkedIn must be True**.\n- Name mismatch -> the Firstname/Lastname on the form must exactly match the PMS fields (including multi-word first names).\n- Wrong SSID -> user must connect to the SSID for their group (Guest vs Crew).\n- Device limit reached -> disconnect a device via the intermediate screen; the real limit is `num_of_devices` in the CP database profiles table (Ucopia multidevice must be >= that value).\n- Duplicated user in Cruisepal -> report to Cruisepal; authentication uses the unique account_id.\n- PMS server down -> use vouchers as a temporary alternative.\n- Check usage logs for normal events; Laravel logs for suspected application bugs / bad PMS responses.\n- Ucopia: Accounts tab to confirm registration, Sessions for auth type/duration, DHCP leases for IP<->MAC mapping, and showLogs over SSH for DHCP/auth events.\n\nRefer to the dedicated Troubleshooting folder and Work Instructions folder in the CP Confluence space for full step-by-step instructions.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Why should you pass a very large number to the -n option of showLogs (e.g. `showLogs -n 1000000 \"13 06:00\"`)?",
+              "answers": [
+                "To restart the Ucopia service",
+                "So Ucopia actually prints the logs",
+                "To delete old log events",
+                "To change the day start time"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The note states to use a very large number of lines (at least 1000000) so Ucopia actually prints the logs."
+            },
+            {
+              "id": "q2",
+              "question": "Which command is best for real-time troubleshooting on the CP host?",
+              "answers": [
+                "showLogs dhcp",
+                "tail -f -n 50 /var/www/html/storage/logs/usage-2026-03-13.log",
+                "python3 xpal_parser.py",
+                "cat /var/www/html/VERSION"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "For real-time troubleshooting the guide recommends tailing the CP host logs, e.g. tail -f -n 50 /var/www/html/storage/logs/usage-2026-03-13.log."
+            },
+            {
+              "id": "q3",
+              "question": "A guest reports their name is rejected on the registration form. Which is the first thing to verify?",
+              "answers": [
+                "That the Fortigate SD-WAN rule CPEnablerGuest is enabled",
+                "That the Firstname/Lastname entered exactly matches the PMS fields, including multi-word first names",
+                "That the Ucopia certificate is *.sailwifi.com",
+                "That the device lifetime is set to 30"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Name-mismatch troubleshooting requires the Firstname/Lastname entered on the form to exactly match the PMS server fields, including multi-word first names."
+            },
+            {
+              "id": "q4",
+              "question": "On the showLogs command, when does a 'day' start for the -d filter?",
+              "answers": [
+                "At midnight (00:00)",
+                "At 6:25 AM",
+                "At 12:00 PM",
+                "At the cruise embark time"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "In the showLogs -d documentation, a day starts at 6:25 AM (0=today, 1=yesterday, range x-y)."
+            },
+            {
+              "id": "q5",
+              "question": "Which set of Ucopia views maps to the right troubleshooting goal?",
+              "answers": [
+                "Accounts to confirm registration, Sessions for auth type/duration, DHCP leases for IP-to-MAC mapping",
+                "DHCP leases to confirm registration, Accounts for IP-to-MAC mapping, Sessions for resource usage",
+                "Resources usage to confirm registration, Accounts for auth duration, Sessions for DHCP",
+                "Sessions to confirm registration, DHCP leases for auth type, Accounts for resource usage"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "Use the Accounts tab to confirm a user registered, Sessions to see auth type and duration, and DHCP leases for IP-to-MAC mapping."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
