@@ -1,0 +1,177 @@
+/* AlbusV2 — Sistema de diseño OmniAccess / NOC Tools
+   Tokens canónicos de metricas/design.json */
+
+:root {
+  --oa-red: #c1032f;
+  --oa-red-light: #e40028;
+  --oa-grad: linear-gradient(135deg, #c1032f 0%, #e40028 100%);
+  --oa-bg: #0e1117;
+  --oa-anthracite: #1e2934;
+  --oa-card: #1e2934;
+  --oa-card-hover: #253341;
+  --oa-border: #2d3f52;
+  --oa-border-strong: #3a5068;
+  --oa-text: #e6eaf0;
+  --oa-text-secondary: #9ca3af;
+  --oa-text-muted: #6b7280;
+  --oa-success: #22c55e;
+  --oa-warning: #f59e0b;
+  --oa-error: #ef4444;
+  --oa-info: #4da6ff;
+
+  --sidebar-w: 280px;
+  --sidebar-w-collapsed: 64px;
+  --chat-w: 360px;
+
+  --radius-card: 0.75rem;
+  --radius-btn: 0.5rem;
+
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+/* ── Modo claro: solo se redefinen los colores ──
+   El "chrome" (sidebar, chat, cabecera) va en gris para enmarcar el contenido,
+   que queda más claro (cards/texto en blanco "flotando"). */
+:root[data-theme="light"] {
+  --oa-bg: #f6f8fb;          /* área de contenido (clara) */
+  --oa-anthracite: #dde4ee;  /* chrome: sidebar + chat (gris, más oscuro) */
+  --oa-header-bg: #dde4ee;   /* cabecera del curso (mismo gris de chrome) */
+  --oa-card: #ffffff;        /* cards, burbujas, code -> blanco que destaca */
+  --oa-card-hover: #cfd8e4;
+  --oa-border: #c7d1de;
+  --oa-border-strong: #b2bdcd;
+  --oa-text: #1a2230;
+  --oa-text-secondary: #55606e;
+  --oa-text-muted: #828d9c;
+  /* rojo de marca y semánticos se mantienen */
+}
+
+/* En modo claro, SOLO el índice (sidebar) se mantiene OSCURO, como en el modo
+   oscuro: re-declaramos la paleta oscura en su subárbol. El chat y el contenido
+   central conservan los colores claros de :root[data-theme="light"]. */
+:root[data-theme="light"] .sidebar {
+  --oa-bg: #0e1117;
+  --oa-anthracite: #1e2934;
+  --oa-card: #1e2934;
+  --oa-card-hover: #253341;
+  --oa-border: #2d3f52;
+  --oa-border-strong: #3a5068;
+  --oa-text: #e6eaf0;
+  --oa-text-secondary: #9ca3af;
+  --oa-text-muted: #6b7280;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--oa-bg);
+  color: var(--oa-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--oa-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--oa-border-strong);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+.eyebrow {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--oa-text-muted);
+}
+
+/* Botones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-btn);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s, transform 0.1s;
+}
+.btn-primary {
+  background: var(--oa-grad);
+  color: #fff;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+}
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--oa-border);
+  color: var(--oa-text);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--oa-card-hover);
+  border-color: var(--oa-border-strong);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+}
+.badge-live {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--oa-success);
+}
+.badge-soon {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--oa-warning);
+}
+.badge-neutral {
+  background: rgba(77, 96, 112, 0.25);
+  color: var(--oa-text-secondary);
+}

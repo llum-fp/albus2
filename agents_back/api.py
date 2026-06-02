@@ -61,7 +61,7 @@ log = logging.getLogger("agents_back.api")
 # build entirely and points at the single pre-built course JSON.
 HARDCODED_RESPONSE = {
     "json_exists": True,
-    "json_path": "/home/lfuster/projects/hackathon20/agents_directory/json/course_14a0494d-d694-4744-8b01-1272b4c99c4b.json",
+    "json_path": "/home/lfuster/projects/hackathon20/agents_back/agents_directory/json/course_14a0494d-d694-4744-8b01-1272b4c99c4b.json",
     "session_id": "14a0494d-d694-4744-8b01-1272b4c99c4b",
 }
 

@@ -5,13 +5,19 @@ multiple-choice questions) via the `create-course` skill: a `source-extractor`
 agent reads the page, then a profile-specific course-creator agent
 (`technical-course-creator` / `sales-course-creator`) authors the course.
 
-Two backends:
+Two backends + a learner frontend:
 
 ```
-frontend ─▶ platform_back (:8001) ─▶ agents_back (:8000) ─▶ create-course skill
-                                                            ├─ source-extractor (reads)
-                                                            └─ <profile>-course-creator (writes)
+albusv2 frontend (:5174) ─▶ platform_back (:8001) ─▶ agents_back (:8000) ─▶ create-course skill
+   (Vite proxy /api ─▶ :8001)      │                                        ├─ source-extractor (reads)
+                                   │                                        └─ <profile>-course-creator (writes)
+                                   └─ /api/* surface (courses, surveys, Albus chat tutor)
 ```
+
+The React learner UI (`proyecto_exportacion/albusv2/`) talks only to platform_back's
+`/api/*` routes; platform_back is the single `:8001` origin. The colleague's original
+mock backend (`proyecto_exportacion/backend/`) is **not run** — its chat tutor
+(`chat.py`) and persona were ported into platform_back.
 
 ## Layout
 
@@ -27,25 +33,50 @@ frontend ─▶ platform_back (:8001) ─▶ agents_back (:8000) ─▶ create-c
     schema in `agents_directory/.claude/course-schema.md`. Source extracts are
     written to `agents_directory/extract/`, courses to `agents_directory/json/`.
 - **`platform_back/`** — FastAPI backend with SQLite persistence. Entry point: `run.py`.
-  - `app/main.py` — FastAPI app, mounts routers, runs `create_all` on startup.
-  - `app/models/` — SQLAlchemy models: `Course`, `User`.
-  - `app/schemas/` — Pydantic v2 schemas.
-  - `app/crud/` — DB operations for courses and users.
-  - `app/routers/courses.py` — `GET/POST /courses/`, `GET/PATCH /courses/{id}`.
-  - `app/routers/users.py` — `GET/POST /users/`, `GET /users/{id}`.
-  - `app/services/agents_back.py` — httpx client: `create_course()` → `/create-course`, `update_course()` → `/update-course`.
+  - `app/main.py` — FastAPI app + CORS, mounts routers, runs `create_all` on startup.
+  - `app/config.py` — `COURSES_DIR` (= `agents_back/agents_directory/json`, the shared
+    course-file source of truth), loads `agents_back/.env`, back-fills `CONFLUENCE_*`
+    env names from `ATLASSIAN_*` for the chat tutor.
+  - `app/models/` — SQLAlchemy models: `Course`, `User`, `Survey`.
+  - `app/schemas/` — Pydantic v2 schemas (course, user, survey).
+  - `app/crud/` — DB operations for courses, users, surveys.
+  - **Internal/management surface (integer course ids):**
+    - `app/routers/courses.py` — `GET/POST /courses/`, `GET/PATCH /courses/{id}`.
+    - `app/routers/users.py` — `GET/POST /users/`, `GET /users/{id}`.
+    - `app/services/agents_back.py` — httpx client → agents_back `/create-course`, `/update-course`.
+  - **Frontend-facing `/api/*` surface (the albusv2 contract; string filename-stem ids):**
+    - `app/routers/api_courses.py` — `GET /api/courses` (summaries), `GET /api/courses/{id}`
+      (full course JSON served verbatim from `COURSES_DIR` with `id` injected from the filename).
+    - `app/routers/api_surveys.py` — `POST/GET /api/surveys` (persisted in SQLite).
+    - `app/routers/chat.py` — Albus quiz-tutor: `POST /api/chat/session`, `GET /api/chat/stream`
+      (SSE). Ported from the colleague backend; streams the local `claude` CLI and reads
+      courses from `COURSES_DIR`. `app/albus_persona.md` is its persona; `app/util/html.py`
+      holds `strip_html`. Sandbox: `platform_back/claude-sandbox/` (gitignored).
   - `platform.db` — SQLite database (auto-created on first run).
-- **`.venv/`** — shared virtualenv (FastAPI, uvicorn, SQLAlchemy 2.x, pydantic v2, httpx). `example.json` — sample payload.
+- **`proyecto_exportacion/albusv2/`** — React 19 + Vite learner frontend (dev `:5174`). All
+  backend calls go through `src/api.ts` + `src/useChat.ts` (5 `/api/*` endpoints); the Vite
+  proxy forwards `/api` → `:8001`. No source changes were needed to target platform_back.
+- **`proyecto_exportacion/backend/`** — the colleague's original mock backend. **Not run**;
+  kept as reference. Holds a live `.env` (gitignored) — rotate before any push.
+- **`.venv/`** — shared virtualenv (FastAPI, uvicorn, SQLAlchemy 2.x, pydantic v2, httpx,
+  requests, beautifulsoup4, anthropic). `example.json` — sample payload.
 
 ## Run the backends
 
 ```bash
-# agents_back (engine) — terminal 1
+# agents_back (engine) — terminal 1  (only needed to author/revise courses)
 cd agents_back && ../.venv/bin/python api.py            # :8000
 
-# platform_back (FastAPI + SQLite) — terminal 2
+# platform_back (FastAPI + SQLite, also serves the frontend /api/*) — terminal 2
 cd platform_back && ../.venv/bin/python run.py          # :8001
+
+# albusv2 learner frontend — terminal 3
+cd proyecto_exportacion/albusv2 && npm install && npm run dev   # :5174 (proxies /api → :8001)
 ```
+
+Open the UI at `http://localhost:5174`. The Albus chat tutor needs the `claude` CLI on
+PATH (it streams it for quiz feedback) and runs platform_back as a single process
+(chat sessions are in-memory) — `run.py`'s `reload=True` keeps it single-worker.
 
 ## Call the API
 

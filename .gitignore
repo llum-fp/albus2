@@ -20,6 +20,10 @@ dist/
 
 # Data — keep sample courses, ignore generated ones
 
+# Albus chat tutor sandbox (temp system-prompt files written per request)
+platform_back/claude-sandbox/
+proyecto_exportacion/backend/claude-sandbox/
+
 # OS / editor
 .DS_Store
 .idea/

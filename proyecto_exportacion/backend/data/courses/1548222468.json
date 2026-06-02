@@ -1,0 +1,170 @@
+{
+  "title": "Captive Portal Scenic/Emerald: Guía de Soporte",
+  "description": "Este curso te explica cómo funciona el Captive Portal que gestionamos en los cruceros Scenic y Emerald: qué hace, de qué piezas está compuesto y cómo actuar cuando algo falla. Está pensado para técnicos que acaban de incorporarse y necesitan entender el sistema desde cero.",
+  "source": "Confluence page 1548222468",
+  "language": "es",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Captive Portal Scenic/Emerald: Guía de Soporte",
+      "summary": "Este curso te explica cómo funciona el Captive Portal que gestionamos en los cruceros Scenic y Emerald: qué hace, de qué piezas está compuesto y cómo actuar cuando algo falla. Está pensado para técnicos que acaban de incorporarse y necesitan entender el sistema desde cero.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "¿Qué es el Captive Portal y para qué sirve aquí?",
+          "content": "Cuando un pasajero o tripulante de un crucero Scenic o Emerald conecta su móvil al Wi-Fi, no accede directamente a internet. Primero aparece una pantalla de bienvenida donde tiene que identificarse. Eso es el Captive Portal: una puerta controlada que decide quién puede usar internet, cuánto y con qué límites.\n\nEn estos cruceros, el Captive Portal cumple dos funciones principales. La primera es gestionar el acceso a internet: controla quién se conecta, cuánto ancho de banda consume y cuándo expira su acceso. La segunda es recopilar los emails de los pasajeros para que Scenic/Emerald pueda enviarles encuestas de satisfacción después del crucero.\n\nHay dos formas en las que un usuario puede autenticarse. La forma principal es a través del servidor PMS (Property Management System), que es el sistema que el hotel usa para gestionar las reservas. El pasajero introduce su número de cabina, nombre y apellido, y el sistema lo cruza con los datos del servidor PMS. Si coincide, se le da acceso. La forma alternativa es mediante vouchers: credenciales de usuario y contraseña generadas manualmente por recepción, útiles cuando el PMS falla o hay algún problema puntual.\n\nImportante: tripulación y pasajeros usan SSIDs (redes Wi-Fi) distintas. Si un tripulante intenta conectarse a la red de pasajeros, sus credenciales no funcionarán. El sistema está diseñado para que cada grupo use su red correspondiente.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "¿Cuál es el método PRINCIPAL de autenticación que usan Scenic y Emerald en su Captive Portal?",
+              "answers": [
+                "Voucher con usuario y contraseña generado por recepción",
+                "Autenticación mediante el servidor PMS con número de cabina, nombre y apellido",
+                "Acceso libre sin autenticación para todos los usuarios",
+                "Autenticación con email y contraseña personal"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": ""
+            },
+            {
+              "id": "q2",
+              "question": "¿Qué ocurre si un tripulante intenta conectarse a la red Wi-Fi de pasajeros?",
+              "answers": [
+                "Funciona igual, el sistema detecta automáticamente el tipo de usuario",
+                "Se le pide un voucher especial para tripulación",
+                "Sus credenciales no funcionarán, cada grupo debe usar su propia red",
+                "Se le conecta automáticamente con acceso limitado"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": ""
+            }
+          ]
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Las piezas del sistema: quién hace qué",
+          "content": "El Captive Portal no es una sola máquina, sino un conjunto de componentes que trabajan juntos. Entender qué hace cada uno es clave para saber dónde buscar cuando algo falla.\n\nEl Fortigate es el cerebro de red. Controla qué tráfico va a dónde, aplica reglas de firewall, gestiona el SD-WAN y redirige el tráfico de pasajeros y tripulación hacia Ucopia cuando el CP está activo. Es el guardián de las comunicaciones.\n\nUcopia es el controlador de acceso. Recibe el tráfico de los usuarios no autenticados, les redirige al portal de registro y, una vez autenticados, les aplica su perfil: cuánto ancho de banda tienen, cuántos dispositivos pueden conectar y cuándo expira su sesión. También actúa como servidor DHCP para las redes de pasajeros y tripulación.\n\nEl host del Captive Portal es el cerebro de la lógica. Es un servidor Linux Debian que aloja todo el código de la aplicación web del portal. Cuando un usuario introduce sus datos, es este servidor el que consulta al PMS, valida las credenciales, crea el usuario en Ucopia y guarda todo en la base de datos. Sin él, no hay portal.\n\nEl servidor PMS (Cruisepal en cruceros de río, MXP en cruceros de océano) es el sistema del hotel. Contiene los datos de todos los pasajeros y tripulantes registrados. El Captive Portal lo consulta en tiempo real para validar quién puede acceder.\n\nEl Mikrotik es el router interno del barco. Su función aquí es hacer de DHCP Relay: reenvía las peticiones DHCP de pasajeros y tripulación hacia el Fortigate, que las redirige a Ucopia.\n\nPor último, la base de datos del Captive Portal guarda toda la información: qué usuarios se han registrado, sus dispositivos, los emails de las encuestas y las tablas de configuración del sistema.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "¿Qué componente es el responsable de validar las credenciales del usuario contra el PMS y crear el usuario en Ucopia?",
+              "answers": [
+                "El Fortigate",
+                "El Mikrotik",
+                "El host del Captive Portal (servidor Linux Debian)",
+                "Ucopia directamente"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": ""
+            },
+            {
+              "id": "q2",
+              "question": "¿Qué diferencia hay entre el servidor PMS en cruceros de río y de océano de Scenic/Emerald?",
+              "answers": [
+                "En río usan MXP y en océano usan Cruisepal",
+                "En río usan Cruisepal y en océano usan MXP",
+                "Ambos usan el mismo sistema PMS llamado Unity",
+                "Los cruceros de océano no tienen servidor PMS"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": ""
+            }
+          ]
+        },
+        {
+          "id": "lesson-1-3",
+          "title": "El viaje del usuario: del check-in a internet",
+          "content": "Vamos a seguir paso a paso lo que ocurre desde que un pasajero sube al barco hasta que consigue navegar por internet. Entender este flujo te ayudará a identificar en qué punto se rompe algo cuando hay un problema.\n\nPrimero, el pasajero hace el check-in en recepción. El recepcionista introduce sus datos en el PMS (nombre, cabina, fechas). Sin este paso, el pasajero no podrá autenticarse en el portal.\n\nCuando el pasajero conecta su dispositivo al Wi-Fi de pasajeros, Ucopia le asigna una IP mediante DHCP (el Mikrotik hace de relay hacia el Fortigate, que lo reenvía a Ucopia). En este momento el dispositivo tiene IP pero no tiene internet.\n\nCuando el dispositivo intenta acceder a cualquier web, Ucopia intercepta la petición DNS y, al ver que ese dispositivo no está registrado, le redirige al portal del Captive Portal. El navegador abre automáticamente la pantalla de bienvenida.\n\nEl pasajero acepta los términos y rellena el formulario con su nombre y número de cabina. El servidor CP consulta al PMS: ¿existe este usuario? ¿están sus datos correctos? Si sí, continúa. Si no, error.\n\nAtención importante: los datos tienen que coincidir exactamente con lo que está en el PMS. Si el recepcionista guardó 'Esteban Ivan' como nombre y el pasajero escribe 'Esteban', fallará. Es uno de los problemas más frecuentes.\n\nTras la validación, se muestra la pantalla de encuesta de satisfacción (solo para pasajeros, no para tripulación). El pasajero introduce su email. Con eso, el CP crea el usuario en Ucopia, habilita su sesión y guarda todo en la base de datos. A partir de ahí, tiene internet.\n\nSi el dispositivo ya se registró antes (su MAC ya está en el sistema), Ucopia lo reconoce automáticamente y no le pide que vuelva a registrarse.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Un pasajero llega al barco y no puede registrarse en el Captive Portal. El error dice que sus datos no son válidos. ¿Cuál es la causa más probable?",
+              "answers": [
+                "El servidor Ucopia está caído",
+                "Los datos introducidos no coinciden exactamente con los que el recepcionista guardó en el PMS",
+                "El pasajero está conectado a la red Wi-Fi de tripulación",
+                "La base de datos del CP está llena"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": ""
+            },
+            {
+              "id": "q2",
+              "question": "¿Qué diferencia hay entre el flujo de registro de un pasajero y el de un tripulante?",
+              "answers": [
+                "Los tripulantes usan vouchers obligatoriamente, nunca el PMS",
+                "Los tripulantes tienen más dispositivos permitidos que los pasajeros",
+                "Al tripulante no se le muestra la pantalla de encuesta de satisfacción ni se le pide el email",
+                "El tripulante no necesita aceptar los términos y condiciones"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": ""
+            }
+          ]
+        },
+        {
+          "id": "lesson-1-4",
+          "title": "Perfiles, límites y base de datos de configuración",
+          "content": "No todos los usuarios tienen el mismo tipo de acceso. El sistema está configurado con perfiles que definen qué puede hacer cada grupo: cuánto ancho de banda tiene, cuántos dispositivos puede conectar simultáneamente y cuánto dura su sesión.\n\nEn Scenic/Emerald hay 5 perfiles definidos: Guest (pasajero estándar), Guest VIP, Crew (tripulación estándar), Crew Executive y Host Bypass (para dispositivos que deben saltarse el portal, como sistemas del barco).\n\nEl número máximo de dispositivos que puede conectar un usuario simultáneamente está definido en la base de datos del CP, en la tabla llamada 'profiles'. Hay una regla importante: el límite configurado en Ucopia debe ser igual o mayor al límite que hay en esta tabla. Si no, puede haber comportamientos inesperados.\n\nLa base de datos tiene dos tipos de tablas. Las de datos (clientes registrados, dispositivos, emails de encuestas) y las de configuración (portal_configs, profiles, role_features, role_views). Las de configuración son las que definen cómo se comporta el sistema y se editan desde Rundeck, nunca directamente.\n\nAlgunos parámetros clave de configuración: 'show logs pms' activa los logs de llamadas al PMS (desactivado por defecto para no saturar), 'show logs ucopia' muestra las llamadas a Ucopia (activado por defecto) y 'voucher auth' controla si aparece el enlace de 'Login via voucher' en el formulario de registro.\n\nLos usuarios tienen fecha de expiración tanto en Ucopia como en la base de datos. Cuando expiran, Ucopia los elimina al día siguiente. El CP los elimina mediante un proceso automático que corre cerca de medianoche cada día. Si un pasajero ya ha finalizado su crucero y quiere volver a conectarse, el recepcionista tendrá que recrear su cuenta en el PMS.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "¿Dónde está definido el límite real de dispositivos simultáneos que puede conectar un usuario?",
+              "answers": [
+                "En la configuración del Fortigate",
+                "En la tabla 'profiles' de la base de datos del Captive Portal",
+                "En el servidor PMS (Cruisepal o MXP)",
+                "En la configuración de red del Mikrotik"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": ""
+            },
+            {
+              "id": "q2",
+              "question": "Un usuario cuya cuenta ha expirado intenta conectarse al portal. ¿Qué debe hacer el técnico de soporte?",
+              "answers": [
+                "Reiniciar el servidor Ucopia",
+                "Eliminar manualmente el usuario de la base de datos del CP",
+                "Indicar al recepcionista que recree la cuenta del usuario en el PMS",
+                "Crear un voucher temporal para ese usuario"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": ""
+            }
+          ]
+        },
+        {
+          "id": "lesson-1-5",
+          "title": "Monitorización y logs: cómo saber qué está pasando",
+          "content": "Cuando algo falla, lo primero que necesitas es visibilidad. Aquí tienes las herramientas principales para entender el estado del sistema.\n\nEn Ucopia, la sección más útil para soporte es 'Management → User & Devices → Accounts'. Muestra todos los usuarios registrados que no han expirado. Si un usuario dice que no puede conectarse, aquí puedes ver si existe, qué perfil tiene y cuándo expira. Los usuarios creados via PMS tienen un login con formato de ID (guest_id), los creados via voucher aparecen con el prefijo 'lu-'.\n\nPara ver las sesiones activas y el historial de conexiones, ve a 'Monitoring → Usage logs → Sessions'. Puedes filtrar por fecha, tipo de autenticación y mucho más. Esto te ayuda a distinguir si un dispositivo se autentica por portal (primera vez) o por MAC (ya registrado).\n\nLos logs del host del Captive Portal son el recurso más detallado. Están en '/var/www/html/storage/logs/'. Cada día se crea un nuevo fichero. Para seguir los logs en tiempo real mientras un usuario intenta conectarse, el comando es:\n\ntail -f -n 50 /var/www/html/storage/logs/usage-2026-03-13.log\n\nEn esos logs verás los intentos de registro, las llamadas al PMS, la creación de usuarios en Ucopia y los errores. Son tu mejor aliado para diagnósticos de Tier 1 y Tier 2.\n\nPara ver los logs de Ucopia por SSH, el comando principal es 'showLogs'. Puedes filtrar por fecha (showLogs -n 1000000 \"13 06:00\") o por palabra clave (útil para filtrar DHCP, por ejemplo). Usa siempre un número de líneas muy alto (1000000) para que imprima todo.\n\nPor último, Rundeck es la herramienta centralizada para interactuar con la base de datos del CP de forma segura. Desde ahí puedes obtener logs por habitación, exportar la configuración actual y compararla con el baseline.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "¿Cómo puedes ver en tiempo real lo que ocurre cuando un usuario intenta registrarse en el CP?",
+              "answers": [
+                "Desde la interfaz web de Ucopia en Monitoring → Real-time",
+                "Usando el comando tail -f en los logs del host del Captive Portal",
+                "Consultando directamente la base de datos del CP desde la terminal",
+                "Desde el panel de administración del Fortigate"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": ""
+            },
+            {
+              "id": "q2",
+              "question": "En la pantalla de cuentas de Ucopia (User & Devices → Accounts), ¿cómo puedes distinguir si un usuario se registró vía PMS o vía voucher?",
+              "answers": [
+                "Los usuarios PMS tienen el perfil 'Guest' y los de voucher tienen 'Voucher'",
+                "Los usuarios PMS tienen un ID numérico como login, los de voucher tienen el prefijo 'lu-'",
+                "No es posible distinguirlos desde Ucopia, hay que mirar la base de datos del CP",
+                "Los usuarios de voucher aparecen con fecha de expiración diferente"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
