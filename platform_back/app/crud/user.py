@@ -16,7 +16,7 @@ def get_users(db: Session, skip: int = 0, limit: int = 100) -> list[User]:
 
 
 def create_user(db: Session, data: UserCreate) -> User:
-    user = User(email=data.email, name=data.name)
+    user = User(email=data.email, name=data.name, role=data.role)
     db.add(user)
     db.commit()
     db.refresh(user)
