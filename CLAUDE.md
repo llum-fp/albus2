@@ -26,9 +26,16 @@ frontend ─▶ platform_back (:8001) ─▶ agents_back (:8000) ─▶ create-c
     `technical-course-creator`, `sales-course-creator`), and the shared JSON
     schema in `agents_directory/.claude/course-schema.md`. Source extracts are
     written to `agents_directory/extract/`, courses to `agents_directory/json/`.
-- **`platform_back/`** — thin Flask backend (`POST /courses`) that just forwards
-  the request to agents_back (`helpers/call_agents_back.py`).
-- **`.venv/`** — shared virtualenv with Flask. `example.json` — sample payload.
+- **`platform_back/`** — FastAPI backend with SQLite persistence. Entry point: `run.py`.
+  - `app/main.py` — FastAPI app, mounts routers, runs `create_all` on startup.
+  - `app/models/` — SQLAlchemy models: `Course`, `User`.
+  - `app/schemas/` — Pydantic v2 schemas.
+  - `app/crud/` — DB operations for courses and users.
+  - `app/routers/courses.py` — `GET/POST /courses/`, `GET/PATCH /courses/{id}`.
+  - `app/routers/users.py` — `GET/POST /users/`, `GET /users/{id}`.
+  - `app/services/agents_back.py` — httpx client: `create_course()` → `/create-course`, `update_course()` → `/update-course`.
+  - `platform.db` — SQLite database (auto-created on first run).
+- **`.venv/`** — shared virtualenv (FastAPI, uvicorn, SQLAlchemy 2.x, pydantic v2, httpx). `example.json` — sample payload.
 
 ## Run the backends
 
@@ -36,33 +43,40 @@ frontend ─▶ platform_back (:8001) ─▶ agents_back (:8000) ─▶ create-c
 # agents_back (engine) — terminal 1
 cd agents_back && ../.venv/bin/python api.py            # :8000
 
-# platform_back (forwarder) — terminal 2
-cd platform_back && ../.venv/bin/python api.py          # :8001
+# platform_back (FastAPI + SQLite) — terminal 2
+cd platform_back && ../.venv/bin/python run.py          # :8001
 ```
 
 ## Call the API
 
 ```bash
 # New course (page_id required; topic/profile/duration_min optional)
-curl -s -X POST http://localhost:8001/courses \
+curl -s -X POST http://localhost:8001/courses/ \
      -H 'Content-Type: application/json' --data @example.json
 
-# Continue / revise a course (reuse the returned session_id)
-curl -s -X POST http://localhost:8001/courses -H 'Content-Type: application/json' \
-     -d '{"session_id":"<uuid>","feedback":"make the quiz harder"}'
+# Revise an existing course (use the db id returned at creation)
+curl -s -X PATCH http://localhost:8001/courses/<db_id> \
+     -H 'Content-Type: application/json' \
+     -d '{"feedback": "make the quiz harder"}'
+
+# Get course detail (full content)
+curl -s http://localhost:8001/courses/<db_id>
+
+# Get course detail (compact preview, first 2 modules only)
+curl -s 'http://localhost:8001/courses/<db_id>?preview=true&max_modules=2'
 
 # Instant canned response, no build
-curl -s -X POST http://localhost:8001/courses -H 'Content-Type: application/json' \
+curl -s -X POST http://localhost:8001/courses/ -H 'Content-Type: application/json' \
      -d '{"harcoded": true}'
 ```
 
-Response: `{ "session_id": "...", "json_path": "...", "json_exists": true }`
+Response (POST): `{ "session_id": "...", "json_path": "...", "json_exists": true, "db_id": 1 }`
 
-platform_back keeps a single `POST /courses` endpoint and routes by payload:
-a `session_id` forwards to agents_back `POST /update-course`, otherwise to
-`POST /create-course`. Call agents_back directly on `:8000` to skip
-platform_back — `/create-course` (needs `page_id`) for new courses,
-`/update-course` (needs `session_id` + `feedback`) to revise.
+Docs interactivas: `http://localhost:8001/docs`
+
+Call agents_back directly on `:8000` to skip platform_back:
+- `POST /create-course` (needs `page_id`) — new course
+- `POST /update-course` (needs `session_id` + `feedback`) — revise
 
 ## CLI instead of API
 
