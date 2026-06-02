@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """FastAPI app that builds and revises courses. Two endpoints:
 
-POST /create-course — build a NEW course. `page_id` is required; topic/profile/
-duration_min are optional steering fields. (Set {"harcoded": true} to skip the
-build and get a canned response.)
+POST /create-course — build a NEW course. `page_id` is required (or `page_ids`, a
+list, to combine multiple pages into one course); topic/profile/duration_min are
+optional steering fields. (Set {"harcoded": true} to skip the build and get a
+canned response.)
     {
       "page_id": "1548222468",
+      "page_ids": ["1548222468", "1548222469"],
       "topic": "Captive Portal v4.0.6 Support Guide Scenic",
       "profile": "technical support",
       "duration_min": "60"
@@ -37,7 +39,12 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from create_course import AGENTS_DIR, run_claude
+from create_course import (
+    AGENTS_DIR,
+    build_course_prompt,
+    normalize_page_ids,
+    run_claude,
+)
 
 PORT = int(os.environ.get("PORT", "8000"))
 
@@ -62,6 +69,7 @@ app = FastAPI(title="agents_back course API")
 
 class CreateCourseRequest(BaseModel):
     page_id: str | int | None = None
+    page_ids: list[str | int] | None = None
     topic: str = ""
     profile: str = ""
     duration_min: str | int = ""
@@ -112,21 +120,18 @@ def _run(session_id: str, prompt: str, resume: bool) -> dict:
 def build_new_course(req: CreateCourseRequest) -> dict:
     """Build a brand-new course from a Confluence page via the create-course skill."""
     session_id = str(uuid.uuid4())
-    page_id = str(req.page_id)
+    ids = normalize_page_ids(req.page_id, req.page_ids)
     rel_path = f"json/course_{session_id}.json"
     extract_path = f"extract/source_{session_id}.md"
     log.info(
-        "[%s] new course: page_id=%s profile=%r topic=%r duration_min=%r",
-        session_id, page_id, req.profile, req.topic, req.duration_min,
+        "[%s] new course: page_ids=%s profile=%r topic=%r duration_min=%r",
+        session_id, ids, req.profile, req.topic, req.duration_min,
     )
     # Delegate the whole procedure to the create-course skill (the "recipe");
     # api.py only supplies the per-request details. Invoked explicitly by slash
     # command for deterministic headless behavior.
-    prompt = (
-        f"/create-course page_id={page_id} profile=\"{req.profile or 'technical'}\" "
-        f'topic="{req.topic or "the whole page"}" '
-        f"duration_min={req.duration_min or 'unspecified'} "
-        f"extract_path={extract_path} out_path={rel_path}"
+    prompt = build_course_prompt(
+        ids, req.profile, req.topic, req.duration_min, extract_path, rel_path
     )
     return _run(session_id, prompt, resume=False)
 
@@ -156,9 +161,9 @@ def create_course(req: CreateCourseRequest):
     if req.harcoded:
         log.info("returning hardcoded response (build skipped)")
         return HARDCODED_RESPONSE
-    if not req.page_id:
-        log.warning("rejected request: missing 'page_id' (required for a new course)")
-        raise HTTPException(status_code=400, detail="missing 'page_id' (required for a new course)")
+    if not (req.page_id or req.page_ids):
+        log.warning("rejected request: missing 'page_id' or 'page_ids' (required for a new course)")
+        raise HTTPException(status_code=400, detail="missing 'page_id' or 'page_ids' (required for a new course)")
     try:
         return build_new_course(req)
     except Exception as exc:  # noqa: BLE001 - surface any failure as JSON

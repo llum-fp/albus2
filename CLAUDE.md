@@ -86,3 +86,17 @@ ls -lt ~/.claude/projects/-home-lfuster-projects-hackathon20/*.jsonl   # newest 
   Claude session, not always in headless runs — the engine fetches the page
   itself and hands the content to the agent.
 - The `harcoded` shortcut returns one fixed pre-built course JSON path.
+- **Confluence images.** The `source-extractor` agent downloads page screenshots
+  itself (not the main agent) and reads them to describe their real content, via
+  the `download-confluence-images` skill
+  (`agents_directory/.claude/skills/download-confluence-images/`, which bundles
+  `download_images.sh`). The MCP tools only return page text, so image binaries
+  are pulled from the media API with HTTP Basic auth via the Atlassian gateway:
+  `https://api.atlassian.com/ex/confluence/<cloudId>/wiki<downloadLink>` (the
+  plain `<site>/wiki/download/...` path is CDN-fronted and rejects Basic auth).
+  Credentials come from `ATLASSIAN_EMAIL` + `ATLASSIAN_API_TOKEN`, read from
+  `agents_back/.env` (gitignored; see `.env.example`) by `create_course.load_env()`
+  and inherited by the headless `claude` subprocess. Images are saved to
+  `agents_directory/images/<session_id>/` and referenced by both the extract
+  (inline) and the course JSON (optional per-lesson `images` array). Without the
+  token the extractor falls back to image metadata + text descriptions.

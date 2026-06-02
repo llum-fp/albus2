@@ -1,0 +1,571 @@
+{
+  "title": "Unity Local Admin: Usage and Benefits",
+  "description": "A technical course for engineers and operations staff covering what the Unity Local Admin is, how to install and access it, how to monitor Captive Portal users through its dashboards, and how to create and delete users (by Room, Voucher, and Voucher Bulk). Screenshots from the live system are included throughout. PII visible in source screenshots (guest names, device MACs) has been excluded from course content.",
+  "source": "Confluence page 1566081037, space CP (Captive Portal), title: Unity Local Admin",
+  "language": "en",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "What Is the Unity Local Admin?",
+      "summary": "Defines the Unity Local Admin, its purpose as a Captive Portal visibility and control layer, and the minimum requirements for running it.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Overview and Purpose",
+          "content": "The **Unity Local Admin** is a set of dashboards inside the Unity GUI designed to serve as a **point of visibility and control of the Captive Portal**. It allows operations staff to monitor active users, manage user accounts, and create new users without relying on CruisePAL.\n\n**Minimum requirement:** Unity version **4.1.8** or higher must be running before the Local Admin can be installed.\n\n**Scope of the feature:** the Unity Local Admin is accessible under the **User Cruises Management** section in the Unity GUI, which exposes the following dashboards:\n- Profiles\n- Accounts\n- User Tiers\n- User Types\n- Purchases *(not used in v4.1.8)*\n- Consolidations *(not used in v4.1.8)*\n\n> ⚠️ **Note:** The **Purchases** and **Consolidations** dashboards **do not work** on Unity version 4.1.8.\n\n> ⚠️ **Scope warning:** This course covers operational usage. In-depth technical internals must be provided by the Development team.",
+          "images": [
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-5-image-20260314-004354.png",
+              "caption": "Unity GUI – User Cruises Management area showing the Accounts dashboard (473 accounts) and the left nav listing all dashboards including the non-functional Purchases and Consolidations."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q1",
+              "question": "What is the primary purpose of the Unity Local Admin?",
+              "answers": [
+                "To replace CruisePAL as the primary passenger authentication system",
+                "To provide a point of visibility and control of the Captive Portal within the Unity GUI",
+                "To configure Fortigate VRF routing for the Ucopia integration",
+                "To manage Unity software upgrades and Docker service deployments"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Unity Local Admin is described as 'a dashboard in Unity thought to be a point of visibility and control of the Captive Portal.' It is not an authentication replacement, a network configurator, or a deployment tool."
+            },
+            {
+              "id": "q2",
+              "question": "What is the minimum Unity version required to install the Unity Local Admin?",
+              "answers": [
+                "4.0.0",
+                "4.1.0",
+                "4.1.8",
+                "5.0.0"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source explicitly states: 'It is needed at least Unity version 4.1.8 to install the Local Admin in Unity.'"
+            },
+            {
+              "id": "q3",
+              "question": "A colleague asks you which dashboards in the User Cruises Management section are functional on Unity v4.1.8. Which two should you flag as NOT working?",
+              "answers": [
+                "Profiles and Accounts",
+                "User Tiers and User Types",
+                "Purchases and Consolidations",
+                "Accounts and User Types"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source states: 'Purchases and Consolidation dashboards DO NOT WORK on Unity version 4.1.8.' The other dashboards (Profiles, Accounts, User Tiers, User Types) are operational."
+            },
+            {
+              "id": "q4",
+              "question": "Users created through the Unity Local Admin methods (by Room or Voucher) are stored in which system?",
+              "answers": [
+                "CruisePAL",
+                "The Fortigate firewall database",
+                "The Captive Portal database",
+                "The Unity LDAP directory"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source states: 'The following methods do not use CruisePAL to authenticate the users. The users are created in the Captive Portal database.'"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Installation and Access",
+      "summary": "Step-by-step installation prerequisites and the Rundeck jobs needed to register Ucopia and Captive Portal controllers in Unity, plus how to enable the User Access Management feature toggle.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Installation Steps",
+          "content": "Installing the Unity Local Admin requires four ordered steps:\n\n**Step 1 — Upgrade Unity**\nUpgrade Unity to version **4.1.8** (minimum).\n\n**Step 2 — Add the Ucopia controller in Unity DB**\nRun the Rundeck job **Ucopia** at:\n```\nhttps://omniscripting.omniaccess.com:4443/project/OA_Services/job/show/8707365f-cef8-4114-821c-19faab0b75d8\n```\nIn the Ucopia controller config form:\n- **Unity IP** and **Unity Serial** — leave blank / do not touch (marked with red arrows in the UI)\n- **Ucopia IP** = `10.254.150.5`\n- **Ucopia LDAP Admin** = (ucopia password)\n- **Vessel Type** = `viking` or `yacht` as applicable\n\n**Step 3 — Add the CP controller in Unity DB**\nRun the Rundeck job **Captive Portal** at:\n```\nhttps://omniscripting.omniaccess.com:4443/project/OA_Services/job/show/c0035e91-0885-4808-8546-5c70f0a15118\n```\nIn the CP controller config form:\n- **Unity IP** and **Unity Serial** — leave blank\n- **Cruise KVM IP** = `10.254.149.10` (do not touch)\n\n**Step 4 — Enable User Access Management**\nIn the Unity Admin page (superadmin / UNITY/SUPERADMIN role), go to **Features Addons** and toggle **User Access Management** to ON.\n\n> ⚠️ **Warning:** Do not modify Unity IP and Unity Serial fields in either Rundeck job form — they must remain blank.",
+          "images": [
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-3-image-20260505-104756.png",
+              "caption": "Rundeck – Ucopia controller config form showing Unity IP and Unity Serial (do not touch), Ucopia IP 10.254.150.5, and Vessel Type selector."
+            },
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-2-image-20260505-104845.png",
+              "caption": "Rundeck – CP controller config form showing Unity IP and Unity Serial (blank), and Cruise KVM IP 10.254.149.10."
+            },
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-1-image-20260528-094132.png",
+              "caption": "Unity Admin page – Features Addons list with User Access Management toggle highlighted in red box, switched ON."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q5",
+              "question": "During the Ucopia Rundeck job, what is the correct value to enter in the Unity IP field?",
+              "answers": [
+                "The IP address of the Unity management interface",
+                "10.254.150.5",
+                "Leave it blank — do not touch it",
+                "The Cruise KVM IP of the vessel"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source marks Unity IP and Unity Serial with 'do not touch' arrows and states they must be left blank/untouched in the Ucopia controller config form."
+            },
+            {
+              "id": "q6",
+              "question": "What IP address should be entered for the Ucopia IP field in the Ucopia Rundeck config form?",
+              "answers": [
+                "10.254.149.10",
+                "10.254.150.5",
+                "10.254.199.1",
+                "The IP is auto-detected and should not be filled in"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source shows the Ucopia controller config form with Ucopia IP = 10.254.150.5."
+            },
+            {
+              "id": "q7",
+              "question": "After running both Rundeck jobs, which toggle in the Unity Admin page must be enabled to expose the Local Admin dashboards?",
+              "answers": [
+                "Bonding",
+                "Connectivity Management",
+                "User Access Management",
+                "User Cruises Management"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Step 4 requires enabling the 'User Access Management' toggle in the Features Addons section of the Unity Admin page. 'User Cruises Management' is the navigation section that appears after it is enabled — it is not itself the toggle."
+            },
+            {
+              "id": "q8",
+              "question": "An engineer is setting up the Captive Portal (CP) Rundeck job and notices a field labeled 'Cruise KVM IP' pre-populated with 10.254.149.10. What should they do?",
+              "answers": [
+                "Replace it with the Unity management IP",
+                "Replace it with the Ucopia IP (10.254.150.5)",
+                "Leave it as-is — do not touch it",
+                "Delete the value and leave it blank like Unity IP"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source shows the CP controller config form with a red 'do not touch' arrow pointing at the Cruise KVM IP field (10.254.149.10). It must not be modified."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Monitoring the Captive Portal",
+      "summary": "How to use the User Types, User Tiers, Profiles, and Accounts dashboards to observe and investigate Captive Portal users.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "User Types, Tiers, and Profiles",
+          "content": "The Unity Local Admin defines **two user types**, each with **two tiers**:\n\n| User Type | Tier 1 (level 0) | Tier 2 (level 1) |\n|-----------|-----------------|------------------|\n| Guest     | Standard Room (`guest_level0`) | VIP Room (`guest_level1`) |\n| Crew      | Regular Crew (`crew_level0`)  | Crew Executive (`crew_level1`) |\n\nEach tier has a **default profile** that controls quota and max devices. This is a preconfiguration only — a different profile can be assigned to any individual user. Example profile table (Scenic/Emerald installation):\n\n| Profile Name | User Type | Level | Base Price | Max Devices | Quota |\n|--------------|-----------|-------|------------|-------------|-------|\n| Guest        | Guest / Standard Room | 0 | Free | 2 | 20 GB |\n| GuestVIP     | Guest / VIP Room      | 1 | Free | 2 | 20 GB |\n| Crew         | Crew / Regular Crew   | 0 | Free | 2 | 2 GB  |\n| CrewExecutive| Crew / Crew Executive | 1 | Free | 2 | 5 GB  |\n\nThe **User Types** dashboard shows the count of active users per type and the associated tiers. The **Profiles** dashboard can be filtered by user type and shows quota, max devices, and Mxp Id for each profile.",
+          "images": [
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-19-image-20260312-102232.png",
+              "caption": "User Types tab showing Guest (545 users, default tier guest_level0) and Crew (55 users, default tier crew_level0) with their associated tiers."
+            },
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-18-image-20260312-102551.png",
+              "caption": "Profiles tab filtered by Guest Type showing Name, User Type, Level, Base Price, Max Devices, Quota, Mxp Id, and Day/Week columns."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q9",
+              "question": "A Regular Crew member is consuming unexpectedly high data. You check their profile and confirm they are on the default tier. What is their data quota?",
+              "answers": [
+                "20 GB",
+                "5 GB",
+                "2 GB",
+                "Unlimited"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Regular Crew (crew_level0) has a default profile 'Crew' with a quota of 2 GB. Crew Executive (crew_level1) gets 5 GB. Guests (both tiers) get 20 GB."
+            },
+            {
+              "id": "q10",
+              "question": "What is the internal tier identifier for a VIP Room guest?",
+              "answers": [
+                "guest_level0",
+                "guest_level1",
+                "crew_level1",
+                "guest_vip"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "VIP Room is Guest tier 2, with the internal identifier guest_level1. Standard Room is guest_level0."
+            },
+            {
+              "id": "q11",
+              "question": "A hotel manager asks whether Crew Executive passengers can be placed on the standard Crew profile instead of CrewExecutive. Is this possible?",
+              "answers": [
+                "No — profiles are locked to their default tier and cannot be changed per user",
+                "Yes — the profile assignment is only a preconfiguration; a different profile can be assigned to any individual user",
+                "Yes — but only by editing the Docker container configuration directly",
+                "No — only the Development team can modify profile assignments"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states: 'Each of the tiers has a default profile assigned... This is only a preconfiguration — it is possible to assign different profiles to every tier.'"
+            },
+            {
+              "id": "q12",
+              "question": "How many tiers exist per user type in the current configuration?",
+              "answers": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states: 'Currently we defined 2 types of users (Guest and Crew) and there are 2 tiers per type.'"
+            }
+          ]
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Using the Accounts Dashboard",
+          "content": "The **Accounts dashboard** is the main tool for user monitoring. It displays the full list of active accounts and supports filtering by Room, User, or Type.\n\n**Columns shown:** Name, Room, Type, Profile, End Date, Start Date, Actions.\n\n**Investigating a single user:**\n1. Locate the user in the list (use the search/filter bar).\n2. Click the **eye (view) icon** in the Actions column.\n3. The per-user detail page shows:\n   - **Guest information:** username, status (Active/Inactive), room, user tier, type, profile, validity dates.\n   - **Profile Info:** profile name, status, controller profile string (e.g. `Guest - guest_level0`), profile level.\n   - **Quota gauge:** percentage used, GB used vs. GB contracted, and time to next renewal.\n   - **Device table:** MAC addresses and session status (Online/Offline).\n   - **Top Apps (48h):** application-level usage over the last 48 hours.\n\n**Available actions from the per-user detail page:**\n- *User actions:* Extend Validity, Block User, Kick User, Delete User\n- *Profile actions:* Change Profile\n- *Device actions:* Add Device, Remove Device",
+          "images": [
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-17-image-20260312-103031.png",
+              "caption": "Accounts dashboard showing 537 accounts with search filters (All/Room/User/Type) and the eye action icon highlighted."
+            },
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-16-image-20260312-103330.png",
+              "caption": "Per-user detail page showing guest information, profile info, quota gauge (5.3% used = 1.06 GB / 20 GB), device table, and user/profile/device action buttons in the left rail."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q13",
+              "question": "A guest calls the front desk saying their internet is very slow. You suspect they may have hit their quota limit. Which dashboard and which specific control do you use to check their current quota consumption?",
+              "answers": [
+                "User Types dashboard → click on the tier name to see aggregate quota",
+                "Profiles dashboard → filter by the guest's profile name",
+                "Accounts dashboard → click the eye icon next to the guest → check the Quota gauge on the per-user detail page",
+                "Purchases dashboard → search by room number"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The per-user detail page (reached via the eye icon in the Accounts dashboard) shows a quota gauge with percentage used, GB used vs. contracted, and time to renewal. The Purchases dashboard does not work on v4.1.8."
+            },
+            {
+              "id": "q14",
+              "question": "What information does the Accounts dashboard display in its main list? (Choose the most complete answer.)",
+              "answers": [
+                "Name, Room, Type, Profile, End Date, Start Date, Actions",
+                "Name, MAC Address, IP Address, VLAN, SSID",
+                "Username, Password, Room, Tier, Docker service version",
+                "Name, Quota used, Quota remaining, Profile, Vessel Type"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source describes the Accounts dashboard columns as: Name, Room, Type, Profile, End Date, Start Date, Actions."
+            },
+            {
+              "id": "q15",
+              "question": "You need to add a second device MAC to an existing user's account. Where in the Unity Local Admin can you do this?",
+              "answers": [
+                "Profiles dashboard → Change Profile",
+                "User Types dashboard → edit the user tier",
+                "Per-user detail page → Device actions → Add Device",
+                "Accounts dashboard → eye icon → Extend Validity"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The per-user detail page includes a 'Device actions' section with 'Add Device' and 'Remove Device' options."
+            },
+            {
+              "id": "q16",
+              "question": "Which filter options are available in the Accounts dashboard search bar?",
+              "answers": [
+                "All, Room, User, Type",
+                "All, Profile, Tier, Status",
+                "Name, MAC, IP, VLAN",
+                "Active, Inactive, Blocked, Expired"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source describes the Accounts dashboard search bar with filters: All / Room / User / Type."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-4",
+      "title": "Deleting Users",
+      "summary": "How to delete a user through the Unity Local Admin and what the operation actually does to both the CP database and Ucopia.",
+      "lessons": [
+        {
+          "id": "lesson-4-1",
+          "title": "Delete User Operation",
+          "content": "The **Delete User** function removes the user from **two systems simultaneously**:\n1. The **Captive Portal (CP) Database**\n2. **Ucopia**\n\nThis means the user is completely removed from the system — there is no soft-delete or recovery mechanism described in the source.\n\n**How to delete a user:**\n1. Go to the **Accounts** dashboard.\n2. Find the target user (filter by Room, Name, or Type).\n3. Click the **eye icon** to open the per-user detail page.\n4. In the left **USER ACTIONS** rail, click **Delete User**.\n\n> ⚠️ **Warning:** Deleting a user removes them completely from both the CP Database and Ucopia. This action affects both systems — not just the Unity view.",
+          "images": [
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-15-image-20260312-103920.png",
+              "caption": "Per-user detail page with 'Delete User' action highlighted in a red box in the USER ACTIONS left rail."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q17",
+              "question": "When you click 'Delete User' in the Unity Local Admin, which systems are affected?",
+              "answers": [
+                "Only the Unity GUI cache — the backend databases are updated on next sync",
+                "Only the Captive Portal database",
+                "Both the Captive Portal database and Ucopia",
+                "The Captive Portal database, Ucopia, and CruisePAL"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source states: 'This functionality deletes the user details in CP Database and also in Ucopia. Deletes the user completely from the system.'"
+            },
+            {
+              "id": "q18",
+              "question": "A junior operator accidentally deleted the wrong user using the Delete User action. What is the correct expectation about recovery?",
+              "answers": [
+                "The deletion is soft — the user can be restored from the Accounts dashboard within 24 hours",
+                "The deletion is permanent from both CP Database and Ucopia — the user must be recreated manually",
+                "The deletion only affects the Unity GUI; the user still exists in Ucopia and CruisePAL",
+                "The deletion can be rolled back using the Rundeck Ucopia job"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states the Delete User function 'deletes the user completely from the system' in both CP Database and Ucopia. No recovery or rollback mechanism is described."
+            },
+            {
+              "id": "q19",
+              "question": "Where in the Unity Local Admin UI is the Delete User control located?",
+              "answers": [
+                "Accounts dashboard → Actions column → trash icon",
+                "Per-user detail page → USER ACTIONS rail → Delete User",
+                "Profiles dashboard → select profile → remove user",
+                "User Types dashboard → expand tier → delete member"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Delete User action is located in the USER ACTIONS rail on the per-user detail page, which is accessed from the Accounts dashboard via the eye icon."
+            },
+            {
+              "id": "q20",
+              "question": "Before performing a Delete User, an operator wants to confirm the correct user is selected. Which fields on the per-user detail page best confirm the identity?",
+              "answers": [
+                "Docker service version and controller profile string",
+                "Username, status, room number, and validity dates",
+                "Quota gauge percentage and next renewal time",
+                "Top Apps (48h) usage data"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The per-user detail page shows username, status (Active/Inactive), room number, user tier, type, profile, and validity dates — these fields confirm the user identity before a destructive action."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-5",
+      "title": "Creating Users",
+      "summary": "Three methods for creating users outside of CruisePAL: by Room (name + room number), by Voucher (custom username/password), and by Voucher Bulk (batch generation with CSV export).",
+      "lessons": [
+        {
+          "id": "lesson-5-1",
+          "title": "Create User by Room",
+          "content": "The **Create User by Room** method creates a user account linked to a specific room number with a real first name and last name.\n\n**When to use it:** when you know the passenger's name and room assignment and want to create an account tied to that room.\n\n**Steps:**\n1. Go to the **Accounts** dashboard.\n2. Click the **Create User** dropdown button.\n3. Select **Create User by Room**.\n4. Fill in the modal form:\n   - First Name\n   - Last Name\n   - Year of birth\n   - Room number\n   - Booking Start date\n   - Booking End date\n   - User Type (e.g. Crew / crew_level0)\n   - User Tier (e.g. Regular Crew / crew_level0)\n   - Profile (e.g. Crew / ScenicCrew)\n5. Click **Create User**.\n\n**Resulting username format:** `@lu-<hash>` (auto-generated, e.g. `@lu-25bab4e466974fd`)\n\nThe account does not use CruisePAL authentication — it lives entirely in the CP database.",
+          "images": [
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-14-image-20260312-104922.png",
+              "caption": "Accounts dashboard with Create User dropdown open showing three options: Create User by Room (highlighted), Create User by Voucher, and Create Users by Voucher (Bulk)."
+            },
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-13-image-20260312-104805.png",
+              "caption": "Create User Account by Room modal showing all required fields (First Name, Last Name, Year of birth, Room, Booking start/end, User Type, User Tier, Profile)."
+            },
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-12-image-20260312-104847.png",
+              "caption": "Accounts list filtered by Room 800 showing resulting account with auto-generated username @lu-25bab4e466974fd."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q21",
+              "question": "What format will the username take for a user created via the Create User by Room method?",
+              "answers": [
+                "The room number (e.g. 800)",
+                "The guest's first initial + last name (e.g. ttest)",
+                "@lu-<hash> (auto-generated, e.g. @lu-25bab4e466974fd)",
+                "lu-<login> based on the name entered in the First Name field"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source shows a room-created user appearing with username @lu-25bab4e466974fd, noting that room-created users get an auto-generated lu-<hash> username."
+            },
+            {
+              "id": "q22",
+              "question": "Which of the following fields is NOT part of the Create User by Room form?",
+              "answers": [
+                "Year of birth",
+                "Booking Start and Booking End dates",
+                "Login / Username",
+                "User Type and User Tier"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The Login / Username field is part of the Voucher creation form, not the Room creation form. The Room method auto-generates the username. The Room form requires First Name, Last Name, Year of birth, Room, Booking Start/End, User Type, User Tier, and Profile."
+            },
+            {
+              "id": "q23",
+              "question": "A ship is welcoming a VIP guest who needs internet access but is not in CruisePAL. You want to create their account tied to room 420 as a Guest / VIP Room. Which creation method should you use?",
+              "answers": [
+                "Create User by Voucher — because VIP users require a custom password",
+                "Create User by Room — because this creates a user with name and room association in the CP database",
+                "Create Users by Voucher Bulk — because VIP guests always need batch credentials",
+                "Edit via Rundeck Captive Portal job — because room-based accounts require a Rundeck update"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Create User by Room is designed exactly for this case: creating a user account with first name, last name, and room number, stored in the CP database independently of CruisePAL."
+            },
+            {
+              "id": "q24",
+              "question": "You create a user via the Room method with User Type = Guest and User Tier = VIP Room. Which profile will be applied by default?",
+              "answers": [
+                "Crew",
+                "CrewExecutive",
+                "Guest",
+                "GuestVIP"
+              ],
+              "correctAnswerIndex": 3,
+              "explanation": "The GuestVIP profile is the default profile for User Type Guest / VIP Room (guest_level1). The Guest profile is the default for Standard Room (guest_level0)."
+            }
+          ]
+        },
+        {
+          "id": "lesson-5-2",
+          "title": "Create User by Voucher",
+          "content": "The **Create User by Voucher** method creates a single user account with a **manually specified username and password** — useful for providing internet access to users without a room-based identity.\n\n**When to use it:** when you need a specific login credential pair for an individual user, not tied to an auto-generated hash.\n\n**Steps:**\n1. Go to the **Accounts** dashboard.\n2. Click the **Create User** dropdown → select **Create User by Voucher**.\n3. Fill in the form:\n   - First Name\n   - Last Name\n   - **Login / Username** (your chosen username)\n   - **Password**\n   - Room\n   - Booking Start / End\n   - User Type, User Tier, Profile\n4. Click **Create User**.\n\n**Resulting username format:** `@lu-<login>` — for example, if you entered `test` as the login, the resulting username in the system will be `@lu-test`.\n\nThe account is stored in the CP database and does not use CruisePAL.",
+          "images": [
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-11-image-20260312-104447.png",
+              "caption": "Accounts dashboard with Create User dropdown open and Create User by Voucher highlighted."
+            },
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-10-image-20260312-104514.png",
+              "caption": "Create User Account by Voucher modal showing Login/Username and Password fields alongside the standard booking and tier fields."
+            },
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-9-image-20260312-104545.png",
+              "caption": "Search result showing resulting voucher account with username @lu-test, Room 999, Guest / Standard Room."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q25",
+              "question": "You create a voucher user with Login = 'frontdesk01'. What will the resulting username be in the Accounts dashboard?",
+              "answers": [
+                "frontdesk01",
+                "@frontdesk01",
+                "@lu-frontdesk01",
+                "lu_frontdesk01"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Voucher users get a lu-<login> username. The source shows login 'test' resulting in username '@lu-test', so 'frontdesk01' would become '@lu-frontdesk01'."
+            },
+            {
+              "id": "q26",
+              "question": "What is the key difference between Create User by Room and Create User by Voucher?",
+              "answers": [
+                "Room method uses CruisePAL; Voucher method does not",
+                "Voucher method allows specifying a custom Login/Username and Password; Room method auto-generates the username",
+                "Room method stores users in Ucopia only; Voucher method stores in CP database only",
+                "Voucher method is for crew only; Room method is for guests only"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Voucher method includes Login/Username and Password fields, letting the operator choose the credentials. The Room method auto-generates the username as @lu-<hash>. Both methods store users in the CP database and neither uses CruisePAL."
+            },
+            {
+              "id": "q27",
+              "question": "A voucher-created user reports they cannot log in with their password. You need to verify their account exists. What username should you search for in the Accounts dashboard if their voucher login was 'infodesk'?",
+              "answers": [
+                "infodesk",
+                "lu_infodesk",
+                "@lu-infodesk",
+                "@infodesk"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Voucher users are stored with the username @lu-<login>. The login 'infodesk' results in the username '@lu-infodesk'."
+            },
+            {
+              "id": "q28",
+              "question": "Which fields are present in the Voucher creation form but NOT in the Room creation form?",
+              "answers": [
+                "User Type and User Tier",
+                "Booking Start and Booking End",
+                "Login / Username and Password",
+                "Year of birth and Room number"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The Voucher form includes Login/Username and Password fields for manual credential selection. The Room form does not — it auto-generates the username. Both forms share User Type, User Tier, Booking Start/End, and Profile fields."
+            }
+          ]
+        },
+        {
+          "id": "lesson-5-3",
+          "title": "Create Users by Voucher (Bulk)",
+          "content": "The **Create Users by Voucher (Bulk)** method generates multiple username/password pairs in a single operation and produces a downloadable **CSV file** that can be shared with the Hotel Manager.\n\n**When to use it:** when a group of users needs credentials at once (e.g. beginning of a cruise, staff group onboarding).\n\n**Steps:**\n1. Go to the **Accounts** dashboard → **Create User** → **Create Users by Voucher (Bulk)**.\n2. Fill in **Common Settings** (applies to all users in the batch):\n   - Booking Start / Booking End\n   - User Type, User Tier, Profile\n3. Fill in **User Generation** settings:\n   - **Login Prefix/Seed** — the base string for all usernames (e.g. `guest`)\n   - Start # — the starting number (e.g. 1)\n   - Quantity — how many users to create (e.g. 3)\n   - Pass Length — length of auto-generated passwords\n   - Optional: check **Use same password for all users**\n4. Click **(1) Generate** to preview the accounts.\n5. Click **(2) Review Users** to confirm.\n6. After creation, download the **CSV file** using the green **Download Credentials (CSV)** button.\n\n**Resulting username format:** `lu-<seed>-<number>` — e.g. seed `guest`, start 900, quantity 3 → usernames `lu-guest-900`, `lu-guest-901`, `lu-guest-902`.\n\n> ⚠️ **WARNING:** The Login Prefix/Seed **must be entered in lowercase letters**. There is a known bug with uppercase input that will cause account creation to fail or behave unexpectedly.\n\n**CSV columns:** Login, Password. Example rows from the system: `guest-900 / dMw$6UtG`, `guest-901 / HEKMVoqR`.",
+          "images": [
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-8-image-20260312-104614.png",
+              "caption": "Create User Accounts by Voucher (Bulk) modal showing Common Settings and User Generation sections. The Login Prefix/Seed field has a red 'LOWERCASE' arrow pointing at it."
+            },
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-7-image-20260312-104633.png",
+              "caption": "Users Created Successfully confirmation modal with green Download Credentials (CSV) button and sample CSV rows (guest-900, guest-901, guest-902)."
+            },
+            {
+              "path": "images/920a33b7-fc03-44ce-8686-ddb61d39ad1a/1566081037-6-image-20260312-104656.png",
+              "caption": "Accounts list showing three resulting bulk accounts: lu-guest-900, lu-guest-901, lu-guest-902."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q29",
+              "question": "You run a Voucher Bulk creation with Login Prefix = 'crew', Start # = 10, Quantity = 3. What will the three resulting usernames be?",
+              "answers": [
+                "@lu-crew, @lu-crew-1, @lu-crew-2",
+                "lu-crew-10, lu-crew-11, lu-crew-12",
+                "crew10, crew11, crew12",
+                "@crew-10, @crew-11, @crew-12"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Bulk voucher users get usernames in the format lu-<seed>-<number>. With seed 'crew', Start # 10, Quantity 3, the resulting usernames are lu-crew-10, lu-crew-11, lu-crew-12."
+            },
+            {
+              "id": "q30",
+              "question": "A colleague runs a Voucher Bulk creation with Login Prefix = 'GUEST' (uppercase). What should you warn them about?",
+              "answers": [
+                "There is no issue — uppercase is fully supported in the Login Prefix field",
+                "Uppercase triggers an LDAP conflict with existing Ucopia users",
+                "There is a known bug with uppercase Login Prefix/Seed — it must be entered in lowercase",
+                "Uppercase is only supported if the 'Use same password for all users' checkbox is enabled"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source includes an explicit warning: 'Please create the Login Prefix/Seed in lowercase letters — currently there is a bug with uppercase.'"
+            },
+            {
+              "id": "q31",
+              "question": "After a successful Bulk Voucher creation, how does the Hotel Manager obtain the login credentials for the new accounts?",
+              "answers": [
+                "The credentials are automatically emailed to the Hotel Manager's address on file",
+                "The Hotel Manager logs into Ucopia directly to retrieve them",
+                "A CSV file with Login and Password columns is available for download from the confirmation modal",
+                "Credentials must be copied manually from the Accounts dashboard one by one"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source states the Bulk method 'generates a CSV that you can download and provide to the Hotel Manager (or he can download it himself).' The confirmation modal shows a green 'Download Credentials (CSV)' button."
+            },
+            {
+              "id": "q32",
+              "question": "What is the correct two-step sequence in the Voucher Bulk creation form before accounts are actually created?",
+              "answers": [
+                "(1) Review Users → (2) Generate",
+                "(1) Generate → (2) Review Users",
+                "(1) Create User → (2) Download CSV",
+                "(1) Import → (2) Create User"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Bulk creation form requires first clicking '(1) Generate' to preview accounts, then '(2) Review Users' to confirm before the accounts are created. The CSV download comes after successful creation."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

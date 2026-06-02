@@ -1,0 +1,551 @@
+{
+  "title": "Ucopia Captive Portal: Troubleshooting & Version Upgrade",
+  "description": "A 60-minute hands-on course for Tier 1 / technical support engineers covering the six known Ucopia Captive Portal bugs (symptoms, recognition, and escalation actions) and the safe version upgrade procedure including Proxmox backups and disabling auto-updates. No PII included.",
+  "source": "Confluence pages: Ucopia Bugs (id 1570865158, space CP) and Ucopia version upgrade (id 1603764386, space CP)",
+  "language": "en",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Ucopia Known Bugs — DHCP and MAC Address Issues",
+      "summary": "Deep-dive into the two most disruptive known bugs: DHCP lease failure and the MAC 'unknown' / Cannot find profile error. Both require immediate escalation to Ucopia.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Bug 1: DHCP Leases Stop Working",
+          "content": "## Symptoms\n\nDHCP leases count is decreasing or reaches 0. Guests and crew report no internet. Because IPs are not properly leased, the Captive Portal re-prompts for login credentials repeatedly.\n\n**Additional context:** This condition can also be triggered after a main Unity server failure where the backup failover on Ucopia fails. The result is MySQL database corruption on Ucopia, which causes Ucopia to stop providing IP addresses to DHCP clients entirely.\n\n## Root Cause\n\nOne of the internal DHCP services inside Ucopia gets stuck. The system incorrectly believes the service is UP, so it does not auto-restart it. The stuck service causes complete DHCP failure.\n\n## Tier 1 Action\n\n**WORKAROUND TO APPLY:** Escalate to Ucopia (following the escalation page, CP id 1566998545) and **call them directly**. Ucopia must manually restart the stuck DHCP service.\n\n> Note: A definitive fix is still pending as of the last update (May 27, 2026). Do not attempt to restart the service yourself — escalate immediately.",
+          "images": [
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1570865158-8-image-20260316-154038.png",
+              "caption": "Ucopia DHCP LEASES screen with an empty table (\"No entries available.\") — leases dropped to 0"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q1",
+              "question": "A ship reports that guests are unable to get internet. The Captive Portal keeps popping up asking for credentials repeatedly, and you observe that the DHCP lease count on Ucopia has dropped to nearly zero. What is the FIRST action Tier 1 should take?",
+              "answers": [
+                "Reboot the Ucopia VM from Proxmox to clear the stuck service.",
+                "Escalate to Ucopia by following CP id 1566998545 and calling them directly so they can manually restart the stuck DHCP service.",
+                "Disable and re-enable the DHCP scope in the Ucopia WebGUI.",
+                "Check and recycle the Unity server connection to restore the MySQL database."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The documented workaround is to escalate to Ucopia and call them directly. Only Ucopia can manually restart the stuck internal DHCP service. Rebooting the VM, toggling DHCP scopes, or recycling Unity are not the prescribed steps and could make the situation worse."
+            },
+            {
+              "id": "q2",
+              "question": "Which secondary event can also trigger the DHCP lease failure bug on Ucopia?",
+              "answers": [
+                "A firmware upgrade that was not stopped at the target version.",
+                "Enabling DHCP option 252 on the VOC.",
+                "A main Unity server failure causing backup failover to fail and corrupting the Ucopia MySQL database.",
+                "Activation of a License Advance 1000 on the Ucopia controller."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "According to the source, DHCP lease failure also occurs after a main Unity server failure where the backup failover fails on Ucopia, leading to MySQL database corruption and stopping DHCP service entirely."
+            },
+            {
+              "id": "q3",
+              "question": "When Tier 1 escalates the DHCP lease issue to Ucopia, what specific action does Ucopia need to perform?",
+              "answers": [
+                "Drop and re-create the ulog database table.",
+                "Disable DHCP option 252 on the affected VOC.",
+                "Apply the LDAP access fix to stop session kicks.",
+                "Manually restart the stuck internal DHCP service."
+              ],
+              "correctAnswerIndex": 3,
+              "explanation": "Ucopia reported that the fix requires them to manually restart the stuck DHCP service. The system incorrectly believes the service is running, so no auto-restart occurs."
+            },
+            {
+              "id": "q4",
+              "question": "A definitive software fix for the DHCP leases stop working bug is available. Is this statement true or false based on the source documentation?",
+              "answers": [
+                "True — Ucopia released a patch in v7.2.5.",
+                "True — the fix was delivered through an LDAP configuration update.",
+                "False — a definitive fix is still pending.",
+                "False — the fix requires upgrading to v7.2.8 which resolves all DHCP issues."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source explicitly states 'A definitive fix is still pending.' There is no released patch; escalation and manual service restart by Ucopia is the only current workaround."
+            }
+          ]
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Bug 2: MAC 'unknown' — Cannot Find Profile Error",
+          "content": "## Symptoms\n\nUsers have valid credentials but cannot log in to the internet. Ucopia cannot allow access because the client's MAC address is missing from the DHCP lease table, even though Ucopia originally assigned the IP to that client.\n\nThe problem occurs during IP address renewal: the process that saves the MAC-to-IP mapping fails, so the user gets a renewed IP but their MAC is not stored. From that point Ucopia treats them as unknown.\n\n## Log Pattern\n\nIn Ucopia logs, DHCP negotiation completes successfully (DHCPDISCOVER → DHCPOFFER → DHCPREQUEST → DHCPACK), but immediately after the ACK the MAC address disappears:\n\n```\n2026 Jan  6 22:11:11 localhost dhcpd[1837]: DHCPACK on 10.11.136.57 to 1e:4b:5f:39:0e:f4 via 10.11.136.1\n---->>> Starting here MAC is lost <<<-------\n2026 Jan  6 22:11:14 controller authserver[4326]: ... MAC: null, IP: 10.11.136.57 ...\n2026 Jan  6 22:11:14 controller authserver[4326]: ... getMACFromIP: Mac address from network entry not found.\n2026 Jan  6 22:11:14 controller authserver[4326]: ... returnCode 10003, no user account found with this IP and/or MAC address\n```\n\n**Rule of thumb:** If there are many warning errors, or a few warnings all clustered in a short time period, this bug is likely active.\n\n## How to Obtain the Serial Number for Escalation\n\nAll VOC tunnels are currently enabled. When escalating to Ucopia you only need to provide the **serial number**, which you can obtain by:\n\n- **CLI:** The serial number appears when you log in via CLI.\n- **WebGUI:** Maintenance → Remote Services tab (same tab where the tunnel is enabled).\n\n## Tier 1 Action\n\n**WORKAROUND TO APPLY:** Escalate to Ucopia (CP id 1566998545) and **call them directly**. They must manually restart the stuck DHCP service.\n\n> Note: A previous workaround (database optimization on the main VOC database) was tested and proved not to work. Do not attempt to apply it again.",
+          "images": [
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1570865158-9-image-20260316-153448.png",
+              "caption": "Unity fleet dashboard; a vessel row highlighted where CP log lines/IPs spike (lines 3792 / IPs 427), the warning burst that signals the MAC-lost bug"
+            },
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1570865158-7-image-20260316-155045.png",
+              "caption": "Maintenance → Remote Services tab showing the Serial number and tunnel ports used to escalate to Ucopia"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q5",
+              "question": "A user with valid credentials cannot connect. Ucopia logs show a clean DHCPACK followed immediately by 'getMACFromIP: Mac address from network entry not found' and 'returnCode 10003'. Which bug is most likely occurring?",
+              "answers": [
+                "DHCP 252 Option — the WPAD file is missing causing a blank portal page.",
+                "MAC unknown / Cannot find profile — MAC address is lost after IP renewal.",
+                "Ulog file too big — the log partition is full causing authentication failures.",
+                "Lost access to LDAP — Unity is kicking the session every 5 minutes."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The log signature — DHCPACK succeeds then MAC: null and returnCode 10003 — is the exact pattern for the MAC unknown / Cannot find profile bug, where the MAC-to-IP mapping is not saved during IP renewal."
+            },
+            {
+              "id": "q6",
+              "question": "When escalating the MAC unknown bug to Ucopia, which piece of information do you need to provide?",
+              "answers": [
+                "The affected user's MAC address and full session log dump.",
+                "The Proxmox VM snapshot name taken before the incident.",
+                "The serial number of the Ucopia, obtainable via CLI at login or via Maintenance → Remote Services in the WebGUI.",
+                "The Freshdesk ticket number opened for the Unity server failure."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source states that because all VOC tunnels are already enabled, you only need to provide the serial number. It can be obtained from the CLI login prompt or from Maintenance → Remote Services in the Ucopia WebGUI."
+            },
+            {
+              "id": "q7",
+              "question": "A previous workaround for the MAC unknown bug involved an optimization on the main VOC database. Should Tier 1 apply this workaround?",
+              "answers": [
+                "Yes — it is the first step before escalating to Ucopia.",
+                "Yes — it reduces the frequency of MAC loss events even if it does not fully resolve the issue.",
+                "No — this workaround was tested and proved not to work.",
+                "No — this workaround only applies to VRC units, not VOCs."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source explicitly states the database optimization workaround was applied and 'Proved not to work OK.' Tier 1 must escalate directly to Ucopia instead."
+            },
+            {
+              "id": "q8",
+              "question": "At what point in the DHCP exchange does the MAC address become lost, according to the Ucopia log pattern?",
+              "answers": [
+                "During the DHCPDISCOVER — Ucopia never records the MAC on initial discovery.",
+                "During the DHCPOFFER — the offered IP is not linked to the MAC.",
+                "During the DHCPREQUEST — the client's renewal request is dropped.",
+                "After the DHCPACK — the MAC-to-IP mapping is not saved after the lease is acknowledged."
+              ],
+              "correctAnswerIndex": 3,
+              "explanation": "The log shows all four DHCP steps (DISCOVER, OFFER, REQUEST, ACK) completing successfully. The MAC is lost immediately after the DHCPACK, during the process that should save the mapping to the MAC address table."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Ucopia Known Bugs — Logging, Licensing, and Portal Issues",
+      "summary": "Covers the Ulog disk full bug, the License Advance 1000 single-user traffic bug, DHCP option 252 blocking the Captive Portal on Windows, and the v7.2.8 LDAP access loss bug. Each requires Ucopia escalation.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Bug 3: Ulog File Too Big",
+          "content": "## Symptoms\n\nUpon entering the Ucopia WebGUI, a warning banner appears in the top-right of the screen:\n\n> \"The disk space reserved for logging is nearly full, please configure an automated FTP export for the logs.\"\n\nThis indicates the 'ulog' database is consuming all available disk space.\n\n**Important:** This warning may persist on screen even after the issue has been resolved. Always verify the actual state before escalating.\n\n## How to Verify\n\nNavigate to: **Monitoring → System logs → Resources usage**\n\nCheck the **\"Log partition\"** graph. If the value is between **20 GB and 30 GB**, the issue is active and escalation is required.\n\n## Additional Symptom\n\nThe Unity tab for Ucopia Accounts stops working. If this occurs alongside the disk warning, the ulog issue is the likely cause.\n\n## Tier 1 Action\n\n**WORKAROUND TO APPLY:** Escalate to Ucopia (CP id 1566998545) and **call them directly**. Ucopia must **drop and re-create the ulog table** to free the disk space.\n\nDo not attempt to manually delete log files — only Ucopia can safely perform this operation.",
+          "images": [
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1570865158-7-image-20260316-155045.png",
+              "caption": "Orange \"disk space reserved for logging is nearly full\" warning banner in the Ucopia GUI"
+            },
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1570865158-6-image-20260316-155249.png",
+              "caption": "Resources usage: Log partition graph around 25 GB (20–30 GB problem range) then dropping after Ucopia drops/recreates the table"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q9",
+              "question": "The Ucopia WebGUI shows a warning that disk space for logging is nearly full. Before escalating to Ucopia, where do you verify that the issue is genuinely active (not a stale warning)?",
+              "answers": [
+                "Operations → Maintenance → Update — check the storage usage section.",
+                "Monitoring → System logs → Resources usage — check the 'Log partition' graph value.",
+                "Maintenance → Remote Services — the tunnel status indicates disk health.",
+                "The Ucopia CLI login banner — it displays current disk usage percentages."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source instructs to go to Monitoring → System logs → Resources usage and check the Log partition graph. A value between 20 GB and 30 GB confirms the issue is active. The warning banner may persist even after the problem is resolved, so this verification step is essential."
+            },
+            {
+              "id": "q10",
+              "question": "What disk usage range on the 'Log partition' graph confirms that the ulog bug is active and Ucopia escalation is needed?",
+              "answers": [
+                "Between 1 GB and 5 GB",
+                "Between 5 GB and 10 GB",
+                "Between 10 GB and 20 GB",
+                "Between 20 GB and 30 GB"
+              ],
+              "correctAnswerIndex": 3,
+              "explanation": "The source specifies that if the Log partition graph is showing a value between 20 GB and 30 GB, there is a problem and Ucopia must be contacted to drop and re-create the ulog table."
+            },
+            {
+              "id": "q11",
+              "question": "Besides the disk warning banner, what other symptom indicates the ulog file is too big?",
+              "answers": [
+                "The Captive Portal re-prompts users for login credentials repeatedly.",
+                "The Unity tab for Ucopia Accounts stops working.",
+                "Windows devices see a blank portal page after receiving an IP.",
+                "Only the first connected user can pass traffic."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states that another symptom of the ulog too big condition is that the Unity tab regarding Ucopia Accounts stops working."
+            },
+            {
+              "id": "q12",
+              "question": "What action does Ucopia need to perform to resolve the ulog file too big issue?",
+              "answers": [
+                "Restart the stuck DHCP service.",
+                "Disable DHCP option 252 on the affected VOC.",
+                "Drop and re-create the ulog table.",
+                "Apply the LDAP access fix to stop unauthorized admin requests."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source specifies that Ucopia must drop and re-create the ulog table to resolve the disk space issue. This is not something Tier 1 can do independently."
+            }
+          ]
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Bug 4: Only One User Passing Traffic After License Advance 1000 Activation",
+          "content": "## Symptoms\n\nAfter activating a **License Advance 1000**, Ucopia only allows the first connected user to pass traffic. All subsequent users:\n\n- Can register successfully with the Captive Portal.\n- **Cannot access the internet** — the portal keeps popping up.\n\n## How to Confirm via Packet Capture\n\nRun a traffic sniffer on the Fortigate for a device that has registered but has no internet. You will see:\n\n- Traffic **entering** the `uc_in` interface.\n- Traffic **not exiting** the `uc_out` interface.\n\nThis asymmetry (traffic in but not out) confirms the bug.\n\n## Tier 1 Action\n\n**WORKAROUND TO APPLY:** Escalate to Ucopia (CP id 1566998545). No phone call procedure is specifically mandated for this bug in the source, but follow the standard escalation process.\n\n> This bug occurs intermittently — not every License Advance 1000 activation triggers it.",
+          "images": [
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1570865158-5-image-20260513-063552.png",
+              "caption": "Ucopia User accounts list with three registered profiles (CrewStandard, QoEGuestStandard, QoECrewStandard); only the first connected user passes traffic"
+            },
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1570865158-4-image-20260513-063833.png",
+              "caption": "Fortigate sniffer: many packets on uc_in but \"0 packets received\" on uc_out — traffic enters Ucopia but never leaves"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q13",
+              "question": "After activating a License Advance 1000, multiple users register to the Captive Portal successfully but only the first connected user has internet access. On the Fortigate sniffer you see traffic entering uc_in but nothing exiting uc_out. What is the diagnosis?",
+              "answers": [
+                "The DHCP service is stuck and must be restarted by Ucopia.",
+                "The ulog partition is full and blocking outbound forwarding.",
+                "This is the known License Advance 1000 single-user traffic bug — escalate to Ucopia.",
+                "DHCP option 252 is sending clients to a missing WPAD file, blocking outbound traffic."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The uc_in/uc_out asymmetry combined with only the first user passing traffic after a License Advance 1000 activation is the documented signature for this specific bug. The correct action is escalation to Ucopia."
+            },
+            {
+              "id": "q14",
+              "question": "A user affected by the License Advance 1000 bug can successfully register to the Captive Portal. What happens when they try to browse the internet?",
+              "answers": [
+                "They receive a 'Cannot find profile' error and are denied portal registration.",
+                "The portal keeps popping up and they cannot access the internet despite being registered.",
+                "They get internet for approximately 5 minutes then the session is kicked by Unity.",
+                "The browser shows a blank page due to WPAD resolution failure."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states that affected devices can register to the portal but cannot access internet, and the portal probably keeps popping up — the same symptom seen in DHCP issues but caused here by the license activation bug."
+            },
+            {
+              "id": "q15",
+              "question": "On which network device and which interfaces do you run a packet sniffer to confirm the License Advance 1000 traffic bug?",
+              "answers": [
+                "On the Ucopia controller, checking the dhcpd process logs.",
+                "On the Unity server, checking the API whitelist traffic.",
+                "On the Fortigate, checking for traffic entering uc_in but not exiting uc_out.",
+                "On the Proxmox host, checking VM network adapter counters."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source specifies running a sniffer on the Fortigate and looking for traffic entering uc_in but not going out via uc_out as confirmation of this bug."
+            },
+            {
+              "id": "q16",
+              "question": "Which of the following is the correct Tier 1 action for the License Advance 1000 single-user traffic bug?",
+              "answers": [
+                "Reboot the Ucopia VM and re-apply the license.",
+                "Disable and re-enable the License Advance 1000 from the Ucopia WebGUI.",
+                "Escalate to Ucopia following CP id 1566998545.",
+                "Remove the Unity IP from the API whitelist to stop session interference."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The documented workaround is to escalate to Ucopia following the escalation page at CP id 1566998545. There is no Tier 1 self-service fix for this bug."
+            }
+          ]
+        },
+        {
+          "id": "lesson-2-3",
+          "title": "Bug 5: DHCP Option 252 Blocking Captive Portal on Windows",
+          "content": "## Symptoms\n\nWindows devices receive an IP address but the Captive Portal either:\n\n- Takes a very long time to pop up, or\n- Never appears — the browser shows a URL with a blank page instead.\n\nMac and non-Windows clients may connect normally during the same incident.\n\n## Root Cause\n\nDHCP **option 252** is a custom DHCP parameter used to distribute **Web Proxy Auto-Discovery (WPAD)** configuration files to clients. When Ucopia sends option 252, Windows devices attempt to retrieve a `wpad.dat` file from Ucopia. This file does not exist on Ucopia, so Windows keeps loading indefinitely until it times out and shows a blank page.\n\n## Affected Environment\n\nThis issue was identified in VOC Mira (Freshdesk tickets: CP Eng 399628, Ucopia escalation 401196).\n\n## Tier 1 Action\n\n**WORKAROUND TO APPLY:** Call Ucopia and request to **disable DHCP option 252** on the affected VOC.\n\n> Tier 1 cannot disable DHCP options from the WebGUI — this requires Ucopia's intervention.",
+          "images": [
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1570865158-1-dhcp_252_wrong_url.png",
+              "caption": "Browser address bar stuck on msftconnecttest.com/redirect instead of the captive portal"
+            },
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1570865158-2-dhcp_252_error_message.png",
+              "caption": "Browser error page \"Your connection was interrupted — ERR_NETWORK_CHANGED\""
+            },
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1570865158-3-image-20260525-092328.png",
+              "caption": "Wireshark capture of the Windows client repeatedly issuing HTTP GET /wpad.dat (WPAD from DHCP option 252)"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q17",
+              "question": "Windows guests on a VOC report that the Captive Portal never loads — the browser shows a blank page. Mac and iOS devices connect normally. DHCP is working and devices are getting IP addresses. What bug should Tier 1 suspect?",
+              "answers": [
+                "MAC unknown / Cannot find profile — the MAC-to-IP mapping is not being saved.",
+                "DHCP option 252 causing Windows to look for a missing wpad.dat file.",
+                "Ulog partition full causing portal authentication to fail for Windows clients.",
+                "License Advance 1000 bug — only the first user (on Windows) is allowed through."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The DHCP option 252 bug specifically affects Windows devices by sending them a WPAD configuration pointer. Windows tries to fetch wpad.dat, which does not exist on Ucopia, causing an indefinite load or blank page. Other OS clients are not affected by this behavior."
+            },
+            {
+              "id": "q18",
+              "question": "What does DHCP option 252 do, and why does it cause problems with Ucopia?",
+              "answers": [
+                "It sets the default gateway — Ucopia sends the wrong gateway address causing routing failure.",
+                "It distributes WPAD configuration files; Windows fetches a wpad.dat from Ucopia that does not exist.",
+                "It sets the DNS server; Ucopia's DNS resolver is not configured for portal redirection.",
+                "It defines the DHCP lease time; Ucopia sends a value of 0 causing immediate expiry."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "DHCP option 252 is a custom parameter for distributing Web Proxy Auto-Discovery (WPAD) configuration files. Windows devices follow this option and attempt to retrieve wpad.dat from Ucopia, which does not exist, causing the portal to never load or show a blank page."
+            },
+            {
+              "id": "q19",
+              "question": "What specific action does Tier 1 request from Ucopia to fix the DHCP option 252 issue?",
+              "answers": [
+                "Drop and re-create the ulog table to free disk space blocking WPAD resolution.",
+                "Manually restart the stuck DHCP service to re-issue leases without option 252.",
+                "Disable DHCP option 252 on the affected VOC.",
+                "Apply the LDAP access fix to prevent session kicks interrupting portal load."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source states the fix is to request Ucopia to disable option DHCP 252 on the affected VOC (in the documented case, VOC Mira)."
+            },
+            {
+              "id": "q20",
+              "question": "The DHCP option 252 bug was originally identified on which environment?",
+              "answers": [
+                "VRC",
+                "Scenic RC",
+                "Emerald RC",
+                "VOC Mira"
+              ],
+              "correctAnswerIndex": 3,
+              "explanation": "The source references VOC Mira and the associated Freshdesk tickets (CP Eng 399628, Ucopia escalation 401196) as the environment where DHCP option 252 was identified and where Ucopia was requested to disable it."
+            }
+          ]
+        },
+        {
+          "id": "lesson-2-4",
+          "title": "Bug 6: v7.2.8 — Lost Access to LDAP",
+          "content": "## Symptoms\n\nThis bug affects Ucopia running version **7.2.8**.\n\n- Unity sends a **\"kick user for quota sync\"** command every 5 minutes for all Captive Portal users.\n- In Ucopia, sessions are being cut every 5 minutes.\n- In the CP logs, many **\"kick user for quota sync\"** messages appear.\n- If the Unity IP is removed from the Ucopia API whitelist (to prevent Unity making API calls), an **\"Unauthorized admin request\"** message from the Unity IP appears every 5 minutes.\n- After disabling Unity entirely, the 5-minute kicks stop and current sessions remain active for longer periods.\n\nThe pattern — Unity sending kicks every 5 minutes, sessions cut, and unauthorized requests when Unity is blocked — indicates Ucopia has lost access to LDAP and falls back to a broken authentication cycle.\n\n## Related Tickets\n\n- CP Eng: Freshdesk ticket 402008\n- T1: Freshdesk ticket 402226\n\n## Tier 1 Action\n\n**WORKAROUND TO APPLY:** Call Ucopia and request to **apply the fix in LDAP access**.\n\n> ⚠️ Important: Do not permanently disable Unity as a workaround in production. Disabling Unity is only a diagnostic step to confirm the bug.",
+          "questions": [
+            {
+              "id": "q21",
+              "question": "On a ship running Ucopia v7.2.8, users are getting their sessions cut every 5 minutes. CP logs show repeated 'kick user for quota sync' messages. What is the most likely cause?",
+              "answers": [
+                "The DHCP lease table is corrupted causing periodic re-authentication.",
+                "The ulog partition is full, causing Ucopia to reset sessions to free resources.",
+                "The v7.2.8 LDAP access loss bug — Unity sends kicks every 5 minutes due to broken LDAP communication.",
+                "License Advance 1000 activation is resetting sessions for all but the first user."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "5-minute session cuts combined with 'kick user for quota sync' messages in CP logs is the documented signature of the v7.2.8 LDAP access loss bug. Unity sends these kicks because Ucopia has lost its LDAP connection."
+            },
+            {
+              "id": "q22",
+              "question": "To confirm the v7.2.8 LDAP bug, a technician removes the Unity IP from the Ucopia API whitelist. What message appears every 5 minutes afterward?",
+              "answers": [
+                "'getMACFromIP: Mac address from network entry not found.'",
+                "'returnCode 10003, no user account found with this IP and/or MAC address'",
+                "'Unauthorized admin request' from the Unity IP address",
+                "'The disk space reserved for logging is nearly full'"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source states that when the Unity IP is removed from the API whitelist, an 'Unauthorized admin request' message from the Unity IP appears every 5 minutes — confirming Unity is still attempting to communicate with Ucopia despite being blocked."
+            },
+            {
+              "id": "q23",
+              "question": "Disabling Unity stops the 5-minute session kicks. Is disabling Unity the recommended Tier 1 fix for the v7.2.8 LDAP bug?",
+              "answers": [
+                "Yes — disabling Unity is the documented workaround to apply.",
+                "Yes — it resolves the issue and sessions remain stable indefinitely.",
+                "No — disabling Unity is only a diagnostic step; the fix is to call Ucopia and request the LDAP access fix.",
+                "No — the correct fix is to downgrade Ucopia from v7.2.8 to v7.2.4."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Disabling Unity is described as a diagnostic confirmation step (it stops the kicks), not the fix. The documented workaround is to call Ucopia and request that they apply the fix in LDAP access."
+            },
+            {
+              "id": "q24",
+              "question": "Which Ucopia firmware version is specifically associated with the LDAP access loss / session kick bug?",
+              "answers": [
+                "7.2.4",
+                "7.2.5",
+                "7.2.6",
+                "7.2.8"
+              ],
+              "correctAnswerIndex": 3,
+              "explanation": "The section title is 'v7.2.8 – Lost access to LDAP', explicitly identifying version 7.2.8 as the version where this bug was documented."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Ucopia Version Upgrade Procedure",
+      "summary": "Safe step-by-step upgrade procedure: approved versions by fleet type, Proxmox VM backup, running the automatic upgrade, and the critical step of disabling auto-updates once the target version is reached.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Approved Versions and Pre-Upgrade Checks",
+          "content": "## Approved Versions\n\nOnly versions approved by Solutions Architecture may be installed. The current approved versions are:\n\n| Fleet type | Approved version(s) |\n|---|---|\n| VRC | 7.2.8 |\n| Scenic / Emerald RC | 7.2.8 |\n| VOC | 7.2.4 and 7.2.5 |\n\nDo not upgrade a VOC beyond 7.2.5 — 7.2.8 introduces the LDAP bug on VOCs.\n\n## Upgrade Impact Warning\n\n> ⚠️ **WARNING:** The upgrade process takes **10–15 minutes** total, with **1–2 minutes of internet outage** while Ucopia reboots. Plan accordingly and inform the vessel.\n\n## Pre-Upgrade Action: VM Backup in Proxmox\n\nBefore starting any upgrade:\n\n1. Access **Proxmox**.\n2. Perform a **VM Backup** of the Ucopia VM.\n3. Add the tag: `UC_BackupBeforeUpdateToV…` (complete with the target version number).\n\nThis backup is your rollback point. Do not skip it.\n\n## Configuration Preservation\n\nThe upgrade of the Ucopia controller **preserves the configuration** — profiles, users, and settings are retained after upgrade.",
+          "images": [
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1603764386-1-image-20260325-083351.png",
+              "caption": "Proxmox VM Backup with the note UC_BackupBeforeUpdateToV728 — the required pre-upgrade backup"
+            },
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1603764386-8-image-20260324-142104.png",
+              "caption": "Controller Update page (Operations → Maintenance → Update) showing Current version 7.2.4 and Daily checking Disabled"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q25",
+              "question": "You need to upgrade a VOC. Which version(s) are approved for installation on VOC units?",
+              "answers": [
+                "7.2.8 only",
+                "7.2.6 and 7.2.7",
+                "7.2.4 and 7.2.5",
+                "Any version up to and including 7.2.8"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source lists only 7.2.4 and 7.2.5 as approved for VOC. VRC and Scenic/Emerald RC are approved for 7.2.8, but VOC must not go beyond 7.2.5 per the approved versions table."
+            },
+            {
+              "id": "q26",
+              "question": "What is the expected internet outage duration during an Ucopia upgrade reboot?",
+              "answers": [
+                "No outage — the upgrade is hot-patched without reboot.",
+                "1–2 minutes",
+                "5–10 minutes",
+                "10–15 minutes"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states the total process takes 10–15 minutes, but the internet outage during the reboot is 1–2 minutes. The full 10–15 minutes is the total upgrade duration, not the outage window."
+            },
+            {
+              "id": "q27",
+              "question": "What must you do in Proxmox before starting the Ucopia upgrade, and what tag naming convention is required?",
+              "answers": [
+                "Take a configuration export from the Ucopia WebGUI and name it with the current date.",
+                "Create a VM Snapshot in Proxmox and name it with the Freshdesk ticket number.",
+                "Perform a VM Backup in Proxmox and add the tag UC_BackupBeforeUpdateToV… with the target version.",
+                "Disable the Ucopia VM network interface in Proxmox to prevent traffic during upgrade."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source specifies accessing Proxmox, performing a VM Backup, and adding the tag UC_BackupBeforeUpdateToV… (completed with the target version). This is the required pre-upgrade step and rollback point."
+            },
+            {
+              "id": "q28",
+              "question": "After a successful Ucopia controller upgrade, what happens to the existing configuration (profiles, users, settings)?",
+              "answers": [
+                "Configuration is wiped — a full reconfiguration is required after upgrade.",
+                "Configuration is preserved — profiles, users, and settings are retained.",
+                "Only user accounts are preserved — profiles must be re-imported from backup.",
+                "Configuration is preserved only if a snapshot was taken before the upgrade."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source explicitly states: 'The upgrade of the controller preserves the configuration (profiles, users, etc.).' No reconfiguration is needed after a standard upgrade."
+            }
+          ]
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Running the Automatic Upgrade and Stopping at the Target Version",
+          "content": "## Upgrade Path\n\nThe automatic upgrade process chains through all intermediate versions in sequence:\n\n```\n7.2.4 → 7.2.5 → 7.2.6 → 7.2.7 → 7.2.8\n```\n\nYou **cannot choose** a specific version to jump to — the system upgrades through every intermediate version automatically.\n\n## Step-by-Step Upgrade Procedure\n\n1. Log in to the **Ucopia WebGUI**.\n2. Navigate to **Operations → Maintenance → Update**.\n3. In the **Updates** section, change the toggle from **Disabled** to **Enabled**.\n4. Click **Confirm**. The system begins downloading and installing all Ucopia versions up to the newest.\n5. Monitor progress — Ucopia displays messages as it progresses through each version.\n6. Monitor the current version displayed on the dashboard.\n\n## ⚠️ CRITICAL WARNING: Stop at the Target Version\n\n> ⚠️ **IMPORTANT WARNING:** Once you reach the desired version, **IMMEDIATELY DISABLE the automatic updates** (change the toggle back to Disabled and confirm).\n\nIf you do not disable updates at the target version, the system will continue upgrading beyond the approved version. For VOCs, this means the system will pass through 7.2.5 and continue to 7.2.8, which introduces the LDAP access loss bug.\n\n## Where to Monitor Version Progress\n\nYou can monitor the current installed version in the same **Operations → Maintenance → Update** dashboard.",
+          "images": [
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1603764386-5-image-20260324-144717.png",
+              "caption": "Updates \"Daily checking: Disabled (Enable)\" close-up — the toggle to start the upgrade"
+            },
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1603764386-3-image-20260324-144950.png",
+              "caption": "Before/after: Daily checking switched from Disabled to Enabled"
+            },
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1603764386-6-image-20260324-144638.png",
+              "caption": "\"Update state\" dialog chaining 7.2.x downloads and the numbered install steps (incl. SSL update pre-hook warning)"
+            },
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1603764386-4-image-20260324-144945.png",
+              "caption": "Daily checking returned to Disabled — the required end state once the target version is reached"
+            },
+            {
+              "path": "images/73eead49-afb7-4f90-a731-cb8a5564bd86/1603764386-2-image-20260324-145033.png",
+              "caption": "Controller Update page after the chain: Current version 7.2.8 / Last installation update_7.2.8"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q29",
+              "question": "You are upgrading a VOC from 7.2.4 to 7.2.5. You enable automatic updates and the system starts upgrading. After version 7.2.5 is installed and confirmed, what must you do immediately?",
+              "answers": [
+                "Reboot the Ucopia VM manually from Proxmox to finalize the installation.",
+                "Disable the automatic updates toggle to prevent the system from continuing to 7.2.6 and beyond.",
+                "Take a new Proxmox VM backup tagged UC_BackupAfterUpdate to record the new state.",
+                "Verify the upgrade by checking Monitoring → System logs → Resources usage."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source contains an explicit IMPORTANT WARNING: once you reach the desired version, disable the automatic updates immediately. For VOCs the target is 7.2.5 — failing to disable updates will cause the system to continue to 7.2.6, 7.2.7, and 7.2.8, which introduces the known LDAP bug."
+            },
+            {
+              "id": "q30",
+              "question": "Where in the Ucopia WebGUI do you go to enable the automatic upgrade and monitor its progress?",
+              "answers": [
+                "Monitoring → System logs → Resources usage",
+                "Maintenance → Remote Services",
+                "Operations → Maintenance → Update",
+                "Administration → Firmware → Automatic updates"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source specifies the upgrade is located at Operations → Maintenance → Update. The Updates section in that screen has the Disabled/Enabled toggle and shows upgrade progress."
+            },
+            {
+              "id": "q31",
+              "question": "When using the Ucopia automatic upgrade, can you choose to install only version 7.2.6 directly, skipping 7.2.5?",
+              "answers": [
+                "Yes — the WebGUI shows a list of available versions and you select the target.",
+                "Yes — but only if you are already running a version newer than 7.2.4.",
+                "No — the automatic process chains through every version sequentially (7.2.4 → 7.2.5 → 7.2.6 → 7.2.7 → 7.2.8) and you cannot skip versions.",
+                "No — but you can pause the upgrade at any version using the Disabled toggle and resume later."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source explicitly states: 'This method upgrades automatically to the latest version of firmware available. You cannot choose the version.' The chain is sequential: 7.2.4 → 7.2.5 → 7.2.6 → 7.2.7 → 7.2.8. To stop at an intermediate version, you must disable auto-updates when the target version is reached."
+            },
+            {
+              "id": "q32",
+              "question": "An engineer upgrades a VOC and forgets to disable automatic updates after reaching 7.2.5. The system continues to 7.2.8. What is the likely operational consequence?",
+              "answers": [
+                "No consequence — 7.2.8 is an approved version for all fleet types.",
+                "The Ucopia configuration (profiles, users) will be wiped and need to be re-entered.",
+                "The ulog partition will immediately fill to 30 GB requiring Ucopia intervention.",
+                "Unity will send 'kick user for quota sync' every 5 minutes due to the v7.2.8 LDAP access loss bug."
+              ],
+              "correctAnswerIndex": 3,
+              "explanation": "7.2.8 on VOC is not approved and introduces the LDAP access loss bug documented in module 2. The result is Unity sending session kicks every 5 minutes, cutting all active CP sessions. 7.2.8 is only approved for VRC and Scenic/Emerald RC."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -29,6 +29,9 @@ The file must be a single JSON object that conforms exactly to this schema:
           "id": "lesson-1-1",
           "title": "Lesson title",
           "content": "The lesson body. Plain text or lightweight Markdown.",
+          "images": [
+            { "path": "images/<session_id>/123-1-topology.png", "caption": "Network topology diagram" }
+          ],
           "questions": [
             {
               "id": "q1",
@@ -53,6 +56,12 @@ Schema rules — follow these precisely:
   optional `summary`, and a non-empty `lessons` array.
 - Each **lesson** has a unique `id`, a `title`, a `content` string, and a
   non-empty `questions` array.
+- Each **lesson** MAY include an optional `images` array (omit it entirely if the
+  lesson has none — it is fully back-compatible). Each entry has a `path`
+  (relative, pointing into `images/<session_id>/`) and a `caption`. Only
+  reference images the extractor actually saved — never invent paths. If the
+  extract only had a text description of an image, fold that into `content` as
+  today instead of adding an `images` entry.
 - Each **question** has an `id`, a `question` string, an `answers` array of
   **exactly 4 strings**, a `correctAnswerIndex` (an integer 0–3 pointing at the
   correct entry in `answers`), and an `explanation` string.
@@ -79,8 +88,10 @@ rule.
 - **Preserve warnings.** Source "WARNING"/"IMPORTANT" notes are high-value — fold
   them into the relevant lesson `content` (e.g. a "⚠️ Important:" line), never
   drop them.
-- **Screenshots:** when the source relies on images you can't embed, replace them
-  with concise text descriptions of what the reader would see.
+- **Screenshots:** when the extractor saved an image file, prefer embedding it
+  via the optional lesson `images` field (using the saved `path` and a
+  `caption`). Otherwise — when only a text description exists — keep the
+  text-description behavior and fold it into `content`.
 - **Valid JSON.** Verify the file parses cleanly (`python3 -m json.tool <file>`
   or `jq . <file>`) and matches the schema before reporting done.
 - **Match the language** of the source material / the user's request.
