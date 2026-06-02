@@ -1,12 +1,16 @@
 # Course Generator
 
 Turns a Confluence page into a structured JSON course (modules → lessons →
-multiple-choice questions), built by the `course-creator` agent.
+multiple-choice questions) via the `create-course` skill: a `source-extractor`
+agent reads the page, then a profile-specific course-creator agent
+(`technical-course-creator` / `sales-course-creator`) authors the course.
 
 Two backends:
 
 ```
-frontend ─▶ platform_back (:8001) ─▶ agents_back (:8000) ─▶ course-creator agent
+frontend ─▶ platform_back (:8001) ─▶ agents_back (:8000) ─▶ create-course skill
+                                                            ├─ source-extractor (reads)
+                                                            └─ <profile>-course-creator (writes)
 ```
 
 ## Layout
@@ -16,8 +20,12 @@ frontend ─▶ platform_back (:8001) ─▶ agents_back (:8000) ─▶ course-c
     revise it in the same session.
   - `api.py` — Flask API (`POST /create-course`) wrapping the same logic.
   - `agents_directory/` — Claude runs here, scoped so it can't touch the rest of
-    the project. Agent lives in `agents_directory/.claude/agents/course-creator.md`;
-    courses are written to `agents_directory/json/`.
+    the project. The `create-course` skill lives in
+    `agents_directory/.claude/skills/create-course/`, the agents in
+    `agents_directory/.claude/agents/` (`source-extractor`,
+    `technical-course-creator`, `sales-course-creator`), and the shared JSON
+    schema in `agents_directory/.claude/course-schema.md`. Source extracts are
+    written to `agents_directory/extract/`, courses to `agents_directory/json/`.
 - **`platform_back/`** — thin Flask backend (`POST /courses`) that just forwards
   the request to agents_back (`helpers/call_agents_back.py`).
 - **`.venv/`** — shared virtualenv with Flask. `example.json` — sample payload.
@@ -49,13 +57,19 @@ curl -s -X POST http://localhost:8001/courses -H 'Content-Type: application/json
 ```
 
 Response: `{ "session_id": "...", "json_path": "...", "json_exists": true }`
-(call agents_back directly on `:8000/create-course` to skip platform_back.)
+
+platform_back keeps a single `POST /courses` endpoint and routes by payload:
+a `session_id` forwards to agents_back `POST /update-course`, otherwise to
+`POST /create-course`. Call agents_back directly on `:8000` to skip
+platform_back — `/create-course` (needs `page_id`) for new courses,
+`/update-course` (needs `session_id` + `feedback`) to revise.
 
 ## CLI instead of API
 
 ```bash
 cd agents_back
-./create_course.py 1727332382     # any Confluence page id; default 1727332382
+./create_course.py 1727332382                   # any page id; default 1727332382
+./create_course.py 1727332382 --profile sales   # technical (default) or sales
 # after it builds, type feedback ('exit' to quit) to revise the same file
 ```
 

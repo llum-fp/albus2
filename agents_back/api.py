@@ -1,38 +1,53 @@
 #!/usr/bin/env python3
-"""Very simple Flask API that builds a course and returns its session_id and
-json_path.
+"""FastAPI app that builds and revises courses. Two endpoints:
 
-POST any JSON shaped like example.json, e.g.:
+POST /create-course — build a NEW course. `page_id` is required; topic/profile/
+duration_min are optional steering fields. (Set {"harcoded": true} to skip the
+build and get a canned response.)
     {
       "page_id": "1548222468",
       "topic": "Captive Portal v4.0.6 Support Guide Scenic",
       "profile": "technical support",
       "duration_min": "60"
     }
-`page_id` is required for a NEW course; the rest steer it and are optional.
 
-To CONTINUE a conversation, pass the `session_id` returned by a previous call
-(and put the change request in `feedback`). It resumes that session and edits
-the same course file in place:
+POST /update-course — REVISE an existing course. Pass the `session_id` returned
+by /create-course and the change request in `feedback`. It resumes that session
+and edits the same course file in place:
     { "session_id": "<uuid>", "feedback": "make the quiz harder" }
 
-Response:
-    { "session_id": "<uuid>", "json_path": "<absolute path to the .json>" }
+Both return:
+    { "session_id": "<uuid>", "json_path": "<abs path>", "json_exists": true }
 
-Run (use the project venv that has Flask):
-    ./.venv/bin/python api.py      # listens on 0.0.0.0:8000 (override with PORT env var)
+Run (use the project venv that has FastAPI + uvicorn):
+    ./.venv/bin/python api.py            # listens on 0.0.0.0:8000 (override with PORT)
+    ./.venv/bin/uvicorn api:app --host 0.0.0.0 --port 8000   # or run uvicorn directly
 Call:
     curl -s -X POST http://localhost:8000/create-course \
          -H 'Content-Type: application/json' --data @example.json
+    curl -s -X POST http://localhost:8000/update-course \
+         -H 'Content-Type: application/json' --data @example_feedback.json
 """
+import logging
 import os
+import time
 import uuid
 
-from flask import Flask, jsonify, request
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 from create_course import AGENTS_DIR, run_claude
 
 PORT = int(os.environ.get("PORT", "8000"))
+
+# Logging: level via LOG_LEVEL env (default INFO). Each line carries a timestamp
+# and the session_id, so a single course build can be traced end to end.
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
+log = logging.getLogger("agents_back.api")
 
 # Canned response returned when the payload sets "harcoded": true — skips the
 # build entirely and points at the single pre-built course JSON.
@@ -42,72 +57,131 @@ HARDCODED_RESPONSE = {
     "session_id": "14a0494d-d694-4744-8b01-1272b4c99c4b",
 }
 
-app = Flask(__name__)
+app = FastAPI(title="agents_back course API")
 
 
-def build_course(payload: dict) -> dict:
-    topic = payload.get("topic", "")
-    profile = payload.get("profile", "")
-    duration_min = payload.get("duration_min", "")
-    feedback = payload.get("feedback", "")
+class CreateCourseRequest(BaseModel):
+    page_id: str | int | None = None
+    topic: str = ""
+    profile: str = ""
+    duration_min: str | int = ""
+    harcoded: bool = False
 
-    # Optional session_id: when given, resume that conversation and revise the
-    # course it already produced; otherwise start a fresh session.
-    given_session = payload.get("session_id")
-    resume = bool(given_session)
-    session_id = str(given_session) if resume else str(uuid.uuid4())
+
+class UpdateCourseRequest(BaseModel):
+    session_id: str | None = None
+    feedback: str = ""
+
+
+class CourseResponse(BaseModel):
+    session_id: str
+    json_path: str
+    json_exists: bool
+
+
+def _run(session_id: str, prompt: str, resume: bool) -> dict:
+    """Shared runner: invoke one headless claude turn for `session_id`, time it,
+    log it, and return the standard {session_id, json_path, json_exists} reply."""
     rel_path = f"json/course_{session_id}.json"
     json_path = AGENTS_DIR / rel_path
 
-    if resume:
-        change = feedback or topic or "improve and refine the course"
-        prompt = (
-            "Use the course-creator agent (subagent_type: course-creator) to revise "
-            f"the existing JSON course at {rel_path}, editing the file in place and "
-            "keeping it valid JSON that matches the agent's modules -> lessons -> "
-            f"multiple-choice-questions schema, based on this feedback: {change}"
-        )
-    else:
-        page_id = str(payload["page_id"])
-        prompt = (
-            "Use the course-creator agent (subagent_type: course-creator) to create a "
-            f"structured JSON course from Confluence page id {page_id}, following the "
-            "agent's modules -> lessons -> multiple-choice-questions schema (each "
-            "question has exactly 4 options and one correct answer). "
-            f"Audience/profile: {profile or 'general'}. "
-            f"Target duration: {duration_min or 'unspecified'} minutes. "
-            f"Topic focus: {topic or 'the whole page'}. "
-            "Save it as a single valid .json file at exactly this path: "
-            f"{rel_path} (create the json/ directory if needed). Do not save it anywhere else."
-        )
-
     AGENTS_DIR.mkdir(parents=True, exist_ok=True)
+    log.info("[%s] invoking claude (resume=%s) -> %s", session_id, resume, rel_path)
+    log.debug("[%s] prompt: %s", session_id, prompt)
+    started = time.monotonic()
     rc = run_claude(prompt, AGENTS_DIR, session_id, resume=resume)
+    elapsed = time.monotonic() - started
     if rc != 0:
+        log.error("[%s] claude exited with code %s after %.1fs", session_id, rc, elapsed)
         raise RuntimeError(f"claude exited with code {rc}")
+
+    exists = json_path.is_file()
+    log.info(
+        "[%s] done in %.1fs: json_exists=%s path=%s", session_id, elapsed, exists, json_path
+    )
+    if not exists:
+        log.warning("[%s] claude exited 0 but no course file at %s", session_id, json_path)
 
     return {
         "session_id": session_id,
         "json_path": str(json_path),
-        "json_exists": json_path.is_file(),
+        "json_exists": exists,
     }
 
 
-@app.post("/create-course")
-def create_course():
-    payload = request.get_json(silent=True)
-    if not payload:
-        return jsonify(error="invalid or missing JSON body"), 400
-    if payload.get("harcoded") is True:
-        return jsonify(HARDCODED_RESPONSE)
-    if not payload.get("session_id") and not payload.get("page_id"):
-        return jsonify(error="missing 'page_id' (required for a new course)"), 400
+def build_new_course(req: CreateCourseRequest) -> dict:
+    """Build a brand-new course from a Confluence page via the create-course skill."""
+    session_id = str(uuid.uuid4())
+    page_id = str(req.page_id)
+    rel_path = f"json/course_{session_id}.json"
+    extract_path = f"extract/source_{session_id}.md"
+    log.info(
+        "[%s] new course: page_id=%s profile=%r topic=%r duration_min=%r",
+        session_id, page_id, req.profile, req.topic, req.duration_min,
+    )
+    # Delegate the whole procedure to the create-course skill (the "recipe");
+    # api.py only supplies the per-request details. Invoked explicitly by slash
+    # command for deterministic headless behavior.
+    prompt = (
+        f"/create-course page_id={page_id} profile=\"{req.profile or 'technical'}\" "
+        f'topic="{req.topic or "the whole page"}" '
+        f"duration_min={req.duration_min or 'unspecified'} "
+        f"extract_path={extract_path} out_path={rel_path}"
+    )
+    return _run(session_id, prompt, resume=False)
+
+
+def revise_course(req: UpdateCourseRequest) -> dict:
+    """Revise an existing course by resuming its session and applying feedback."""
+    session_id = str(req.session_id)
+    rel_path = f"json/course_{session_id}.json"
+    log.info("[%s] revise: %s (feedback=%r)", session_id, rel_path, req.feedback)
+    # The resumed session retains its context, so it already knows which profile
+    # course-creator authored this file — just ask it to revise.
+    change = req.feedback or "improve and refine the course"
+    prompt = (
+        "Use the same profile course-creator agent you used before to revise the "
+        f"existing JSON course at {rel_path}, editing the file in place and keeping "
+        "it valid JSON that matches the schema in .claude/course-schema.md, based on "
+        f"this feedback: {change}"
+    )
+    return _run(session_id, prompt, resume=True)
+
+
+# Endpoints are sync `def` so Starlette runs them in a threadpool — the blocking
+# `claude` subprocess never stalls the event loop.
+@app.post("/create-course", response_model=CourseResponse)
+def create_course(req: CreateCourseRequest):
+    log.info("POST /create-course: %s", req.model_dump())
+    if req.harcoded:
+        log.info("returning hardcoded response (build skipped)")
+        return HARDCODED_RESPONSE
+    if not req.page_id:
+        log.warning("rejected request: missing 'page_id' (required for a new course)")
+        raise HTTPException(status_code=400, detail="missing 'page_id' (required for a new course)")
     try:
-        return jsonify(build_course(payload))
-    except Exception as exc:  # noqa: BLE001 - return any failure as JSON
-        return jsonify(error=str(exc)), 500
+        return build_new_course(req)
+    except Exception as exc:  # noqa: BLE001 - surface any failure as JSON
+        log.exception("build_new_course failed: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/update-course", response_model=CourseResponse)
+def update_course(req: UpdateCourseRequest):
+    log.info("POST /update-course: %s", req.model_dump())
+    if not req.session_id:
+        log.warning("rejected request: missing 'session_id' (required to update a course)")
+        raise HTTPException(status_code=400, detail="missing 'session_id' (required to update a course)")
+    if not req.feedback:
+        log.warning("rejected request: missing 'feedback' (required to update a course)")
+        raise HTTPException(status_code=400, detail="missing 'feedback' (required to update a course)")
+    try:
+        return revise_course(req)
+    except Exception as exc:  # noqa: BLE001 - surface any failure as JSON
+        log.exception("revise_course failed: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 if __name__ == "__main__":
-    print(f"Listening on http://0.0.0.0:{PORT}  (POST /create-course)")
-    app.run(host="0.0.0.0", port=PORT)
+    log.info("Listening on http://0.0.0.0:%s  (POST /create-course, /update-course)", PORT)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)

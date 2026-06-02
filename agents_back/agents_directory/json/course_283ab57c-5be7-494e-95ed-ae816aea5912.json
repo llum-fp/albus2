@@ -1,0 +1,280 @@
+{
+  "title": "AI Cartels: Building on the AI Hub Platform",
+  "description": "A practical orientation for engineers and support practitioners on what AI cartels are, the three cartel shapes (MCP, AI, Hybrid), and how to choose the right one for your use case. Covers the publish and consume surfaces and the platform vs. developer responsibility split.",
+  "source": "Confluence page 1727332382, space AD (AI Documentation) — 'AI Core - MCP Cartel', author Martí Gelabert, last modified May 12 2026.",
+  "language": "en",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "What Is a Cartel?",
+      "summary": "Core concept: what a cartel is, its two defining traits, and the roles it can play on the AI Hub platform.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Cartel Fundamentals",
+          "content": "A **cartel** is a long-running Python service that plugs into the AI Hub platform. The platform handles infrastructure plumbing — command bus, authentication, observability, model routing. Your cartel is where domain logic lives.\n\nTwo traits every cartel shares:\n\n1. It registers with the platform's command bus (RabbitMQ via `mesh_core`) and is reachable as a named service. Other cartels and the platform CLI can call it by name.\n2. It runs as its own deployable unit — its own container, its own logs, its own quota and audit trail.\n\nA cartel's **purpose** varies:\n- **Expose an external system as tools** — e.g. a Fortigate cartel lets agents query firewall state; a Proxmox cartel exposes hypervisor operations; an Alanis cartel surfaces fleet telemetry.\n- **Consume those tools** — running agents and workflows that combine LLM reasoning with the tool catalog to make domain decisions and emit events for downstream services.\n\nA single cartel can play one role, the other, or both.\n\n> ⚠️ Important: This content builds on the base Python cartel concept — the `mesh_core.Service` class, the cartel lifecycle, commands, and periodic tasks. The canonical reference is **Cartels - Python** (PLA space, page 361988122). Read it first if you have not built a cartel before.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "A cartel registers with the platform's command bus using which technology?",
+              "answers": [
+                "Kafka via mesh_core",
+                "RabbitMQ via mesh_core",
+                "Redis Pub/Sub via mesh_core",
+                "gRPC via mesh_core"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states cartels register with the platform's command bus via RabbitMQ using mesh_core, making them reachable as named services."
+            },
+            {
+              "id": "q2",
+              "question": "Which of the following is NOT a defining trait of every cartel on the AI Hub platform?",
+              "answers": [
+                "It registers with the platform's command bus and is reachable as a named service.",
+                "It runs as its own deployable unit with its own container and audit trail.",
+                "It must expose at least one tool to the platform's Gateway catalog.",
+                "It is a long-running Python service."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Exposing tools to the Gateway catalog is a trait of the Publish surface only. A cartel that only consumes tools (AI cartel) does not need to expose anything. All other options are universal traits."
+            },
+            {
+              "id": "q3",
+              "question": "An engineer is new to the AI Hub platform and has never built a cartel before. According to the platform documentation, what should they do before reading the AI Cartel pages?",
+              "answers": [
+                "Skim docs/cartel-gotchas.md to avoid common pitfalls first.",
+                "Read the MCP Cartel child page to understand tool registration.",
+                "Read Cartels - Python (PLA space, page 361988122) to learn the base mesh_core.Service class and cartel lifecycle.",
+                "Read gateway/README.md to understand auth and routing."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source includes a prominent WARNING: the AI Cartel content builds on the base Python cartel concept (mesh_core.Service, lifecycle, commands, periodic tasks). Cartels - Python in the PLA space (page 361988122) is the canonical prerequisite."
+            },
+            {
+              "id": "q4",
+              "question": "A Proxmox cartel exposes hypervisor operations so other cartels' agents can call them. What role is this cartel playing?",
+              "answers": [
+                "Consuming tools from the platform catalog.",
+                "Running LLM-driven workflows against the tool catalog.",
+                "Exposing an external system as tools for other cartels.",
+                "Acting as the platform's command bus router."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source lists Proxmox as an example of a cartel that exposes an external system (hypervisor) as tools for other cartels' agents to call — the publish/tool-exposure role."
+            }
+          ]
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "RabbitMQ as the Platform Command Bus",
+          "content": "Every cartel's first act on start-up is to connect to **RabbitMQ via `mesh_core`** — this is what makes a cartel a named, callable entity on the AI Hub platform.\n\n### What RabbitMQ does for cartels\n\n| Concern | How RabbitMQ handles it |\n|---|---|\n| Named addressability | Each cartel registers under a service name. Other cartels and the platform CLI reach it by that name without knowing its host or port. |\n| Command routing (Publish surface) | Each tool a cartel publishes becomes a **named RPC handler** on RabbitMQ. The platform routes incoming tool calls to the correct handler automatically. |\n| Request/reply over RPC | Callers send a command message and block on a reply queue; `mesh_core` manages correlation IDs, timeouts, and serialization. |\n\n### What `mesh_core` abstracts away\n\nYou never interact with RabbitMQ directly. `mesh_core.Service` handles:\n- Connection setup, reconnect logic, and channel lifecycle.\n- Declaring and binding the queues that back each registered command handler.\n- Serialising and deserialising message payloads.\n\nYour cartel code only sees Python method calls; the AMQP wire protocol is invisible.\n\n### Publish surface: RabbitMQ routing is the platform's job\n\nWhen you register a tool on the Publish surface, the platform wires a RabbitMQ RPC handler for it. From that point, any AI cartel calling `self.gateway.tools.<tool_name>(...)` has its request routed over RabbitMQ to your handler — you write the tool function, not the routing.\n\n> ⚠️ Important: RabbitMQ connectivity is part of the platform's infrastructure plumbing. If a cartel fails to register (e.g. RabbitMQ is unreachable at start-up), it will not appear as a named service and its tools will not be discoverable via `GET /v1/tools`. Check `mesh_core` connection logs first when a cartel is missing from the catalog.",
+          "questions": [
+            {
+              "id": "q-rmq-1",
+              "question": "A cartel's tools are not appearing in the Gateway catalog after deployment. A colleague suggests the issue is with tool function code. What should you check first according to platform documentation?",
+              "answers": [
+                "Review the tool function's input/output schema for syntax errors.",
+                "Check mesh_core connection logs — if RabbitMQ was unreachable at start-up the cartel will not register and tools will not be discoverable.",
+                "Re-run GET /v1/tools with a different JWT to rule out an auth issue.",
+                "Verify the Dockerfile exposes the correct port for the RPC handlers."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states that RabbitMQ registration is what makes a cartel reachable as a named service and its tools discoverable. A failed RabbitMQ connection at start-up means the cartel never registers, so mesh_core connection logs are the right first check."
+            },
+            {
+              "id": "q-rmq-2",
+              "question": "Which component is responsible for declaring and binding the RabbitMQ queues that back each registered tool handler in a cartel?",
+              "answers": [
+                "The cartel developer — queue names must be declared in pyproject.toml.",
+                "The Gateway — it writes queue bindings when tools are registered via GET /v1/tools.",
+                "mesh_core.Service — it handles connection setup, channel lifecycle, queue declaration, and binding automatically.",
+                "The platform's OTel collector — it intercepts AMQP traffic and creates queue bindings."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source states that mesh_core.Service abstracts all RabbitMQ interaction: connection setup, reconnect logic, channel lifecycle, and declaring/binding queues for each registered command handler. The developer never interacts with RabbitMQ directly."
+            },
+            {
+              "id": "q-rmq-3",
+              "question": "An AI cartel calls self.gateway.tools.query_firewall(...). Over which transport does that call travel to the Fortigate MCP cartel's handler?",
+              "answers": [
+                "A direct HTTP/REST call from the AI cartel container to the Fortigate cartel container.",
+                "A gRPC stream managed by the platform's mesh proxy.",
+                "A RabbitMQ RPC message routed by the platform to the Fortigate cartel's named handler.",
+                "A Temporal activity dispatched through the Temporal worker."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source states that on the Publish surface, RabbitMQ command routing makes each registered tool reachable as a named RPC handler. Gateway tool calls are routed over RabbitMQ to the target cartel's handler — not HTTP, gRPC, or Temporal."
+            },
+            {
+              "id": "q-rmq-4",
+              "question": "What does a developer need to write in order to handle RabbitMQ connection setup and message serialization for their cartel?",
+              "answers": [
+                "An AMQP connection class that inherits from mesh_core.AMQPBase and overrides connect().",
+                "A requirements.txt entry for aio-pika plus a custom channel factory in the service class.",
+                "Nothing — mesh_core.Service handles connection setup, reconnect logic, serialization, and deserialization automatically.",
+                "A startup script that calls rabbitmqadmin to declare the queues before the service starts."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source explicitly states that mesh_core.Service abstracts away all RabbitMQ interaction. Developers never interact with RabbitMQ directly; connection setup, reconnect logic, channel lifecycle, and payload serialization are all handled by mesh_core."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Choosing the Right Cartel Shape",
+      "summary": "The three cartel shapes — MCP, AI, Hybrid — their surfaces, imports, and decision criteria.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "The Three Shapes: MCP, AI, and Hybrid",
+          "content": "Every cartel uses one or both of two **surfaces**:\n\n- **Publish** — expose capabilities you own (an external system, a domain operation) as tools that agents in other cartels can call.\n- **Consume** — run agents and workflows that call tools from the platform's catalog and use LLMs to make decisions.\n\n| Shape | Surfaces | You import | Reference cartels |\n|---|---|---|---|\n| **MCP cartel** | publish | `mcp-cartel` | `cartels/alanis`, `cartels/fortigate`, `cartels/proxmox`, `cartels/freshdesk` |\n| **AI cartel** | consume | `ai-core` (pulls `mcp-cartel` underneath, but publish surface stays unused) | `cartels/anomaly-detection`, `cartels/remediation-cartel` |\n| **Hybrid** | publish + consume | `ai-core` (both surfaces active) | None currently in production |\n\n> ⚠️ Important: No production cartel exercises the Hybrid shape today. The first team to ship a hybrid will be validating the shape end-to-end. The recommendation is to start with MCP Cartel to register tools, then add AI-Core for the AI side.",
+          "questions": [
+            {
+              "id": "q5",
+              "question": "Your team owns a SaaS API and other teams want to write AI workflows that call into it. Which cartel shape should you use?",
+              "answers": [
+                "AI cartel — it already imports ai-core which handles the catalog.",
+                "Hybrid — because the API needs both surfaces to be safe.",
+                "MCP cartel — wrap your system's operations as tools, register them, and stop there.",
+                "No cartel needed — use the Gateway REST API directly."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source explicitly states: 'MCP cartel is the right shape when your team owns a system and other teams want to write AI workflows that call into it.' You don't import ai-core and don't run agents yourself."
+            },
+            {
+              "id": "q6",
+              "question": "An AI cartel imports `ai-core`. According to the platform documentation, what happens to the publish surface in this case?",
+              "answers": [
+                "The publish surface is automatically activated and exposes a default health-check tool.",
+                "ai-core pulls mcp-cartel underneath, but the publishing surface stays unused.",
+                "ai-core replaces mcp-cartel entirely, so the publish surface is unavailable.",
+                "The publish surface must be manually disabled via a config flag."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source table notes that an AI cartel imports ai-core 'which already pulls mcp-cartel underneath, but the publishing surface stays unused' — the machinery is present but not exercised."
+            },
+            {
+              "id": "q7",
+              "question": "Which cartel shape is appropriate when an AI workflow needs to consume a system that only your team owns AND those capabilities should also be available to other teams independently?",
+              "answers": [
+                "MCP cartel only — other teams can call it and your workflow can be a separate internal process.",
+                "AI cartel only — ai-core handles all inter-cartel sharing automatically.",
+                "Hybrid — one service uses both surfaces rather than splitting into two cartels.",
+                "Two separate MCP cartels registered under different names."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source describes the Hybrid shape as the right choice when 'your AI workflow consumes a system that only your team owns AND those same capabilities should be available for other teams.' Rather than splitting into two cartels, one service uses both surfaces."
+            },
+            {
+              "id": "q8",
+              "question": "A support engineer is asked to review a new cartel that references `cartels/anomaly-detection` as its pattern. What shape is that cartel using?",
+              "answers": [
+                "MCP cartel (publish surface)",
+                "AI cartel (consume surface)",
+                "Hybrid (publish + consume)",
+                "Cannot be determined from cartel name alone"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source lists cartels/anomaly-detection and cartels/remediation-cartel as reference cartels for the AI cartel shape (consume surface). MCP reference cartels are alanis, fortigate, proxmox, and freshdesk."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Platform vs. Developer Responsibilities",
+      "summary": "What the platform handles automatically on the Publish and Consume surfaces, and what cartel developers must write themselves.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Publish Surface: What You Own vs. What the Platform Owns",
+          "content": "On the **Publish surface**, the split is:\n\n| Handled by the platform | You write |\n|---|---|\n| RabbitMQ command routing — each registered tool is reachable as a named RPC handler. | The tool function (async Python function) and its input/output schema. |\n| Tool registration with the Gateway catalog so AI cartels discover your tools via `GET /v1/tools`. | The service class that declares the tools it publishes. |\n| Authentication on incoming calls — Gateway validates the caller's JWT and propagates project/user identity before your function runs. | Domain authorization inside the tool when behavior depends on caller identity (e.g. 'this user can only read fleet X'). |\n| Per-call audit — every invocation recorded with caller, args, duration, and outcome in the Gateway's audit tables. | Domain-level events you want surfaced beyond audit (logs from your external system, custom metrics). |\n| Container build, secret distribution, OTel traces/metrics/logs. | The `Dockerfile`, `pyproject.toml`, and env vars for credentials your external system needs. |\n\n> ⚠️ Important: Authentication of incoming calls is handled by the platform, but **domain authorization** (e.g. per-user fleet access) is still your responsibility inside the tool function.",
+          "questions": [
+            {
+              "id": "q9",
+              "question": "A support ticket reports that an MCP cartel tool is being called by unauthorized users. Who is responsible for validating the caller's JWT on incoming tool calls?",
+              "answers": [
+                "The cartel developer — JWT validation must be coded in the tool function.",
+                "The Gateway — it validates the caller's JWT and propagates identity before the tool function runs.",
+                "RabbitMQ — it enforces ACLs on named RPC handlers.",
+                "The cartel's Dockerfile — credentials are scoped at container build time."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states the platform handles 'Authentication on incoming calls — the Gateway validates the caller's JWT and propagates project/user identity before your function runs.' The developer is only responsible for domain-level authorization inside the tool."
+            },
+            {
+              "id": "q10",
+              "question": "You are writing an MCP cartel. Which of the following is YOUR responsibility, not the platform's?",
+              "answers": [
+                "Routing tool calls over RabbitMQ.",
+                "Registering tools in the Gateway catalog so AI cartels can discover them.",
+                "Writing the async Python tool function and its input/output schema.",
+                "Recording per-call audit entries with caller, args, duration, and outcome."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "RabbitMQ routing, Gateway catalog registration, and per-call auditing are all handled by the platform. The developer writes the tool function itself and its input/output schema."
+            },
+            {
+              "id": "q11",
+              "question": "An MCP cartel developer wants to surface custom metrics from the external system it wraps. Where does this responsibility fall?",
+              "answers": [
+                "Platform — OTel metrics are automatically collected for all cartel operations.",
+                "Developer — domain-level events beyond audit (custom metrics, external system logs) are the developer's responsibility.",
+                "Platform — the audit pipeline captures all metrics via AuditHook.",
+                "Developer — the developer must also configure OTel traces manually."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source distinguishes between per-call audit (platform responsibility) and 'domain-level events you want surfaced beyond audit (logs from your external system, custom metrics)' — the latter is the developer's responsibility."
+            }
+          ]
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Consume Surface: What You Own vs. What the Platform Owns",
+          "content": "On the **Consume surface**, the split is:\n\n| Handled by the platform | You write |\n|---|---|\n| Gateway client wired from env — `self.gateway.tools.*` and `self.gateway.llm.*` available with auth, circuit breaker, and audit. | Activity code that calls into the Gateway. |\n| LLM model resolution — `self.llm_models[\"light\"]` and `self.llm_models[\"advanced\"]` routed through the Gateway; no provider names in your code. | Which tier to use per workflow phase, and the prompt content. |\n| Temporal worker, auto-started from `workflows` and `activity_classes` declared as class attributes. | The workflow classes (`@workflow.defn`) and activity classes (`CartelActivities` subclasses). |\n| Agent factory — `build_agent_with_tools(...)` fetches the tool catalog and registers each tool as a typed PydanticAI function. | Which skills to compose, which tools to allowlist, what structured output type to extract. |\n| Audit pipeline — `AuditHook` auto-prepended so OTel spans carry canonical `ai.session.*` / `ai.tool.*` attributes joinable with Gateway spans by `trace_id`. | Stamping the span at each phase boundary via `GovernanceContext.set_session(...)`. |\n| Per-cartel schema isolation when cartel owns tables — Postgres schema creation, sibling migrator service, `search_path` bootstrap. | YAML model definitions in `models/`, Alembic migrations in `migrations/`, and the cartel's `Makefile` hooks. |\n\nA **hybrid** cartel uses both tables; `mesh_core` infrastructure (commands, events, ORM, observability) is shared, so you don't pay for it twice.",
+          "questions": [
+            {
+              "id": "q12",
+              "question": "An AI cartel developer needs to call an LLM for a lightweight classification step. How should they reference the model in their code?",
+              "answers": [
+                "Use self.llm_models[\"light\"] — the platform resolves the provider and routes through the Gateway.",
+                "Import the OpenAI client directly and specify the model name in code.",
+                "Call self.gateway.llm.resolve(\"gpt-4o\") to get the correct endpoint.",
+                "Set the MODEL_NAME environment variable in the Dockerfile."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source states LLM model resolution is platform-handled via self.llm_models[\"light\"] and self.llm_models[\"advanced\"], routed through the Gateway with 'no provider names anywhere in your code.'"
+            },
+            {
+              "id": "q13",
+              "question": "A developer is troubleshooting why their AI cartel's OTel spans are not joining correctly with Gateway spans in the audit pipeline. What is likely missing?",
+              "answers": [
+                "The AuditHook was not auto-prepended — it must be manually registered in the workflow class.",
+                "The developer did not stamp the span at phase boundaries via GovernanceContext.set_session(...).",
+                "The Temporal worker was not started — workflows and activity_classes must be declared manually.",
+                "The agent factory was not called — build_agent_with_tools(...) must be invoked before any span is created."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states AuditHook is auto-prepended by the platform. However, the developer is responsible for 'Stamping the span at each phase boundary via GovernanceContext.set_session(...)' — missing this would break span joining."
+            },
+            {
+              "id": "q14",
+              "question": "An AI cartel owns its own Postgres tables. Which of the following is the platform's responsibility?",
+              "answers": [
+                "Writing YAML model definitions in models/ and Alembic migrations in migrations/.",
+                "Per-cartel schema isolation — Postgres schema creation, sibling migrator service, and search_path bootstrap.",
+                "Writing the cartel's Makefile hooks for the migration pipeline.",
+                "Defining the ORM models and their relationships."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source lists 'Per-cartel schema isolation when your cartel owns tables — Postgres schema creation, sibling migrator service, search_path bootstrap' as platform-handled. YAML model definitions, Alembic migrations, and Makefile hooks are the developer's responsibility."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
