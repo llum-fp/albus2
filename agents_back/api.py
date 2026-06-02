@@ -41,6 +41,7 @@ from pydantic import BaseModel
 
 from create_course import (
     AGENTS_DIR,
+    DEFAULT_MODEL,
     build_course_prompt,
     normalize_page_ids,
     run_claude,
@@ -95,9 +96,10 @@ def _run(session_id: str, prompt: str, resume: bool) -> dict:
 
     AGENTS_DIR.mkdir(parents=True, exist_ok=True)
     log.info("[%s] invoking claude (resume=%s) -> %s", session_id, resume, rel_path)
+    log.info("[%s] model: %s", session_id, DEFAULT_MODEL)
     log.debug("[%s] prompt: %s", session_id, prompt)
     started = time.monotonic()
-    rc = run_claude(prompt, AGENTS_DIR, session_id, resume=resume)
+    rc = run_claude(prompt, AGENTS_DIR, session_id, resume=resume, model=DEFAULT_MODEL)
     elapsed = time.monotonic() - started
     if rc != 0:
         log.error("[%s] claude exited with code %s after %.1fs", session_id, rc, elapsed)

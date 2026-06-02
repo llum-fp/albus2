@@ -1,0 +1,289 @@
+{
+  "title": "Unity Local Admin: Value & Customer Conversations",
+  "description": "A concise sales enablement course covering what the Unity Local Admin is, the customer problems it solves, its key capabilities, and how to position it confidently in front of hospitality and maritime customers. PII found in source screenshots has been excluded.",
+  "source": "Confluence page 1566081037, space CP (Captive Portal), title: Unity Local Admin — https://redevelopment-omniaccess.atlassian.net/wiki/spaces/CP/pages/1566081037/Unity+Local+Admin",
+  "language": "en",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "What Is the Unity Local Admin?",
+      "summary": "Establish the product definition, the problem it solves, and why it matters to the customer.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "The Problem It Solves",
+          "content": "Hospitality operators — hotel managers, cruise ship staff, vessel operators — need visibility and control over their guests' and crew's internet access without requiring deep technical expertise or direct access to low-level network infrastructure.\n\nThe **Unity Local Admin** is a dashboard built into the Unity GUI that acts as the **point of visibility and control for the Captive Portal (CP)**. It surfaces real-time information about who is connected, what profile they are on, how much quota they have consumed, and gives authorized staff the ability to create, manage, and delete user accounts — all from a single, purpose-built interface.\n\n**Key customer outcome:** Operational staff gain self-service control over guest and crew connectivity without needing to escalate to the technical team for routine day-to-day tasks.\n\n> Note: Unity Local Admin requires a qualifying Unity platform version to be installed — confirm with the technical team before deployment. In-depth technical configuration is handled by the Development team; this tool is designed for operational, not engineering, use.",
+          "images": [
+            {
+              "path": "images/e206eb13-a5c7-4c91-8060-9c67c1debf1d/1566081037-5-image-20260314-004354.png",
+              "caption": "Unity GUI showing the User Cruises Management section with Profiles, Accounts, User Tiers, User Types tabs — the Local Admin dashboard family."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q1",
+              "question": "A hotel manager asks what the Unity Local Admin actually is. What is the most accurate one-sentence description?",
+              "answers": [
+                "A low-level network configuration tool for IT engineers to manage routers and switches",
+                "A dashboard in the Unity GUI that provides visibility and control of the Captive Portal for operational staff",
+                "A standalone mobile app for guests to manage their own Wi-Fi sessions",
+                "A billing and invoicing module integrated with the property management system"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source defines Unity Local Admin as 'a dashboard in Unity thought to be a point of visibility and control of the Captive Portal.' It is operational, not a low-level engineering tool, and it is not guest-facing or a billing module."
+            },
+            {
+              "id": "q2",
+              "question": "A potential customer asks who the Unity Local Admin is designed for. What is the most accurate answer?",
+              "answers": [
+                "Network engineers who need to configure routers and switches at the infrastructure level",
+                "Guests and crew members who want to self-manage their own Wi-Fi sessions",
+                "Operational staff — hotel managers, cruise ship staff, and vessel operators — who need to manage connectivity without deep technical expertise",
+                "Billing and finance teams who need to reconcile guest charges"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The Local Admin is explicitly built for operational, non-technical staff. The source describes it as a tool for 'operational, not engineering, use,' enabling hotel managers and vessel staff to manage accounts without escalating to the technical or development team."
+            },
+            {
+              "id": "q3",
+              "question": "A customer's operations team is frustrated that they always need to call the IT department to resolve basic guest connectivity issues. Which Unity Local Admin benefit best addresses this pain?",
+              "answers": [
+                "It automates firmware updates so IT is never needed",
+                "It provides a self-service dashboard so operational staff can manage guest and crew accounts directly",
+                "It replaces the Captive Portal with a simpler authentication system",
+                "It integrates with CruisePAL to sync guest data automatically"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Local Admin is designed to give operational (non-technical) staff direct visibility and control over the Captive Portal, reducing dependency on the IT/development team for day-to-day tasks."
+            },
+            {
+              "id": "q4",
+              "question": "A customer asks who should be doing in-depth technical configuration of the Unity Local Admin. What is the correct answer?",
+              "answers": [
+                "The hotel manager, using the Local Admin dashboard",
+                "Any staff member, since the tool is fully self-explanatory",
+                "The Development (Devel) team, not operational staff",
+                "The guest directly, via the captive portal login page"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source warns explicitly: 'this is not a Unity Local Admin guide. The in-depth technical details should be provided by the Devel team.' Operational tasks are for staff; deep config is for engineers."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Monitoring Capabilities: What Staff Can See",
+      "summary": "Understand the real-time visibility the Local Admin gives operational teams, which is a key differentiator in the sales conversation.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "User Types, Tiers, and Profiles at a Glance",
+          "content": "One of the first questions a hotel or cruise operator asks is: **'Who is on my network and what are they entitled to?'** The Local Admin answers this directly.\n\n**User types and tiers:**\nThe system supports two user types — **Guest** and **Crew** — each with two tiers:\n\n| User Type | Tier 0 (default) | Tier 1 |\n|-----------|-----------------|--------|\n| Guest | Standard Room | VIP Room |\n| Crew | Regular Crew | Crew Executive |\n\n**Profiles** define what each tier is entitled to — quota, max devices, and price. Example profile values:\n\n| Profile | User Type | Max Devices | Quota |\n|---------|-----------|-------------|-------|\n| Guest (Standard) | Guest | 2 | 20 GB |\n| GuestVIP | Guest VIP | 2 | 20 GB |\n| Crew | Regular Crew | 2 | 2 GB |\n| CrewExecutive | Crew Executive | 2 | 5 GB |\n\nProfiles are a pre-configuration but can be individually reassigned per user — giving operators flexibility when a guest needs an upgrade or a crew member changes role.\n\n**Accounts dashboard:** The main monitoring view. Staff can search and filter by user type, see room assignments, profile, cruise start/end dates, and drill into a per-user detail view showing quota usage, connected devices, and top apps.",
+          "images": [
+            {
+              "path": "images/e206eb13-a5c7-4c91-8060-9c67c1debf1d/1566081037-19-image-20260312-102232.png",
+              "caption": "User Types dashboard showing Guest and Crew types, their associated tiers, and the number of active users per type."
+            },
+            {
+              "path": "images/e206eb13-a5c7-4c91-8060-9c67c1debf1d/1566081037-18-image-20260312-102551.png",
+              "caption": "Profiles dashboard grouped by guest type, showing quota, max devices, and profile levels for each tier."
+            },
+            {
+              "path": "images/e206eb13-a5c7-4c91-8060-9c67c1debf1d/1566081037-16-image-20260312-103330.png",
+              "caption": "Per-user detail view showing quota consumption, device list, profile information, and available user/profile/device actions."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q5",
+              "question": "A cruise operations manager asks how many user types the Unity Local Admin supports. What is the correct answer?",
+              "answers": [
+                "One type (Guest only)",
+                "Three types: Guest, Crew, and Staff",
+                "Two types: Guest and Crew, each with two tiers",
+                "Four types: Standard, VIP, Regular, and Executive"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source defines exactly two user types — Guest and Crew — each with two tiers (Tier 0 default and Tier 1 premium), giving four distinct entitlement levels in total."
+            },
+            {
+              "id": "q6",
+              "question": "A customer asks what information staff can see per individual user in the Accounts dashboard. Which answer best reflects the Local Admin's capability?",
+              "answers": [
+                "Only the user's name and room number",
+                "Room, profile, cruise dates, quota usage, connected devices, and top apps",
+                "Billing history and payment method only",
+                "Network packet-level traffic logs and firewall rules"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The per-user detail view shows: profile info, room, user tier, valid dates, quota consumed (GB used vs contracted), connected devices, and top apps in the last 48 hours. Billing and packet-level logs are not part of this dashboard."
+            },
+            {
+              "id": "q7",
+              "question": "A hotel manager wants to upgrade a specific VIP guest to a higher quota profile without changing all guest defaults. Can the Local Admin do this?",
+              "answers": [
+                "No — profiles are fixed per tier and cannot be changed per user",
+                "Yes — profiles can be individually reassigned to any user within the available options for their tier",
+                "Yes — but only by modifying the system-wide default profile for all guests",
+                "No — quota upgrades require a CruisePAL integration"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states: 'it is possible to assign different profiles to every tier' and the per-user view includes a 'Change Profile' action under PROFILE ACTIONS, confirming individual reassignment is supported."
+            },
+            {
+              "id": "q8",
+              "question": "A customer asks whether the Unity Local Admin includes purchasing and billing consolidation dashboards. How should you respond honestly?",
+              "answers": [
+                "Yes — Purchases and Consolidations are fully functional and ready for use",
+                "Yes — but only for crew accounts, not guest accounts",
+                "No — those dashboards exist in the interface but are currently not operational; the core monitoring and account management capabilities are what the tool delivers today",
+                "No — purchasing is handled entirely through CruisePAL and will never be part of the Local Admin"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source explicitly warns that 'Purchases and Consolidation dashboards DO NOT WORK.' An honest sales conversation acknowledges this limitation while directing the customer's attention to the capabilities that are fully functional: monitoring, user management, and per-user actions."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "User Management: Creating and Removing Accounts",
+      "summary": "Learn the three account creation methods and the delete capability — the hands-on control staff will use most frequently.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Three Ways to Create Users",
+          "content": "The Local Admin gives staff three distinct ways to provision access, covering the most common operational scenarios on a vessel or hotel property.\n\n**Important:** All three creation methods create users **directly in the Captive Portal database** — they do not use CruisePAL for authentication. This is a key point to clarify when customers ask about PMS integration.\n\n---\n\n**1. Create User by Room**\nBest for: a specific named guest or crew member who needs an account tied to a room.\n- Staff enter first name, last name, year of birth, room number, booking dates, user type, tier, and profile.\n- The system assigns a username automatically in the format `lu-<random hash>`.\n\n**2. Create User by Voucher**\nBest for: ad-hoc or temporary access where staff choose the username/password.\n- Staff enter name, a chosen login/username, a password, room, booking dates, type, tier, and profile.\n- Username format: `lu-<chosen-login>`.\n\n**3. Create Users by Voucher (Bulk)**\nBest for: pre-provisioning a set of access credentials for a new cruise or group — the most powerful option for large-scale operations.\n- Staff set a login prefix (seed), quantity, password length, and booking window.\n- The system generates all accounts at once and produces a **downloadable CSV** with login credentials that can be handed to the Hotel Manager.\n- Username format: `lu-<seed>-<number>` (e.g. `lu-guest-900`, `lu-guest-901`).\n\n> ⚠️ Important: When using Bulk Voucher creation, the **Login Prefix/Seed must be lowercase letters only**. There is a known bug with uppercase characters.",
+          "images": [
+            {
+              "path": "images/e206eb13-a5c7-4c91-8060-9c67c1debf1d/1566081037-14-image-20260312-104922.png",
+              "caption": "The 'Create User' dropdown showing the three account creation options: by Room, by Voucher, and by Voucher (Bulk)."
+            },
+            {
+              "path": "images/e206eb13-a5c7-4c91-8060-9c67c1debf1d/1566081037-8-image-20260312-104614.png",
+              "caption": "The Bulk Voucher creation form with login prefix, quantity, and password length settings."
+            },
+            {
+              "path": "images/e206eb13-a5c7-4c91-8060-9c67c1debf1d/1566081037-7-image-20260312-104633.png",
+              "caption": "Successful bulk creation confirmation screen with the downloadable CSV credentials button."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q9",
+              "question": "A cruise operator needs to pre-provision 200 guest accounts before embarkation and give the Hotel Manager a credential list. Which creation method is best suited?",
+              "answers": [
+                "Create User by Room — it handles large volumes automatically",
+                "Create User by Voucher — staff can enter each user one by one",
+                "Create Users by Voucher (Bulk) — generates all accounts at once and exports a downloadable CSV",
+                "None — bulk provisioning requires a separate integration with CruisePAL"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Bulk Voucher creation is designed exactly for this scenario: staff set a seed and quantity, the system creates all accounts, and generates a downloadable CSV that can be provided to the Hotel Manager."
+            },
+            {
+              "id": "q10",
+              "question": "A customer asks whether users created via the Local Admin are authenticated through CruisePAL. What is the accurate answer?",
+              "answers": [
+                "Yes — all three creation methods sync with CruisePAL automatically",
+                "No — users created via the Local Admin methods are stored directly in the Captive Portal database, not via CruisePAL",
+                "Only Room-based users use CruisePAL; Voucher users bypass it",
+                "Only for accounts created via the Bulk Voucher method — Room and standard Voucher users do use CruisePAL"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states clearly: 'The following methods do not use CruisePAL to authenticate the users. The users are created in the Captive Portal database.' This applies to all three methods."
+            },
+            {
+              "id": "q11",
+              "question": "A staff member is setting up bulk voucher accounts and types the prefix 'CREW2026'. What should they be warned about?",
+              "answers": [
+                "The prefix is too long and will be truncated",
+                "The bulk method only supports numeric prefixes",
+                "There is a known bug with uppercase letters in the Login Prefix/Seed — it must be lowercase",
+                "The prefix cannot contain numbers, only letters"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source contains an explicit warning: 'Please create the Login Prefix/Seed in lowercase letters — currently there is a bug with Uppercase.' The prefix 'CREW2026' contains uppercase and would trigger this bug."
+            },
+            {
+              "id": "q12",
+              "question": "A hotel reception team needs to create a named account for a VIP guest in room 501. Which creation method best fits this use case?",
+              "answers": [
+                "Create User by Voucher (Bulk) — it is faster for named users",
+                "Create User by Room — it links a specific first name, last name, and room number to the account",
+                "Create User by Voucher — it is the only method that supports VIP tier assignment",
+                "No Local Admin method supports named accounts; only CruisePAL can do this"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Create User by Room is the method designed for named accounts: it captures first name, last name, year of birth, and room number. All three methods support tier and profile assignment."
+            }
+          ]
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Removing Users and Managing Active Accounts",
+          "content": "Beyond creation, the Local Admin gives staff granular control over active accounts through the per-user detail view.\n\n**Available actions per user:**\n- **Extend Validity** — extend a guest's access beyond the original booking end date\n- **Block User** — temporarily suspend access without deleting the account\n- **Kick User** — disconnect a user's active session immediately\n- **Delete User** — permanently removes the user from both the CP database and from Ucopia; the account is gone from the entire system\n- **Change Profile** — reassign the user to a different data profile (e.g. upgrade a guest to a higher quota)\n- **Add/Remove Device** — manage the MAC addresses associated with the user's account\n\n**Selling point:** This level of per-user operational control means ship or hotel staff can respond to guest requests and incidents in real time — without escalating to IT.",
+          "images": [
+            {
+              "path": "images/e206eb13-a5c7-4c91-8060-9c67c1debf1d/1566081037-15-image-20260312-103920.png",
+              "caption": "Per-user view with the Delete User action highlighted under USER ACTIONS."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q13",
+              "question": "A customer asks what happens when staff click 'Delete User' in the Local Admin. What is the correct answer?",
+              "answers": [
+                "The user is temporarily blocked and can be restored later",
+                "The user is removed from the Captive Portal database only; Ucopia still retains the record",
+                "The user is deleted completely from both the CP database and from Ucopia",
+                "The user's devices are removed but the account profile is retained"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source states: 'This functionality deletes the user details in the CP Database and also in Ucopia. It deletes the user completely from the system.' This is a permanent, full removal."
+            },
+            {
+              "id": "q14",
+              "question": "A vessel operations manager says their biggest pain point is having to call IT every time a guest's internet access needs adjusting. Which Local Admin capability set most directly addresses this?",
+              "answers": [
+                "The Purchases and Consolidations dashboards for billing adjustments",
+                "Per-user actions including Block, Kick, Extend Validity, Change Profile, and Add/Remove Device — all without IT involvement",
+                "Automated profile assignment based on CruisePAL booking data",
+                "Bulk firmware updates for access points deployed across the vessel"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The per-user detail view provides a full set of operational actions (block, kick, extend, change profile, manage devices) that staff can perform directly — without IT involvement. Note: Purchases and Consolidations are not operational in the current release, and firmware/AP management is outside the scope of Local Admin."
+            },
+            {
+              "id": "q15",
+              "question": "A staff member wants to temporarily suspend a crew member's access while an investigation is ongoing, without permanently removing their account. Which action should they use?",
+              "answers": [
+                "Delete User — this is the only way to stop access",
+                "Kick User — it permanently removes all sessions and the account",
+                "Block User — it suspends access without deleting the account",
+                "Remove Device — removing all devices will effectively suspend access permanently"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source lists 'Block User' as a distinct action from 'Delete User'. Blocking suspends access without permanent removal, which is the appropriate action when the account may need to be reinstated."
+            },
+            {
+              "id": "q16",
+              "question": "Which of the following is a key sales message when positioning the Local Admin's user management capabilities to a hospitality operator?",
+              "answers": [
+                "It eliminates the need for any network hardware on the vessel",
+                "It gives operational staff real-time, self-service control over guest and crew connectivity without needing to escalate to the IT or development team",
+                "It replaces CruisePAL as the primary guest authentication system",
+                "It provides automated AI-driven quota optimization across all user tiers"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The core value proposition is operational self-service: staff can manage accounts, profiles, devices, and access in real time through the dashboard without IT dependency. The other options introduce capabilities not described in the source."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

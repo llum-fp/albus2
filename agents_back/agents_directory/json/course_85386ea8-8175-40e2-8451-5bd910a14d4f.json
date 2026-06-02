@@ -1,0 +1,266 @@
+{
+  "title": "Unity Local Admin: Usage and Benefits",
+  "description": "A focused sales-oriented course for customer-facing staff covering what the Unity Local Admin is, the value it delivers to maritime hospitality customers, and how its key features — monitoring, user management, and flexible provisioning — translate into real operational benefits. Sample/test data from the source GUI has been excluded; no PII is reproduced.",
+  "source": "Confluence page 1566081037, space CP (Captive Portal) — 'Unity Local Admin', author Luis Pico, last modified May 28, 2026. URL: https://redevelopment-omniaccess.atlassian.net/wiki/spaces/CP/pages/1566081037/Unity+Local+Admin",
+  "language": "en",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "What Is Unity Local Admin and Why It Matters",
+      "summary": "Introduce the product, explain the problem it solves, and articulate its core value proposition for maritime hospitality customers.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "The Problem and the Solution",
+          "content": "Maritime hospitality operations — cruise ships, yachts — need to manage internet access for hundreds of guests and crew members across a voyage. Without a dedicated tool, that means fragmented visibility, manual processes, and no easy way for on-site hotel or IT staff to act without escalating to a central team.\n\nThe **Unity Local Admin** is a set of dashboards built directly into the Unity GUI that gives authorized staff a **single point of visibility and control over the Captive Portal**. It requires Unity version 4.1.8 or higher.\n\nKey value in one sentence: *Unity Local Admin puts Captive Portal control in the hands of the people who need it — on board, in real time.*\n\n> ⚠️ Important: This tool is designed for operational use. For in-depth technical details and initial setup, the Development team should be engaged.",
+          "images": [
+            {
+              "path": "images/85386ea8-8175-40e2-8451-5bd910a14d4f/1566081037-5-image-20260314-004354.png",
+              "caption": "Unity GUI showing the User Cruises Management section with the Accounts dashboard listing active guest accounts"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q1",
+              "question": "A customer asks what Unity Local Admin actually is. Which answer best positions the product?",
+              "answers": [
+                "A standalone mobile app for guest self-service Wi-Fi login",
+                "A set of dashboards inside Unity that gives staff real-time visibility and control over the Captive Portal",
+                "A replacement for the Captive Portal that handles authentication independently",
+                "A reporting tool that exports usage statistics to a third-party BI platform"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source defines Unity Local Admin as 'a dashboard in Unity thought to be a point of visibility and control of the Captive Portal.' It lives inside Unity GUI — it is not standalone, not a replacement, and not a BI export tool."
+            },
+            {
+              "id": "q2",
+              "question": "Which Unity version is required at minimum to run the Local Admin?",
+              "answers": [
+                "Unity 3.0 or higher",
+                "Unity 4.0 or higher",
+                "Unity 4.1.8 or higher",
+                "Any Unity version with the Captive Portal module enabled"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source explicitly states: 'It is needed at least Unity version 4.1.8 to install the Local Admin in Unity.'"
+            },
+            {
+              "id": "q3",
+              "question": "A prospect's hotel manager wants to handle guest internet issues on board without calling IT. Which Unity Local Admin benefit is most relevant to highlight?",
+              "answers": [
+                "It provides a low-latency Wi-Fi network with automatic load balancing",
+                "It enables on-board staff to monitor and manage Captive Portal users directly through Unity, in real time",
+                "It integrates with the ship's PMS to sync room bookings automatically",
+                "It generates monthly compliance reports for regulatory purposes"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The core value of Unity Local Admin is giving on-site staff direct, real-time control of the Captive Portal through Unity dashboards, removing dependency on a central IT team for day-to-day user management."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Monitoring: Full Visibility Over Every User",
+      "summary": "Show how Unity Local Admin gives staff a clear, searchable view of all active users, their profiles, quota consumption, and connected devices — the operational transparency customers care about.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "User Types, Tiers, and Profiles",
+          "content": "Unity Local Admin organizes every connected person into a structured hierarchy that mirrors real ship operations:\n\n**User Types** — two types are defined: **Guest** and **Crew**.\n\n**User Tiers** — each type has two tiers:\n- Guest: Standard Room and VIP Room\n- Crew: Regular Crew and Crew Executive\n\n**Profiles** — each tier has a default profile that sets the commercial parameters: quota (data allowance), maximum number of devices, and pricing. Profiles can be reassigned per user, giving staff flexibility when a guest upgrades or a crew member's role changes.\n\nExample profile parameters (Scenic/Emerald configuration):\n- Guest / Standard Room: 2 devices, 20 GB quota\n- Guest / VIP Room: 2 devices, 20 GB quota\n- Crew / Regular Crew: 2 devices, 2 GB quota\n- Crew / Crew Executive: 2 devices, 5 GB quota\n\nThis structure means staff always know exactly what each person is entitled to — and can act on it.",
+          "images": [
+            {
+              "path": "images/85386ea8-8175-40e2-8451-5bd910a14d4f/1566081037-19-image-20260312-102232.png",
+              "caption": "User Types tab showing Guest (545 users, 2 tiers) and Crew (55 users, 2 tiers) with their associated tier names"
+            },
+            {
+              "path": "images/85386ea8-8175-40e2-8451-5bd910a14d4f/1566081037-18-image-20260312-102551.png",
+              "caption": "Profiles tab showing profile-to-tier mapping with quota, max devices, and pricing for each profile"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q4",
+              "question": "A customer success manager asks how many user types Unity Local Admin supports out of the box. What is the correct answer?",
+              "answers": [
+                "One — only Guest users are managed through the Local Admin",
+                "Three — Guest, Crew, and Staff",
+                "Two — Guest and Crew, each with two tiers",
+                "Four — Standard Guest, VIP Guest, Regular Crew, and Crew Executive, each a separate type"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source defines exactly 2 user types (Guest and Crew), each with 2 tiers, for a total of 4 tiers. The types and tiers are distinct concepts — there are 2 types, not 4."
+            },
+            {
+              "id": "q5",
+              "question": "A guest calls reception because they've used up their data. The hotel manager wants to give them a better plan for the rest of the voyage. What Unity Local Admin capability covers this?",
+              "answers": [
+                "Profiles can be changed per user independently of their tier's default, using the Change Profile action",
+                "The tier must be upgraded first; profiles cannot be changed separately",
+                "Only the Devel team can modify profile assignments for individual users",
+                "Profile changes require a full user deletion and re-creation"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source states that profile assignment is 'only a preconfiguration — it is possible to assign different profiles to every tier,' and the per-user detail view includes a PROFILE ACTIONS section with a 'Change Profile' option."
+            }
+          ]
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "The Accounts Dashboard: Your Command Center",
+          "content": "The **Accounts dashboard** is the operational hub of Unity Local Admin. It shows every active user in the system — searchable and filterable by Room, Username, or User Type.\n\nFor each account staff can see at a glance: name, room number, user type, profile, and booking start/end dates.\n\nClicking the **Eye button** on any row opens a per-user detail view with:\n- Full identity and status information\n- Profile details (quota contracted, profile level, controller profile)\n- **Live quota consumption** — a donut chart showing GB used vs. GB contracted and time to next renewal\n- Device list with connectivity status (online/offline, number of sessions)\n- Top Applications (48h) — which apps the user has been using\n\nThis depth of visibility allows on-board staff to answer guest complaints quickly, verify entitlements, and take action — all without involving a central operations team.",
+          "images": [
+            {
+              "path": "images/85386ea8-8175-40e2-8451-5bd910a14d4f/1566081037-17-image-20260312-103031.png",
+              "caption": "Accounts dashboard with search/filter bar and the Eye (detail) action highlighted in the Actions column"
+            },
+            {
+              "path": "images/85386ea8-8175-40e2-8451-5bd910a14d4f/1566081037-16-image-20260312-103330.png",
+              "caption": "Per-user detail view showing identity info, live quota donut, device list, and available user/profile/device actions"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q6",
+              "question": "A hotel manager says their biggest frustration is not knowing how much data a guest has left when they complain at reception. Which Unity Local Admin feature directly addresses this?",
+              "answers": [
+                "The Profiles tab, which lists the quota contracted for each profile type",
+                "The per-user detail view, which shows live quota consumption including GB used, GB contracted, and time to next renewal",
+                "The Docker service logs, which record all session data in real time",
+                "The Consolidations dashboard, which aggregates usage across all users"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The per-user detail view (accessed via the Eye button in the Accounts dashboard) shows a live quota donut chart with GB used, GB contracted, and the next renewal time. The Profiles tab only shows the contracted amount per profile type, not per-user live consumption. The Consolidations dashboard does not work on version 4.1.8."
+            },
+            {
+              "id": "q7",
+              "question": "A customer asks whether staff can search for a specific guest's account without scrolling through hundreds of rows. What should you tell them?",
+              "answers": [
+                "No — the Accounts dashboard only shows a full alphabetical list with no filtering",
+                "Yes — the Accounts dashboard includes a search bar with filters for Room, User, and Type",
+                "Yes — but only administrators with SUPERADMIN role can access the search function",
+                "Yes — search is available, but only by username, not by room number"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source describes the Accounts dashboard as having a 'Search bar with All / Room / User / Type filters at the top,' making targeted lookup straightforward for any staff member with access."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "User Management: Creating and Removing Users",
+      "summary": "Walk through the three ways to provision users and how to remove them — and explain why these capabilities matter for the customer's day-to-day operations.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Three Ways to Create Users — and When to Use Each",
+          "content": "Unity Local Admin offers three user-creation methods, all of which provision users directly in the **Captive Portal database** — bypassing CruisePAL. This is important: it means these users can be created for anyone who needs internet access, whether or not they are registered in the ship's PMS.\n\n**1. Create User by Room**\nBest for: on-board guests who need an account tied to their cabin.\n- Staff enter first name, last name, year of birth, room number, booking dates, and select user type/tier/profile.\n- The system auto-generates a login in the format `@lu-<random hex>` — no need to define credentials.\n- Use this when the guest does not need to remember a specific username.\n\n**2. Create User by Voucher**\nBest for: giving a specific person a named credential they can use to log in.\n- Staff define the login (username) and password explicitly, in addition to booking and profile details.\n- The account username is stored as `@lu-<chosen-login>`.\n- Use this for VIP guests, crew with special access needs, or any situation where a memorable credential is needed.\n\n**3. Create Users by Voucher (Bulk)**\nBest for: pre-provisioning a batch of accounts — for example, setting up all guest vouchers before a cruise departs.\n- Staff set a Login Prefix/Seed, a starting number, and a quantity. The system generates all accounts at once.\n- A **CSV file with all login/password pairs can be downloaded** and handed to the Hotel Manager (or the Hotel Manager can download it directly).\n- Use this to save time and eliminate manual account-by-account creation for large groups.\n\n> ⚠️ Important: When using Bulk creation, the Login Prefix/Seed **must be entered in lowercase letters**. There is a known bug with uppercase input that causes errors.",
+          "images": [
+            {
+              "path": "images/85386ea8-8175-40e2-8451-5bd910a14d4f/1566081037-14-image-20260312-104922.png",
+              "caption": "Create User dropdown in the Accounts dashboard showing the three creation options"
+            },
+            {
+              "path": "images/85386ea8-8175-40e2-8451-5bd910a14d4f/1566081037-8-image-20260312-104614.png",
+              "caption": "Bulk voucher creation form showing Login Prefix/Seed field (annotated LOWERCASE), quantity settings, and the two-step Generate/Review flow"
+            },
+            {
+              "path": "images/85386ea8-8175-40e2-8451-5bd910a14d4f/1566081037-7-image-20260312-104633.png",
+              "caption": "Confirmation screen after bulk creation showing the Download Credentials (CSV) button"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q8",
+              "question": "A cruise line wants to pre-load 200 guest vouchers before embarkation and give the Hotel Manager a list of credentials. Which creation method is the right recommendation?",
+              "answers": [
+                "Create User by Room — because it ties each account to a cabin number",
+                "Create User by Voucher — so the manager can define each username one by one",
+                "Create Users by Voucher (Bulk) — it generates all accounts at once and produces a downloadable CSV for the Hotel Manager",
+                "This scenario is not supported; user accounts must be synced from the PMS"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Bulk voucher creation is designed exactly for this: generating a batch of credentials in one step and producing a CSV that 'you can download and provide to the Hotel Manager (or he can download it himself).' The other methods are for individual account creation."
+            },
+            {
+              "id": "q9",
+              "question": "A customer's VIP guest needs a login they can remember easily ('John' as the username). Which method should the on-board team use?",
+              "answers": [
+                "Create User by Room — it auto-generates a friendly username based on the guest's name",
+                "Create User by Voucher — staff explicitly set the login and password, resulting in an account like @lu-John",
+                "Create Users by Voucher (Bulk) — it allows custom usernames if the prefix matches the first name",
+                "Change Profile — profile assignment includes a custom username option"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Create User by Voucher lets staff define the login and password explicitly. The resulting username follows the format @lu-<chosen-login>, so setting 'John' as the login produces @lu-John. The by-Room method auto-generates a random hex login, which would not be memorable."
+            },
+            {
+              "id": "q10",
+              "question": "A prospect's operations team asks whether Unity Local Admin can create users independently of their PMS. What is the accurate answer?",
+              "answers": [
+                "No — all user creation must flow through CruisePAL for authentication",
+                "Yes — all three creation methods provision users directly in the Captive Portal database, bypassing CruisePAL",
+                "Yes — but only the Bulk method bypasses CruisePAL; Room and Voucher methods still require PMS sync",
+                "It depends on the vessel type — Viking vessels require PMS integration, yachts do not"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states that the creation methods 'do not use CruisePAL to authenticate the users. The users are created in the Captive Portal database.' This applies to all three methods, not just Bulk."
+            },
+            {
+              "id": "q11",
+              "question": "During a demo, a prospect's IT lead asks about a known limitation of the Bulk voucher creation. What should you proactively disclose?",
+              "answers": [
+                "Bulk creation is limited to 10 users per batch",
+                "The Login Prefix/Seed must be entered in lowercase letters — there is a known bug with uppercase input",
+                "Bulk-created users cannot have their profiles changed after creation",
+                "The CSV download is only available to SUPERADMIN role users"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source includes an explicit warning: 'please create the Login Prefix/Seed in lowercase letters — currently there is a bug with Uppercase.' Disclosing this honestly builds trust and sets accurate expectations."
+            }
+          ]
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Removing Users and Additional User Actions",
+          "content": "When a guest departs or an account needs to be removed, Unity Local Admin provides a **Delete User** action accessible from the per-user detail view.\n\nCritical point for customers: **deletion is complete and synchronized.** It removes the user from both the Captive Portal database and from Ucopia (the underlying authentication controller). There is no risk of ghost accounts lingering in a secondary system.\n\nBeyond deletion, the per-user detail view also exposes additional actions that give on-board staff real operational control:\n- **Extend Validity** — prolong a user's booking period without re-creating the account\n- **Block User** — suspend access without deleting the account\n- **Kick User** — disconnect the user's active session immediately\n- **Add / Remove Device** — manage which devices are authorized for a user\n- **Change Profile** — upgrade or downgrade the user's data plan on the spot\n\nThis breadth of actions means the hotel or IT staff can handle the full lifecycle of a user — from creation to departure — entirely within Unity Local Admin.",
+          "images": [
+            {
+              "path": "images/85386ea8-8175-40e2-8451-5bd910a14d4f/1566081037-15-image-20260312-103920.png",
+              "caption": "Per-user detail view with Delete User highlighted in the USER ACTIONS sidebar, alongside Extend Validity, Block User, Kick User, and device management options"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q12",
+              "question": "A customer is concerned that deleting a user in Unity Local Admin might leave orphaned records in Ucopia, requiring a separate cleanup step. How do you respond?",
+              "answers": [
+                "That concern is valid — staff would need to also log in to Ucopia separately to remove the record",
+                "Deletion through Unity Local Admin removes the user from both the Captive Portal database and Ucopia simultaneously — no separate step is needed",
+                "Unity Local Admin only marks the user as inactive; Ucopia records are cleaned up during the nightly sync",
+                "Ucopia records are managed exclusively by the Devel team and cannot be touched from the Local Admin"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source explicitly states that the Delete User functionality 'deletes the user details in the CP Database and also in Ucopia. Deletes the user completely from the system.' There is no separate cleanup step."
+            },
+            {
+              "id": "q13",
+              "question": "A guest is abusing the network. The hotel manager wants to stop their access immediately without permanently removing their account. Which action in Unity Local Admin is most appropriate?",
+              "answers": [
+                "Delete User — it is the only way to revoke access",
+                "Remove Device — removing all devices will effectively block access",
+                "Block User — it suspends access while keeping the account intact, or Kick User to disconnect the active session immediately",
+                "Change Profile — switch them to a profile with zero quota"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The per-user detail view provides both 'Block User' (suspend access without deletion) and 'Kick User' (disconnect the active session immediately). These are the appropriate tools for temporary action. Delete User would permanently remove the account, and Change Profile to zero-quota is a workaround, not the intended tool."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

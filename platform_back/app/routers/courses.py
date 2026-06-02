@@ -56,6 +56,11 @@ def read_course(
 @router.post("/", status_code=201)
 def create(body: CourseRequest, db: Session = Depends(get_db)):
     payload = body.model_dump(exclude_none=True)
+    # agents_back expects a list of page ids under `page_ids`; `page_id` must be
+    # a scalar. body.page_id is always normalized to a list, so remap it.
+    page_ids = payload.pop("page_id", None)
+    if page_ids:
+        payload["page_ids"] = page_ids
     try:
         result = create_course(payload)
     except Exception as exc:

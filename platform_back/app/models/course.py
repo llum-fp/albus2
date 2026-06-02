@@ -19,7 +19,7 @@ class Course(Base):
     json_path: Mapped[str | None] = mapped_column(String(1000))
     status: Mapped[str] = mapped_column(String(50), default="pending")
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now(), server_default=func.now())
 
     user: Mapped["User | None"] = relationship("User", back_populates="courses")
