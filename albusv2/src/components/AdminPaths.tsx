@@ -5,7 +5,7 @@ import {
   adminFetchCourses,
   type AdminPath, type AdminCourse, type PathCourse,
 } from "../api";
-import { Plus, Pencil, Trash, X, Check, ChevronDown, ChevronRight } from "./icons";
+import { Plus, Pencil, Trash, X, Check, ChevronUp, ChevronDown, ChevronRight, Search } from "./icons";
 
 type Modal =
   | { kind: "create" }
@@ -190,105 +190,144 @@ function PathFormModal({
   );
 }
 
-/* ── Manage courses in path modal ─────────────────────────────────────────── */
+/* ── Manage courses in path modal (two-column picker) ─────────────────────── */
 function ManageCoursesModal({ path, onClose }: { path: AdminPath; onClose: () => void }) {
-  const [courses, setCourses] = useState<PathCourse[]>(
+  const [selected, setSelected] = useState<PathCourse[]>(
     [...path.courses].sort((a, b) => a.position - b.position)
   );
   const [allCourses, setAllCourses] = useState<AdminCourse[]>([]);
+  const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    adminFetchCourses().then((c) => setAllCourses(c.filter((x) => x.published))).catch(() => {});
-  }, []);
+    adminFetchCourses()
+      .then((c) => {
+        // Only published courses matching the path's profile (or all if no profile)
+        const filtered = c.filter((x) => {
+          if (!x.published) return false;
+          if (!path.profile) return true;
+          return (x.profile ?? "").toLowerCase() === path.profile.toLowerCase();
+        });
+        setAllCourses(filtered);
+      })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const addCourse = (sessionId: string) => {
-    if (courses.find((c) => c.course_session_id === sessionId)) return;
-    setCourses((c) => [...c, { course_session_id: sessionId, position: c.length + 1 }]);
+  const selectedIds = new Set(selected.map((c) => c.course_session_id));
+
+  const available = allCourses.filter((c) => {
+    if (!c.session_id || selectedIds.has(c.session_id)) return false;
+    if (!search.trim()) return true;
+    return (c.title ?? "").toLowerCase().includes(search.toLowerCase());
+  });
+
+  const add = (sessionId: string) => {
+    if (selectedIds.has(sessionId)) return;
+    setSelected((cur) => [...cur, { course_session_id: sessionId, position: cur.length + 1 }]);
   };
 
   const remove = (sessionId: string) => {
-    setCourses((c) =>
-      c
-        .filter((x) => x.course_session_id !== sessionId)
-        .map((x, i) => ({ ...x, position: i + 1 }))
+    setSelected((cur) =>
+      cur.filter((x) => x.course_session_id !== sessionId).map((x, i) => ({ ...x, position: i + 1 }))
     );
   };
 
   const move = (idx: number, dir: -1 | 1) => {
-    const next = [...courses];
+    const next = [...selected];
     const swap = idx + dir;
     if (swap < 0 || swap >= next.length) return;
     [next[idx], next[swap]] = [next[swap], next[idx]];
-    setCourses(next.map((c, i) => ({ ...c, position: i + 1 })));
+    setSelected(next.map((c, i) => ({ ...c, position: i + 1 })));
   };
 
   const save = async () => {
     setSaving(true);
     try {
-      await adminSetPathCourses(path.id, courses);
+      await adminSetPathCourses(path.id, selected);
       onClose();
     } catch {
       setSaving(false);
     }
   };
 
-  const usedIds = new Set(courses.map((c) => c.course_session_id));
-  const available = allCourses.filter((c) => c.session_id && !usedIds.has(c.session_id));
+  const courseTitle = (sessionId: string) =>
+    allCourses.find((c) => c.session_id === sessionId)?.title ?? sessionId;
 
   return (
     <div className="admin-overlay" role="dialog" aria-modal="true">
-      <div className="admin-modal admin-modal-wide">
+      <div className="admin-modal wide">
         <button className="icon-btn modal-close" onClick={onClose}><X size={16} /></button>
         <h3>Manage courses — {path.title}</h3>
-        <p className="modal-sub">Set the order learners will follow.</p>
+        <p className="modal-sub">
+          Click a course on the left to add it. Reorder with the arrows on the right.
+          {path.profile && <> Only <strong>{capitalize(path.profile)}</strong> courses are shown.</>}
+        </p>
 
-        {courses.length === 0 ? (
-          <p className="muted">No courses yet. Add one below.</p>
-        ) : (
-          <div className="path-course-list">
-            {courses.map((c, i) => {
-              const meta = allCourses.find((x) => x.session_id === c.course_session_id);
-              return (
-                <div key={c.course_session_id} className="path-course-row">
-                  <span className="path-course-pos">{c.position}</span>
-                  <span className="path-course-title">{meta?.title ?? c.course_session_id}</span>
-                  <div className="path-course-actions">
-                    <button className="icon-btn" disabled={i === 0} onClick={() => move(i, -1)} title="Move up">▲</button>
-                    <button className="icon-btn" disabled={i === courses.length - 1} onClick={() => move(i, 1)} title="Move down">▼</button>
-                    <button className="icon-btn icon-btn-danger" onClick={() => remove(c.course_session_id)} title="Remove"><X size={13} /></button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {available.length > 0 && (
-          <div className="field" style={{ marginTop: "1rem" }}>
-            <label>Add a course</label>
-            <div className="select-wrap">
-              <select
-                className="select"
-                value=""
-                onChange={(e) => { if (e.target.value) addCourse(e.target.value); }}
-              >
-                <option value="">— select a published course —</option>
-                {available.map((c) => (
-                  <option key={c.session_id} value={c.session_id ?? ""}>
-                    {c.title ?? c.session_id}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="select-chevron" />
+        <div className="picker-wrap">
+          {/* Left: available courses */}
+          <div className="picker-col">
+            <div className="picker-col-head">Available</div>
+            <div className="picker-search">
+              <Search size={13} className="picker-search-icon" />
+              <input
+                className="picker-search-input"
+                placeholder="Filter courses…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="picker-col-body">
+              {available.length === 0 ? (
+                <p className="picker-empty">
+                  {search ? "No matches." : selectedIds.size === allCourses.length ? "All courses added." : "No courses available."}
+                </p>
+              ) : (
+                available.map((c) => (
+                  <button key={c.session_id} className="picker-item" onClick={() => add(c.session_id!)}>
+                    <div className="picker-item-info">
+                      <span className="picker-item-title">{c.title ?? c.session_id}</span>
+                      {c.profile && <span className="picker-item-meta">{capitalize(c.profile)}</span>}
+                    </div>
+                    <ChevronRight size={14} className="picker-item-arrow" />
+                  </button>
+                ))
+              )}
             </div>
           </div>
-        )}
+
+          {/* Right: selected courses in order */}
+          <div className="picker-col">
+            <div className="picker-col-head">In this path ({selected.length})</div>
+            <div className="picker-col-body">
+              {selected.length === 0 ? (
+                <p className="picker-empty">No courses yet. Add from the left.</p>
+              ) : (
+                selected.map((c, i) => (
+                  <div key={c.course_session_id} className="picker-selected-row">
+                    <span className="picker-pos">{c.position}</span>
+                    <span className="picker-selected-title">{courseTitle(c.course_session_id)}</span>
+                    <div className="picker-selected-actions">
+                      <button className="icon-btn" disabled={i === 0} onClick={() => move(i, -1)} title="Move up">
+                        <ChevronUp size={13} />
+                      </button>
+                      <button className="icon-btn" disabled={i === selected.length - 1} onClick={() => move(i, 1)} title="Move down">
+                        <ChevronDown size={13} />
+                      </button>
+                      <button className="icon-btn icon-btn-danger" onClick={() => remove(c.course_session_id)} title="Remove">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
 
         <div className="modal-actions">
           <button className="btn btn-secondary" onClick={onClose} disabled={saving}>Cancel</button>
           <button className="btn btn-primary" onClick={save} disabled={saving}>
-            {saving ? "Saving…" : "Save order"}
+            {saving ? "Saving…" : "Save"}
           </button>
         </div>
       </div>
