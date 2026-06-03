@@ -83,7 +83,7 @@ function AdminSettings() {
           <p className="sub">Platform configuration.</p>
         </div>
       </div>
-      <div className="admin-empty" style={{ flexDirection: "column", gap: "1rem" }}>
+      <div className="admin-empty" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
         <img
           src="https://c.tenor.com/KHkxIgIlHAgAAAAC/magic-spongebob.gif"
           alt="Nothing to see here"
