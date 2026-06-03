@@ -27,7 +27,27 @@ the **frontend** and the **API contract** it relies on.
 
 ## Run it
 
-Three processes (each in its own terminal), from the repo root:
+### First time only — seed the database
+
+After cloning, the SQLite database is empty (no users). Run the seed script once to create the default users:
+
+```bash
+cd platform_back && ../.venv/bin/python seed.py
+```
+
+This creates three users:
+
+| Email | Name | Role |
+|-------|------|------|
+| `test1@example.com` | Severus | **Admin** |
+| `test2@example.com` | Hermione | Technical |
+| `admin@example.com` | Dobby | Sales |
+
+Select **Severus** at login to access the Admin panel.
+
+> If you already ran the backends and can't reach the Admin panel, clear `localStorage["albus_user"]` in your browser's DevTools (Application → Local Storage) and reload.
+
+### Three processes (each in its own terminal), from the repo root
 
 ```bash
 # 1. platform_back — FastAPI + SQLite, serves the frontend /api/* surface
