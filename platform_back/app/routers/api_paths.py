@@ -22,7 +22,7 @@ def _course_summary(session_id: str) -> dict:
     meta = read_course_meta(path)
     module_count, lesson_count = course_counts(path)
     return {
-        "id": session_id,
+        "id": session_to_stem(session_id),  # filename-stem format, matches /api/courses/{id}
         "title": meta.get("title") or "",
         "description": meta.get("description") or "",
         "language": meta.get("language"),
