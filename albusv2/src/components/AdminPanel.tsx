@@ -83,8 +83,13 @@ function AdminSettings() {
           <p className="sub">Platform configuration.</p>
         </div>
       </div>
-      <div className="admin-empty">
-        Branding follows the OmniAccess design tokens. No editable settings yet.
+      <div className="admin-empty" style={{ flexDirection: "column", gap: "1rem" }}>
+        <img
+          src="https://c.tenor.com/KHkxIgIlHAgAAAAC/magic-spongebob.gif"
+          alt="Nothing to see here"
+          style={{ width: 200, borderRadius: "0.75rem" }}
+        />
+        <span>No settings yet. Check back later.</span>
       </div>
     </>
   );
