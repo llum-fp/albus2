@@ -20,6 +20,14 @@ dist/
 
 # Data — keep sample courses, ignore generated ones
 
+# Database — never commit, regenerate with seed.py
+platform_back/platform.db
+
+# Local server script and its runtime files
+server.sh
+.server.pids
+.logs/
+
 # Local Confluence page-id index (rebuilt on demand; cache only)
 platform_back/page_index.json
 

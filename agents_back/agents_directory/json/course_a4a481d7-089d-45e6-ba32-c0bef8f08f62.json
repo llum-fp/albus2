@@ -1,0 +1,386 @@
+{
+  "title": "Unity Local Admin: Selling Onboard Guest Access Management",
+  "description": "A sales-focused course on Unity Local Admin — the onboard dashboard that gives hotel teams and ETOs full visibility and control over guest and crew connectivity, without calling IT. Covers what it is, the value it delivers, how to position it, and what to know before a conversation.",
+  "source": "Confluence page 1566081037, space CP (Captive Portal), Unity Local Admin, last modified May 28 2026.",
+  "language": "en",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "What Unity Local Admin Is and Why It Matters",
+      "summary": "Place Unity Local Admin in the OmniAccess portfolio, understand the problem it solves for operators, and learn how to open the conversation with the right personas.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "The Problem: Managing Guest Connectivity Without a Tool",
+          "content": "## The status quo — and why it hurts\n\nOn a cruise ship or superyacht, dozens or hundreds of guests and crew members connect to the onboard network every day. Without a dedicated management tool, every request — \"my internet isn't working,\" \"can you change my plan,\" \"I need extra bandwidth for a video call\" — lands on the ETO or IT officer. They have to log into a backend system, contact the NOC, or wait for shore-side support. Guests wait. Crew frustration grows.\n\nFor a boutique cruise operator, this creates a real operational problem: hotel staff (front desk, guest relations) are the first line of contact for guests, but they have no visibility into the network — they can't answer basic questions, let alone fix anything. The ETO becomes a helpdesk for issues that shouldn't require a network engineer.\n\n## Where Unity Local Admin fits\n\nUnity Local Admin is a set of dashboards built directly into the **UNITY platform** — OmniAccess's single management interface for all onboard digital services. It is the **guest access management** layer of the Captive Portal: the tool that lets on-vessel staff monitor every connected user, adjust access, and onboard new guests — all from a single browser-based screen, without backend access or technical training.\n\nIn the OmniAccess portfolio map it sits under **Network — NaaS**, specifically in the **Captive Portal** capability. It's not a separate product to sell — it's the operator-facing control layer that makes the Captive Portal manageable on a day-to-day basis by the people who are actually on board.\n\n## Who benefits most\n\n| Persona | The frustration it removes |\n|---|---|\n| ETO / IT Officer | No longer the manual helpdesk for every connectivity question |\n| Hotel Manager / Front Desk | Can see, create and adjust guest accounts without calling IT |\n| Captain | Fewer complaints escalated to the bridge; visible, managed experience |\n| IT Fleet Manager | Fleet-wide consistency in how guest access is provisioned and monitored |\n\n## A sentence you can use\n\n\"Unity Local Admin gives your hotel team and ETO a single screen where they can see every connected guest and crew member, fix common issues instantly, and onboard hundreds of guests in minutes — without involving shore-side support.\"\n\n## Discovery questions\n\n- \"Today, when a guest reports a connectivity problem, who handles it — and how long does it take?\"\n- \"Can your hotel staff currently see which guests are connected and how much of their data allowance they've used?\"\n- \"How do you currently onboard guest internet access at the start of a cruise?\"",
+          "images": [
+            {
+              "path": "images/a4a481d7-089d-45e6-ba32-c0bef8f08f62/1566081037-5-image-20260314-004354.png",
+              "caption": "Unity GUI — the User Cruises Management section showing the Accounts dashboard with 479 guest and crew accounts, each with room, profile, and booking dates visible at a glance."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q1-1-1",
+              "question": "A prospect asks: 'What exactly is Unity Local Admin?' What is the most accurate and sales-relevant answer?",
+              "answers": [
+                "It is a set of dashboards inside the UNITY platform that lets on-vessel staff monitor and manage guest and crew network access without needing backend or technical expertise.",
+                "It is a separate OmniAccess product that replaces the Captive Portal and handles all network routing for the vessel.",
+                "It is a shore-side tool used by the OmniAccess NOC to monitor vessels remotely.",
+                "It is a mobile app that guests download to manage their own internet vouchers."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "Unity Local Admin is described in the source as a dashboard within Unity that acts as a point of visibility and control for the Captive Portal — operated by on-vessel staff, not a standalone product or a NOC tool."
+            },
+            {
+              "id": "q1-1-2",
+              "question": "Which OmniAccess solution area does Unity Local Admin belong to?",
+              "answers": [
+                "Cybersecurity — SOC and threat detection",
+                "Connectivity — nextGen Fusion multi-orbit plans",
+                "Network — NaaS, specifically the Captive Portal capability",
+                "IoT & Applications — remote vessel management"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The extract identifies Unity Local Admin as part of the Captive Portal space within Unity, and the OmniAccess context file places Captive Portal under the Network / NaaS solution area."
+            },
+            {
+              "id": "q1-1-3",
+              "question": "A Hotel Manager on a boutique cruise ship says: 'Right now, every time a guest has a connectivity question, we have to call the ETO.' Which Unity Local Admin benefit is most directly relevant here?",
+              "answers": [
+                "The ability to upgrade the Unity platform remotely without vessel downtime.",
+                "The ability for hotel staff to see and manage guest accounts from the UNITY dashboard, removing the ETO from routine requests.",
+                "The ability to run security scans on guest devices before allowing network access.",
+                "The ability to choose which satellite network each guest is routed through."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Unity Local Admin gives non-technical hotel staff direct visibility and control over guest accounts, removing the ETO as the bottleneck for routine connectivity management."
+            },
+            {
+              "id": "q1-1-4",
+              "question": "Which discovery question best surfaces the pain that Unity Local Admin is designed to solve?",
+              "answers": [
+                "'How many satellite providers does your current connectivity plan include?'",
+                "'Do you have an active cybersecurity policy for your vessel network?'",
+                "'Today, when a guest reports a connectivity problem, who handles it and how long does it take?'",
+                "'Is your vessel planning a dry-dock refit in the next 12 months?'"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Unity Local Admin addresses the operational burden of handling guest connectivity issues. Asking who handles those requests and how long it takes surfaces the exact pain point the product resolves."
+            }
+          ]
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "The Dashboard: What You See and What You Can Do",
+          "content": "## One screen, full picture\n\nThe core of Unity Local Admin is the **Accounts dashboard** — a live list of every guest and crew member connected on the vessel. At a glance, hotel staff or the ETO can see:\n\n- **Name and room number** — who is connected and where they are staying.\n- **User type and tier** — Guest (Standard Room or VIP Room) or Crew (Regular Crew or Crew Executive).\n- **Profile** — the specific connectivity package applied to that user (defines their data quota and how many devices they can connect).\n- **Booking start and end date** — so staff can spot expired accounts before a guest does.\n\nWith a click on the **detail view** for any user, staff get a deeper picture: current data usage (quota used vs. total), which devices are connected, recent app traffic over the past 48 hours, account status (active or blocked), and the exact profile being applied. They can take action directly from this screen.\n\n## User types and tiers: the access structure\n\nThe system organises access into two dimensions:\n\n**User types:** Guest and Crew. Each type has two tiers:\n- Guest: **Standard Room** and **VIP Room**\n- Crew: **Regular Crew** and **Crew Executive**\n\nEach tier has a default **profile** — a pre-configured package that defines data quota and maximum number of devices. For example, a VIP Room guest might have a larger quota than a Standard Room guest, and a Crew Executive gets more data than Regular Crew.\n\nThese profiles are not locked — they can be adjusted per user, giving operators the flexibility to offer differentiated service tiers (think \"premium connectivity\" as an upsell) without requiring a technical configuration change.\n\n## For the seller: how to frame this\n\n- **To an IT Fleet Manager:** \"Every account, every quota, every device — visible in one place, with a consistent structure across your fleet.\"\n- **To a Captain:** \"Your hotel team can answer connectivity questions themselves. Guests don't come to the bridge.\"\n- **To an Owner's Rep on a superyacht:** \"Owner and family accounts can be set up with a dedicated tier — full visibility, private, separate from crew.\"\n\n⚠️ **Important:** The Purchases and Consolidations dashboards that appear in the navigation menu **do not work** in the current version (Unity 4.1.8). If a prospect asks about billing or package-purchase features, be clear that those dashboards are not yet functional. Do not position them as available capabilities.",
+          "images": [
+            {
+              "path": "images/a4a481d7-089d-45e6-ba32-c0bef8f08f62/1566081037-19-image-20260312-102232.png",
+              "caption": "User Types tab showing the two user types (Guest and Crew) with their associated tiers, default tiers, and current user counts."
+            },
+            {
+              "path": "images/a4a481d7-089d-45e6-ba32-c0bef8f08f62/1566081037-18-image-20260312-102551.png",
+              "caption": "Profiles tab showing each profile's user type, tier level, data quota, and maximum number of devices — the configurable access packages applied to users."
+            },
+            {
+              "path": "images/a4a481d7-089d-45e6-ba32-c0bef8f08f62/1566081037-16-image-20260312-103330.png",
+              "caption": "Per-user detail view showing usage data (quota donut), connected devices, booking validity dates, and available actions — all accessible with one click from the Accounts list."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q1-2-1",
+              "question": "An IT Fleet Manager asks what information is visible for each connected user in the Accounts dashboard. What is the most complete and accurate answer?",
+              "answers": [
+                "Only the user's name and room number — detailed usage data requires a separate NOC query.",
+                "Name, room, user type and tier, assigned profile, booking start and end date — with a per-user drill-down showing quota used, connected devices, and app traffic.",
+                "Name, room, and current satellite signal strength — so staff can diagnose connectivity issues.",
+                "Only users who are currently active — historical or expired accounts are automatically removed."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Accounts dashboard shows name, room, type, profile, and dates. The per-user detail view adds quota usage, device list, and 48-hour app traffic, all accessible directly from the dashboard."
+            },
+            {
+              "id": "q1-2-2",
+              "question": "A prospect on a boutique cruise line wants to offer better connectivity packages to VIP guests. How does the Unity Local Admin profile system support this?",
+              "answers": [
+                "VIP guests can self-manage their own profiles via a separate guest-facing app.",
+                "Each user tier has a default profile defining quota and device limits, and profiles can be adjusted per user — allowing differentiated service tiers without technical reconfiguration.",
+                "VIP profiles require a separate contract with OmniAccess and must be configured at the NOC level.",
+                "The system supports only a single unified profile for all guests to avoid configuration complexity."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source explains that tiers have default profiles but profiles can be changed per user. This allows operators to offer tiered service (Standard vs. VIP) flexibly within the same system."
+            },
+            {
+              "id": "q1-2-3",
+              "question": "A Captain is skeptical about adding 'yet another system.' Which benefit of the Accounts dashboard most directly addresses a Captain's concern about guest complaints?",
+              "answers": [
+                "The dashboard integrates with the ship's passenger manifest from the port authority.",
+                "Hotel staff can see account status and usage directly and handle common requests themselves, so guests are resolved faster and issues don't escalate to the bridge.",
+                "The dashboard automatically sends a daily report to the Captain summarizing network performance.",
+                "Guests can use the dashboard themselves to check their own data usage."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Giving hotel staff direct visibility and action capability means routine connectivity issues are resolved at the front desk, not escalated to the bridge or the ETO."
+            },
+            {
+              "id": "q1-2-4",
+              "question": "A prospect asks if they can use the Purchases and Consolidations features they can see in the Unity navigation menu. What is the correct answer?",
+              "answers": [
+                "Yes — those features are fully operational and allow guests to purchase upgrades directly.",
+                "Those dashboards are visible in the navigation but are not functional in the current version (Unity 4.1.8) and should not be positioned as available capabilities.",
+                "Those features are available only on vessels with more than 100 guest accounts.",
+                "Purchases and Consolidations require an additional module license from OmniAccess."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source explicitly notes that the Purchases and Consolidation dashboards do not work on Unity version 4.1.8. This is an active limitation sellers must know."
+            }
+          ]
+        },
+        {
+          "id": "lesson-1-3",
+          "title": "Creating and Removing Users: The Operational Freedom Story",
+          "content": "## The core operational question: how do guests get on?\n\nEvery cruise or charter starts with the same challenge: getting guests connected quickly. Unity Local Admin offers three methods for creating user accounts, each suited to a different scenario. Understanding these lets you tell a compelling story about operational efficiency.\n\n## Method 1 — Create by Room\n\nThe simplest method for individual guests. Staff enter a first name, last name, room number, and booking dates, then select user type and tier. The system automatically generates a login credential. No passwords to manage, no usernames to invent. Ideal for: hotel desk staff onboarding individual late arrivals or crew members who join mid-voyage.\n\n**Seller's angle:** \"Your front desk can check in a late arrival and have them connected in under a minute.\"\n\n## Method 2 — Create by Voucher\n\nStaff manually set a username and password and associate the account with a room and booking window. The admin controls the login credential explicitly. Ideal for: situations where the guest or manager wants a specific, memorable login (e.g., for a family cabin or a repeat VIP).\n\n**Seller's angle:** \"Full control over who gets what access, set up exactly how the hotel wants it.\"\n\n## Method 3 — Bulk Voucher Creation\n\nThis is the headline operational story. Staff enter a login prefix, a quantity, and booking dates — the system generates a full batch of username/password combinations in one step and exports them as a **downloadable CSV file**. The Hotel Manager can distribute the CSV directly to guests (or download it themselves).\n\nIn practice: a 200-guest sailing can be fully onboarded — every account created, credentials ready to hand out — in minutes, before guests even board.\n\n**Seller's angle:** \"Your hotel team can onboard an entire sailing's worth of guests in one go, without a single call to IT.\"\n\n⚠️ **Important limitation to know:** There is a current bug in Bulk Voucher creation where the Login Prefix must be entered in **lowercase letters**. Uppercase characters cause the process to fail. This is an active issue that operators need to be aware of.\n\n## Deleting users\n\nWhen a guest departs or an account needs to be removed, the Delete User action removes the record completely from the system. This is a permanent action — it clears the user from the Captive Portal database entirely. Useful for: end-of-cruise cleanup, or removing an account that was created in error.\n\n## Putting it together: the self-service story\n\nAcross all three creation methods, there is one consistent message: **hotel staff can manage guest connectivity end-to-end without IT involvement**. Whether it's a single arrival, a custom VIP credential, or a full-sailing batch, the Hotel Manager has the tools to handle it from the Unity dashboard.",
+          "images": [
+            {
+              "path": "images/a4a481d7-089d-45e6-ba32-c0bef8f08f62/1566081037-14-image-20260312-104922.png",
+              "caption": "Accounts dashboard with the 'Create User' dropdown open, showing the three user creation methods: by Room, by Voucher, and by Voucher (Bulk)."
+            },
+            {
+              "path": "images/a4a481d7-089d-45e6-ba32-c0bef8f08f62/1566081037-8-image-20260312-104614.png",
+              "caption": "Bulk Voucher creation form — staff enter a login prefix (lowercase required), quantity, booking dates, and profile, then generate and download a CSV with all credentials."
+            },
+            {
+              "path": "images/a4a481d7-089d-45e6-ba32-c0bef8f08f62/1566081037-7-image-20260312-104633.png",
+              "caption": "Bulk creation success screen showing a downloadable CSV with login/password pairs for all created accounts — ready to distribute to guests."
+            }
+          ],
+          "questions": [
+            {
+              "id": "q1-3-1",
+              "question": "A boutique cruise line's Hotel Manager asks: 'We have 150 guests boarding tomorrow morning. How quickly can we get everyone set up?' Which Unity Local Admin feature best answers this?",
+              "answers": [
+                "Each guest must be created individually by a crew member using the Create by Room method.",
+                "Bulk Voucher creation generates credentials for any number of guests in a single step and produces a downloadable CSV that the Hotel Manager can distribute immediately.",
+                "Guest accounts are automatically imported from the ship's PMS (Property Management System) overnight.",
+                "Guests self-register through the captive portal landing page — no staff action needed."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Bulk Voucher method is designed for exactly this scenario — mass onboarding in one step with a CSV download for distribution. The source confirms the Hotel Manager can download the file directly."
+            },
+            {
+              "id": "q1-3-2",
+              "question": "When using Bulk Voucher creation, what is a critical operational point that operators need to know?",
+              "answers": [
+                "Bulk creation is limited to a maximum of 50 accounts per batch.",
+                "The CSV file is only available to download for 24 hours before it expires.",
+                "The Login Prefix must be entered in lowercase letters — there is a current bug that causes failure if uppercase letters are used.",
+                "Bulk vouchers cannot be assigned to VIP Room tier — only Standard Room is supported."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source contains an explicit warning: 'please create the Login Prefix/Seed in lowercase letters — currently there is a bug with Uppercase.' This is an active limitation operators must know before using the feature."
+            },
+            {
+              "id": "q1-3-3",
+              "question": "A prospect's ETO says: 'Right now I have to create every crew member account manually.' Which Unity Local Admin capability most directly addresses this?",
+              "answers": [
+                "The Crew profile dashboard, which automatically syncs with the vessel HR roster.",
+                "The Voucher creation method, which lets the admin set a custom username and password — or Bulk Voucher if they need to create multiple crew accounts at once.",
+                "The Delete User function, which speeds up the offboarding process.",
+                "The per-user detail view, which shows the ETO each crew member's data usage without requiring manual entry."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Both Voucher (single, with custom credentials) and Bulk Voucher (batch) methods allow staff to create crew accounts directly from the dashboard. The Bulk method is especially relevant when multiple crew members need accounts at once."
+            },
+            {
+              "id": "q1-3-4",
+              "question": "What does the Delete User action do in Unity Local Admin?",
+              "answers": [
+                "It temporarily blocks the user from connecting but retains their account for reactivation.",
+                "It removes the user's account from the Captive Portal database entirely and permanently.",
+                "It sends a notification to the OmniAccess NOC to archive the user record.",
+                "It changes the user's profile to a zero-quota plan without removing the account."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source states that Delete User removes the user details from the Captive Portal database and from Ucopia — deleting the user completely from the system."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Positioning, Conversations, and What to Watch Out For",
+      "summary": "How to position Unity Local Admin across different customer types, the discovery questions that open the door, the active limitations to be transparent about, and a ready-to-use cheat sheet for your next conversation.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Positioning Across Personas",
+          "content": "## The same capability, different stories\n\nUnity Local Admin is one tool, but the value story changes depending on who you're talking to. Here is how to adapt your message.\n\n## IT Fleet Manager / IT Director (large cruise fleets)\n\nThis persona's world is fleet-wide consistency, OPEX predictability, and keeping the NOC from being overwhelmed by trivial requests.\n\n**Story to tell:** \"Unity Local Admin gives your teams a standardised, role-based management layer across every vessel. User types, tiers, and profiles are configured consistently — your hotel staff work the same way on Ship A as on Ship B. And because they can handle routine requests themselves, your NOC isn't fielding calls every time a guest's password doesn't work.\"\n\n**Discovery questions:**\n- \"How many support tickets per sailing relate to basic guest connectivity issues?\"\n- \"Do your hotel teams currently have any self-service tools for managing guest internet access?\"\n\n## Captain (smaller vessels, direct decision-maker)\n\nThe Captain cares about the vessel running smoothly and guests being happy — without problems arriving at the bridge.\n\n**Story to tell:** \"When a guest walks up to the front desk about their wifi, your hotel team fixes it on the spot. They see the account, they see the usage, they can change the profile or reset access. It doesn't come to you.\"\n\n**Discovery question:**\n- \"When there's a guest connectivity complaint today, who does it end up with?\"\n\n## ETO / IT Officer (technical influencer, daily user)\n\nThis persona lives with the product every day. They need it to be simple enough for hotel staff to use without calling them, and they need visibility without having to dig into backend systems.\n\n**Story to tell:** \"You stay out of the routine stuff. Hotel staff can see and manage guest accounts. You get the dashboard when you need it — quota, devices, app traffic — but you're not the first call every time a guest can't remember their password.\"\n\n**Discovery question:**\n- \"How much of your time today goes on connectivity requests that hotel staff could theoretically handle themselves if they had the right tool?\"\n\n## Owner's Representative / Superyacht context\n\nOn a superyacht, privacy, discretion, and a seamless owner experience are paramount. The ETO must never be caught flat-footed.\n\n**Story to tell:** \"The owner's connectivity is its own tier. You can set it up separately — dedicated profile, private quota — and you have full visibility to proactively spot any issue before it becomes a conversation. No surprises.\"\n\n**Discovery question:**\n- \"Is owner and family connectivity currently managed separately from crew and guest access?\"",
+          "questions": [
+            {
+              "id": "q2-1-1",
+              "question": "You are in a meeting with the IT Director of a boutique cruise line with 20 ships. Which message best resonates with their priorities?",
+              "answers": [
+                "'Unity Local Admin is the easiest interface your guests will ever use to log in to the wifi.'",
+                "'Unity Local Admin gives your hotel teams a consistent, self-service management layer across every vessel, reducing NOC tickets from routine guest access requests.'",
+                "'Unity Local Admin eliminates the need for any network hardware onboard — everything is managed from the cloud.'",
+                "'Unity Local Admin guarantees zero connectivity downtime across your fleet.'"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "An IT Fleet Manager cares about fleet-wide consistency and reducing operational burden on the NOC. The message about a consistent management layer that empowers hotel staff directly addresses both concerns."
+            },
+            {
+              "id": "q2-1-2",
+              "question": "A Captain tells you: 'I just need things to work. I don't want to hear about wifi problems.' What is the most effective positioning response?",
+              "answers": [
+                "'With Unity Local Admin, your hotel staff can see and fix guest account issues directly — connectivity complaints are resolved at the desk, not on the bridge.'",
+                "'Unity Local Admin upgrades your satellite hardware automatically so the network never goes down.'",
+                "'Unity Local Admin gives your ETO a detailed technical dashboard for monitoring every packet on the network.'",
+                "'With Unity Local Admin, guests can troubleshoot their own connectivity issues through a self-service portal.'"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "A Captain's concern is that problems don't reach them. The correct message emphasises that hotel staff handle it at the desk — directly answering the 'I don't want to hear about it' objection."
+            },
+            {
+              "id": "q2-1-3",
+              "question": "An ETO says: 'I'm worried this will just create more work for me — training hotel staff, fixing their mistakes.' How should you respond?",
+              "answers": [
+                "'You're right — this tool does require significant training for hotel staff and the ETO manages all updates.'",
+                "'The dashboard is role-based and straightforward: hotel staff see accounts and can take simple actions. The more complex configuration remains separate. Less routine work for you, not more.'",
+                "'Unity Local Admin replaces the ETO role entirely — hotel staff take over all network management.'",
+                "'The system has an auto-pilot mode that prevents hotel staff from making any configuration errors.'"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The ETO objection is about added complexity. The correct response acknowledges the concern and reframes: the tool is designed for hotel staff to handle routine tasks, which reduces the ETO's interruption load — not increases it."
+            },
+            {
+              "id": "q2-1-4",
+              "question": "On a superyacht, which Unity Local Admin capability is most relevant to the Owner's Representative's concern for privacy and a seamless owner experience?",
+              "answers": [
+                "The Bulk Voucher creation tool, which can onboard large numbers of guests quickly.",
+                "The ability to assign a dedicated user tier and profile to the owner's party, with full visibility into their quota and connectivity status.",
+                "The network topology diagram showing how the vessel connects to the internet.",
+                "The Purchases dashboard, which allows the owner to buy additional data directly."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The user type/tier and profile system allows the owner's party to be set up with a dedicated, separately managed account — giving the ETO proactive visibility and the Owner's Rep the assurance of a private, well-managed experience."
+            }
+          ]
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Objections and What to Know Before You Walk In",
+          "content": "## Common objections — and how the product responds\n\n### 'We already have a Captive Portal — why do we need another layer?'\n\nUnity Local Admin is not a separate product competing with the Captive Portal — it is the management interface that makes the Captive Portal usable by on-vessel operations staff. Without it, the Captive Portal is a backend system that only the NOC or a technical officer can interact with. Unity Local Admin brings that control to the people on the vessel who need it every day.\n\n### 'Our ETO handles connectivity — we don't need hotel staff involved.'\n\nThis is actually the problem Unity Local Admin solves. If the ETO is the single point of contact for every guest connectivity issue, that's a risk: when the ETO is unavailable (off-watch, focused on critical systems), guests wait and complaints accumulate. Unity Local Admin distributes the capability without distributing the complexity.\n\n### 'We're worried about hotel staff making mistakes on the network.'\n\nThe dashboard provides access-level controls appropriate to hotel operations (account creation, profile changes, account deletion) — it does not expose network configuration or routing. Hotel staff cannot accidentally reconfigure the network; they work within the access management layer only.\n\n### 'Is this available now, or is it a roadmap item?'\n\nUnity Local Admin is operational and available from Unity version 4.1.8. It is not a roadmap item — it is in production use today.\n\n## What to know: active limitations\n\nTwo limitations are important to be transparent about before a customer goes live:\n\n1. **Purchases and Consolidations dashboards are not functional** in Unity 4.1.8. These tabs appear in the navigation but do not work. If a customer expects in-system package purchasing or financial consolidation reporting, that capability is not currently available.\n\n2. **Bulk Voucher: Login Prefix must be lowercase.** There is an active bug where using uppercase letters in the bulk voucher Login Prefix causes the process to fail. Operations teams need to be briefed on this before their first sailing batch.\n\n## What is missing from the source (for the team)\n\nThe technical documentation does not include:\n- Pricing or packaging information for Unity Local Admin as a feature or add-on.\n- Customer case studies or live deployment examples.\n- A roadmap for the Purchases/Consolidations fix or other upcoming features.\n- Integration details with PMS (Property Management Systems) or booking platforms.\n\nThese would strengthen the sales conversation and should be gathered from Product or Customer Success before customer-facing demos.",
+          "questions": [
+            {
+              "id": "q2-2-1",
+              "question": "A prospect says: 'We already have a Captive Portal from OmniAccess. Why would we need Unity Local Admin on top?' What is the best response?",
+              "answers": [
+                "'Unity Local Admin replaces your existing Captive Portal with a more modern architecture.'",
+                "'Unity Local Admin is the management interface that makes the Captive Portal accessible to on-vessel operations staff — without it, the portal can only be managed at the backend level by technical staff.'",
+                "'Unity Local Admin adds a separate network layer that improves the performance of the Captive Portal.'",
+                "'The Captive Portal and Unity Local Admin serve different user segments and must be purchased together as a bundle.'"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Unity Local Admin is not a replacement or separate product — it is the operator-facing management layer that makes the Captive Portal practically usable by hotel staff and ETOs on a daily basis."
+            },
+            {
+              "id": "q2-2-2",
+              "question": "A prospect's ETO is the sole person managing all guest connectivity. The Captain says: 'It works fine.' What risk should you surface in your conversation?",
+              "answers": [
+                "The ETO may not be technically qualified to manage the Captive Portal without Unity Local Admin.",
+                "Single-point-of-contact for connectivity means guests wait when the ETO is unavailable — Unity Local Admin distributes the capability so hotel staff can handle routine issues at any time.",
+                "ETOs who manage the Captive Portal manually tend to leave vessels at higher rates.",
+                "The Captive Portal automatically shuts down if only one person manages it."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "When the ETO is the only person who can manage connectivity, any absence creates a gap. Unity Local Admin distributes that capability appropriately to hotel staff — reducing the single-point-of-failure risk."
+            },
+            {
+              "id": "q2-2-3",
+              "question": "A prospect asks if they will be able to use the Purchases feature to let guests buy additional data through the Unity interface. What is the correct, transparent answer?",
+              "answers": [
+                "'Yes, guests can purchase data upgrades directly through the Unity Captive Portal landing page.'",
+                "'The Purchases dashboard is visible in the current version but is not yet functional — it does not work on Unity 4.1.8 and should not be presented as an available feature.'",
+                "'Purchases are handled through OmniAccess's external customer portal, not through Unity Local Admin.'",
+                "'Purchases require a separate integration with the vessel's PMS, which is available as a professional services engagement.'"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source explicitly states that the Purchases and Consolidation dashboards do not work on Unity version 4.1.8. This is an active limitation that must be communicated clearly to avoid setting incorrect expectations."
+            },
+            {
+              "id": "q2-2-4",
+              "question": "When is Unity Local Admin available as a feature?",
+              "answers": [
+                "It is a roadmap item expected in Q3 2026.",
+                "It is available only through a separate advanced license from OmniAccess.",
+                "It is operational and in production from Unity version 4.1.8.",
+                "It requires a hardware upgrade to the vessel's onboard network equipment."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source states that Unity 4.1.8 (at minimum) is required for Unity Local Admin. It is an operational feature today, not a roadmap item."
+            }
+          ]
+        },
+        {
+          "id": "lesson-2-3",
+          "title": "Cheat Sheet: Unity Local Admin in One Page",
+          "content": "## Elevator pitch (1–2 sentences)\n\nUnity Local Admin is the onboard management interface for guest and crew connectivity — built into the UNITY platform. It gives hotel staff and ETOs full visibility over every connected user and the ability to onboard, adjust, or remove accounts in real time, without involving shore-side IT.\n\n---\n\n## Key benefits by persona\n\n| Persona | What to say |\n|---|---|\n| IT Fleet Manager | Fleet-wide consistent access structure; hotel teams self-serve routine requests; fewer NOC interruptions. |\n| Captain | Connectivity complaints resolved at the desk, not on the bridge. |\n| ETO / IT Officer | Full dashboard visibility (quota, devices, app traffic) with hotel staff handling the routine workload. |\n| Hotel Manager | Create one guest or 200 guests in minutes; hand out credentials as a CSV; no IT call needed. |\n| Owner's Rep (superyacht) | Owner's party on a dedicated tier with private quota — proactive visibility, no surprises. |\n\n---\n\n## Discovery questions\n\n1. \"When a guest reports a connectivity problem today, who handles it — and how long does it take?\"\n2. \"Can your hotel staff currently see which guests are connected or how much of their allowance is left?\"\n3. \"How do you onboard guest internet access at the start of a sailing?\"\n4. \"How much of your ETO's time goes on connectivity requests that hotel staff could handle with the right tool?\"\n5. \"Is owner/family connectivity currently managed separately from crew and general guest access?\"\n\n---\n\n## Active limitations to know\n\n- **Purchases and Consolidations dashboards are not functional** in Unity 4.1.8 — visible in the UI but not operational. Do not present as available features.\n- **Bulk Voucher: Login Prefix must be lowercase** — an active bug causes the process to fail if uppercase letters are used.\n\n---\n\n## Natural next step\n\nRequest a guided demo of the Unity dashboard showing the Accounts view, the per-user detail panel, and a live Bulk Voucher creation. Involve the ETO and Hotel Manager together — they are the day-one users and the sharpest validators of the workflow story.\n\n---\n\n## Where it sits in the portfolio\n\nUnity Local Admin is part of **Network — NaaS / Captive Portal**, delivered through the **UNITY platform**. It does not require additional hardware. It becomes available from **Unity version 4.1.8**.",
+          "questions": [
+            {
+              "id": "q2-3-1",
+              "question": "A sales rep has five minutes before a call with a Hotel Manager on a cruise line. What is the single most important message to lead with about Unity Local Admin?",
+              "answers": [
+                "Unity Local Admin requires Unity 4.1.8, so it is important to verify the vessel's software version first.",
+                "Unity Local Admin lets hotel staff onboard and manage guest connectivity accounts themselves — including bulk creation for an entire sailing — without any IT involvement.",
+                "Unity Local Admin is a new product in OmniAccess's cybersecurity portfolio designed to protect guest devices.",
+                "Unity Local Admin replaces the need for a Captive Portal on vessels with fewer than 100 guests."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "For a Hotel Manager, the headline value is operational self-sufficiency: the ability to manage guest accounts, including full-sailing batch onboarding, without calling IT. That is the message most likely to land in a five-minute opening."
+            },
+            {
+              "id": "q2-3-2",
+              "question": "Which two personas should ideally be present together in a Unity Local Admin demo session?",
+              "answers": [
+                "The vessel's Captain and the OmniAccess account manager.",
+                "The ETO / IT Officer and the Hotel Manager — the day-to-day users who will validate the workflow.",
+                "The IT Fleet Manager and the OmniAccess NOC team.",
+                "The Owner's Representative and the vessel's legal and compliance officer."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The ETO and Hotel Manager are the primary operational users of Unity Local Admin. A joint demo lets both validate their respective workflows (technical visibility for the ETO; account management for hotel staff) and builds buy-in from both sides."
+            },
+            {
+              "id": "q2-3-3",
+              "question": "A prospect's IT Director says: 'We love the account management features but we really need the in-system purchasing capability for guests to buy data top-ups.' How should you handle this?",
+              "answers": [
+                "Confirm the feature is available and offer to demonstrate it at the next meeting.",
+                "Explain that the Purchases dashboard exists in the interface but is not functional in the current version — and commit to following up with the product team on the roadmap timeline.",
+                "Tell the customer this requirement means Unity Local Admin is not suitable for their vessel.",
+                "Explain that purchases are handled through the OmniAccess customer portal and redirect the customer there."
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The correct approach is to be transparent about the current limitation (Purchases dashboard not functional in 4.1.8) while keeping the conversation open by committing to follow up on the roadmap. This protects credibility without closing the door."
+            },
+            {
+              "id": "q2-3-4",
+              "question": "What is the correct description of how Unity Local Admin fits into the OmniAccess portfolio?",
+              "answers": [
+                "It is a standalone product sold separately from the UNITY platform, requiring its own hardware appliance.",
+                "It is part of the Connectivity / Fusion portfolio — a management layer for multi-orbit satellite plans.",
+                "It is the operator-facing management interface for the Captive Portal, delivered as part of the UNITY platform under Network — NaaS.",
+                "It is part of the Cybersecurity portfolio, providing access control aligned with the NIST framework."
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "Unity Local Admin is a dashboard within the UNITY platform, specifically for managing the Captive Portal (guest access). It sits under Network — NaaS in the OmniAccess portfolio map, not under Connectivity or Cybersecurity."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

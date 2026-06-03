@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "mcp__claude_ai_Atlassian",
+      "mcp__claude_ai_Atlassian__getAccessibleAtlassianResources",
+      "mcp__claude_ai_Atlassian__getConfluencePage",
+      "mcp__claude_ai_Atlassian__getConfluencePageDescendants",
+      "mcp__claude_ai_Atlassian__searchConfluenceUsingCql",
+      "mcp__claude_ai_Atlassian__fetch",
+      "Read(//home/lfuster/projects/hackathon20/**)",
+      "Read(//tmp/**)",
+      "Write(//tmp/**)",
+      "Write(//home/lfuster/projects/hackathon20/**)",
+      "Edit(//home/lfuster/projects/hackathon20/**)",
+      "Bash(curl -sL -u:*)",
+      "Bash(curl -sL -o:*)",
+      "Bash(curl:*)",
+      "Bash(mkdir -p:*)",
+      "Bash(file:*)",
+      "Bash(.claude/skills/download-confluence-images/download_images.sh:*)",
+      "Bash(bash .claude/skills/download-confluence-images/download_images.sh:*)"
+    ]
+  }
+}
