@@ -22,6 +22,17 @@ dist/
 
 # Database — never commit, regenerate with seed.py
 platform_back/platform.db
+platform_back/platform.db-shm
+platform_back/platform.db-wal
+platform_back/platform.pre-*.db
+
+# Generated course content (written by agents at runtime)
+agents_back/agents_directory/json/
+agents_back/agents_directory/extract/
+agents_back/agents_directory/images/
+
+# Claude Code local config
+.claude/settings.local.json
 
 # Local server script and its runtime files
 server.sh
