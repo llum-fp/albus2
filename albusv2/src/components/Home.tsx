@@ -244,13 +244,23 @@ export default function Home({
             <p className="eyebrow section-title">Learning paths</p>
             {paths.length === 0 ? (
               <p className="muted">No learning paths available yet.</p>
-            ) : (
-              <div className="course-grid">
-                {paths.map((p) => (
-                  <PathCard key={p.id} p={p} onOpen={onOpenPath} />
-                ))}
-              </div>
-            )}
+            ) : (() => {
+              const filtered = paths.filter(
+                (p) => !search || `${p.title} ${p.description ?? ""}`.toLowerCase().includes(search.toLowerCase())
+              );
+              return filtered.length === 0 ? (
+                <div className="empty-search">
+                  <p>No paths match your search.</p>
+                  <button className="link-btn" onClick={() => setSearch("")}>Clear filters</button>
+                </div>
+              ) : (
+                <div className="course-grid">
+                  {filtered.map((p) => (
+                    <PathCard key={p.id} p={p} onOpen={onOpenPath} />
+                  ))}
+                </div>
+              );
+            })()}
           </>
         )}
       </main>
