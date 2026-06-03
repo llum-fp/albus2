@@ -6,12 +6,12 @@ only checks that the response is 2xx, so we return ``{ok: true}``.
 view. ``difficulty`` / ``duration`` accept the literal Spanish enum tokens the
 frontend sends; ``course_id`` is the string filename-stem id.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.survey import SurveyCreate, SurveyRead
-from app.crud.survey import create_survey, get_surveys
+from app.crud.survey import create_survey, get_surveys, has_surveyed
 
 router = APIRouter(prefix="/api", tags=["frontend-surveys"])
 
@@ -20,6 +20,15 @@ router = APIRouter(prefix="/api", tags=["frontend-surveys"])
 def submit_survey(data: SurveyCreate, db: Session = Depends(get_db)):
     create_survey(db, data)
     return {"ok": True}
+
+
+@router.get("/surveys/check")
+def check_survey(
+    user_id: int = Query(...),
+    course_id: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    return {"surveyed": has_surveyed(db, user_id, course_id)}
 
 
 @router.get("/surveys", response_model=list[SurveyRead])

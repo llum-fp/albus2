@@ -1,10 +1,11 @@
-"""One-shot migration: introduce the `roles` table and replace `users.role`
-(string) with `users.role_id` (FK → roles.id).
-
-Run once before starting the server with the new code:
+"""Idempotent migration script. Run before starting the server after pulling
+new code:
     cd platform_back && python migrate.py
 
-Idempotent: if `role_id` already exists the script exits without changes.
+Phase 1: introduce the `roles` table and replace users.role (string) with
+         users.role_id (FK → roles.id).
+Phase 2: add surveys.user_id (FK → users.id, nullable) for backend survey
+         tracking.
 """
 import shutil
 import sqlite3
@@ -27,7 +28,7 @@ def main() -> None:
         print("platform.db not found — nothing to migrate (fresh installs use seed.py).")
         sys.exit(0)
 
-    backup = DB_PATH.with_suffix(f".pre-role-fk-{datetime.now().strftime('%Y%m%d%H%M%S')}.db")
+    backup = DB_PATH.with_suffix(f".pre-migration-{datetime.now().strftime('%Y%m%d%H%M%S')}.db")
     shutil.copy2(DB_PATH, backup)
     print(f"backup → {backup.name}")
 
@@ -35,67 +36,65 @@ def main() -> None:
     con.execute("PRAGMA journal_mode=WAL")
     cur = con.cursor()
 
+    # ── Phase 1: roles table + users.role_id ──────────────────────────────────
     if column_exists(cur, "users", "role_id"):
-        print("Already migrated (role_id column exists). Nothing to do.")
-        con.close()
-        return
+        print("Phase 1: already applied. Skipping.")
+    else:
+        print("Phase 1: users.role (string) → users.role_id (FK)…")
+        con.execute("PRAGMA foreign_keys = OFF")
+        con.execute("BEGIN")
 
-    print("Migrating…")
-    con.execute("PRAGMA foreign_keys = OFF")
-    con.execute("BEGIN")
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS roles (
+                id   INTEGER PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR(50) UNIQUE NOT NULL
+            )
+        """)
+        for name in ROLES:
+            con.execute("INSERT OR IGNORE INTO roles (name) VALUES (?)", (name,))
 
-    # 1. roles table
-    con.execute("""
-        CREATE TABLE IF NOT EXISTS roles (
-            id   INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR(50) UNIQUE NOT NULL
-        )
-    """)
-    for name in ROLES:
-        con.execute("INSERT OR IGNORE INTO roles (name) VALUES (?)", (name,))
+        con.execute("ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES roles(id)")
+        con.execute("""
+            UPDATE users SET role_id = (SELECT id FROM roles WHERE name = users.role)
+        """)
+        con.execute("""
+            UPDATE users
+            SET role_id = (SELECT id FROM roles WHERE name = ?)
+            WHERE role_id IS NULL
+        """, (FALLBACK_ROLE,))
 
-    # 2. add role_id (nullable) to existing users table
-    con.execute("ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES roles(id)")
+        con.execute("""
+            CREATE TABLE users_new (
+                id         INTEGER PRIMARY KEY,
+                email      VARCHAR(255) UNIQUE NOT NULL,
+                name       VARCHAR(255) NOT NULL,
+                role_id    INTEGER NOT NULL REFERENCES roles(id),
+                created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+            )
+        """)
+        con.execute("""
+            INSERT INTO users_new (id, email, name, role_id, created_at)
+            SELECT id, email, name, role_id, created_at FROM users
+        """)
+        con.execute("DROP TABLE users")
+        con.execute("ALTER TABLE users_new RENAME TO users")
+        con.execute("CREATE INDEX IF NOT EXISTS ix_users_id ON users (id)")
+        con.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)")
 
-    # 3. populate role_id from the existing role string
-    con.execute("""
-        UPDATE users
-        SET role_id = (SELECT id FROM roles WHERE name = users.role)
-    """)
+        con.execute("COMMIT")
+        con.execute("PRAGMA foreign_keys = ON")
+        print("Phase 1 done.")
 
-    # 4. fallback: any user whose role string didn't match a known role gets FALLBACK_ROLE
-    con.execute("""
-        UPDATE users
-        SET role_id = (SELECT id FROM roles WHERE name = ?)
-        WHERE role_id IS NULL
-    """, (FALLBACK_ROLE,))
+    # ── Phase 2: surveys.user_id ───────────────────────────────────────────────
+    if column_exists(cur, "surveys", "user_id"):
+        print("Phase 2: already applied. Skipping.")
+    else:
+        print("Phase 2: adding surveys.user_id…")
+        con.execute("ALTER TABLE surveys ADD COLUMN user_id INTEGER REFERENCES users(id)")
+        print("Phase 2 done.")
 
-    # 5. recreate users without the role string column
-    con.execute("""
-        CREATE TABLE users_new (
-            id         INTEGER PRIMARY KEY,
-            email      VARCHAR(255) UNIQUE NOT NULL,
-            name       VARCHAR(255) NOT NULL,
-            role_id    INTEGER NOT NULL REFERENCES roles(id),
-            created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
-        )
-    """)
-    con.execute("""
-        INSERT INTO users_new (id, email, name, role_id, created_at)
-        SELECT id, email, name, role_id, created_at FROM users
-    """)
-    con.execute("DROP TABLE users")
-    con.execute("ALTER TABLE users_new RENAME TO users")
-
-    # 6. restore indexes
-    con.execute("CREATE INDEX IF NOT EXISTS ix_users_id ON users (id)")
-    con.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)")
-
-    con.execute("COMMIT")
-    con.execute("PRAGMA foreign_keys = ON")
     con.close()
-
-    print("Done. users.role (string) → users.role_id (FK).")
+    print("Migration complete.")
     print(f"Rollback if needed: cp {backup.name} platform.db")
 
 

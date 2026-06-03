@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
-import { fetchCourse, fetchUserProgress, mediaUrl, userKey, type Course, type Question, type SessionUser } from "../api";
-import { recordProgress, markCompleted, hasSurveyed } from "../progress";
+import { fetchCourse, fetchUserProgress, checkSurveyed, mediaUrl, type Course, type Question, type SessionUser } from "../api";
+import { recordProgress, markCompleted } from "../progress";
 import { useChat } from "../useChat";
 import QuizQuestion from "./QuizQuestion";
 import ChatPanel from "./ChatPanel";
@@ -96,7 +96,6 @@ export default function CourseViewer({
   user: SessionUser;
   onBack: () => void;
 }) {
-  const pkey = userKey(user);
   const [course, setCourse] = useState<Course | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [active, setActive] = useState(0); // índice lineal sobre todas las lecciones
@@ -111,16 +110,22 @@ export default function CourseViewer({
   // Preguntas elegidas al azar por lección (estable mientras dure la sesión).
   const [quizPick, setQuizPick] = useState<Record<string, Question[]>>({});
   const [showSurvey, setShowSurvey] = useState(false);
+  const [alreadySurveyed, setAlreadySurveyed] = useState(false);
 
   const chat = useChat(courseId);
 
   useEffect(() => {
     setState("loading");
-    Promise.all([fetchCourse(courseId), fetchUserProgress(user.id)])
-      .then(([c, progressMap]) => {
+    Promise.all([
+      fetchCourse(courseId),
+      fetchUserProgress(user.id),
+      checkSurveyed(user.id, courseId),
+    ])
+      .then(([c, progressMap, surveyed]) => {
         setCourse(c);
         const saved = progressMap[courseId];
         setActive(saved?.furthest ?? 0);
+        setAlreadySurveyed(surveyed);
         setView("lesson");
         setQIndex(0);
         setOpenModules(new Set(c.modules.map((_, i) => i)));
@@ -228,7 +233,7 @@ export default function CourseViewer({
   // Finalizar el curso: marcar acabado y, si no lo ha valorado aún, lanzar el survey.
   const finishCourse = () => {
     markCompleted(courseId, total, user).catch(() => {});
-    if (hasSurveyed(pkey, courseId)) {
+    if (alreadySurveyed) {
       onBack();
     } else {
       setShowSurvey(true);

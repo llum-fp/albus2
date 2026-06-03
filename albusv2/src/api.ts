@@ -66,6 +66,7 @@ export async function fetchCourse(courseId: string): Promise<Course> {
 
 export interface SurveyPayload {
   course_id: string;
+  user_id: number;
   user: string;
   rating_overall: number;
   rating_content: number;
@@ -83,6 +84,14 @@ export async function submitSurvey(payload: SurveyPayload): Promise<void> {
     body: JSON.stringify(payload),
   });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
+}
+
+export async function checkSurveyed(userId: number, courseId: string): Promise<boolean> {
+  const p = new URLSearchParams({ user_id: String(userId), course_id: courseId });
+  const r = await fetch(`/api/surveys/check?${p}`);
+  if (!r.ok) return false;
+  const data = await r.json();
+  return data.surveyed as boolean;
 }
 
 /* The signed-in identity (stub auth). Picked on the login screen from the real

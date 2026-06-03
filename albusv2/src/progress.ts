@@ -35,29 +35,3 @@ export async function markCompleted(
   await upsertProgress(sessionUser.id, courseId, total - 1, total, true).catch(() => {});
 }
 
-/* ── Encuestas: marca si el usuario ya valoró un curso (para no repetir) ── */
-
-const surveyKey = (user: string) => `albus_surveyed_${user}`;
-
-export function hasSurveyed(user: string, courseId: string): boolean {
-  try {
-    const raw = localStorage.getItem(surveyKey(user));
-    const ids = raw ? (JSON.parse(raw) as string[]) : [];
-    return ids.includes(courseId);
-  } catch {
-    return false;
-  }
-}
-
-export function markSurveyed(user: string, courseId: string) {
-  try {
-    const raw = localStorage.getItem(surveyKey(user));
-    const ids = raw ? (JSON.parse(raw) as string[]) : [];
-    if (!ids.includes(courseId)) {
-      ids.push(courseId);
-      localStorage.setItem(surveyKey(user), JSON.stringify(ids));
-    }
-  } catch {
-    /* noop */
-  }
-}
