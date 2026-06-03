@@ -35,12 +35,9 @@ export default function ChatPanel({
     bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  // Cada vez que wrongFlashKey sube (nueva respuesta incorrecta), dispara el flash.
   useEffect(() => {
     if (!wrongFlashKey) return;
-    setFlashing(false);
-    const id = requestAnimationFrame(() => setFlashing(true));
-    return () => cancelAnimationFrame(id);
+    setFlashing(true);
   }, [wrongFlashKey]);
 
   const stopFlash = useCallback(() => setFlashing(false), []);
@@ -74,7 +71,7 @@ export default function ChatPanel({
 
   return (
     <aside className="chat">
-      {flashing && <div className="chat-flash-overlay" onAnimationEnd={stopFlash} />}
+      {flashing && <div key={wrongFlashKey} className="chat-flash-overlay" onAnimationEnd={stopFlash} />}
       {onResize && (
         <div
           className={`chat-resizer ${dragging ? "active" : ""}`}
