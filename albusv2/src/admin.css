@@ -367,6 +367,192 @@
   color: var(--oa-text-muted);
 }
 
+/* ── Confluence page search (New course) ──────────────────────────────── */
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-icon {
+  position: absolute;
+  left: 0.6rem;
+  color: var(--oa-text-muted);
+  pointer-events: none;
+}
+.search-input {
+  padding-left: 2rem;
+}
+.search-spin {
+  position: absolute;
+  right: 0.6rem;
+  color: var(--oa-text-muted);
+}
+.search-hint {
+  font-size: 0.78rem;
+  color: var(--oa-text-muted);
+  margin-top: 0.4rem;
+}
+.page-results {
+  margin-top: 0.5rem;
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-btn);
+  max-height: 230px;
+  overflow-y: auto;
+  background: var(--oa-bg);
+}
+
+/* Results as a panel that unfolds flush from the right edge of the New course
+   modal — same height as the modal, darker than it (so it reads as an extension
+   that slid out), with its own vertical scroll when results exceed that height. */
+.new-course-wrap {
+  position: relative;
+}
+/* Square off the modal's right corners while the panel is attached, so the two
+   read as a single piece. */
+.new-course-wrap.has-panel .admin-modal {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.page-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0; /* match the modal's height exactly */
+  left: 100%; /* flush against the modal's right edge, no gap */
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  background: var(--oa-bg); /* darker than the modal's --oa-card */
+  border: 1px solid var(--oa-border);
+  border-left: none; /* the modal's right border is the divider */
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+  overflow: hidden;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--oa-text-muted);
+  border-bottom: 1px solid var(--oa-border);
+  flex-shrink: 0;
+}
+.page-panel-body {
+  flex: 1;
+  min-height: 0; /* allow the flex child to shrink so overflow scrolls */
+  overflow-y: auto;
+  padding: 0.4rem;
+}
+.page-results.flush {
+  margin-top: 0;
+  border: none;
+  max-height: none;
+  background: transparent;
+}
+/* On narrow screens, drop the panel below the modal instead of off-screen. */
+@media (max-width: 920px) {
+  .new-course-wrap.has-panel .admin-modal {
+    border-bottom-right-radius: var(--radius-card);
+  }
+  .page-panel {
+    position: static;
+    width: auto;
+    max-height: 40vh;
+    border-left: 1px solid var(--oa-border);
+    border-radius: 0 0 var(--radius-card) var(--radius-card);
+  }
+}
+.page-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--oa-border);
+  transition: background 0.12s;
+}
+.page-result:last-child {
+  border-bottom: none;
+}
+.page-result:hover {
+  background: var(--oa-card-hover);
+}
+.page-result.selected {
+  background: rgba(193, 3, 47, 0.08);
+}
+.page-result-check {
+  width: 16px;
+  flex-shrink: 0;
+  color: var(--oa-success);
+  padding-top: 0.1rem;
+}
+.page-result-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.page-result-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--oa-text);
+}
+.page-result-desc {
+  font-size: 0.75rem;
+  color: var(--oa-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.selected-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+.page-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  padding: 0.25rem 0.3rem 0.25rem 0.6rem;
+  border-radius: 9999px;
+  background: var(--oa-card-hover);
+  border: 1px solid var(--oa-border);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.page-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: var(--oa-text-secondary);
+  flex-shrink: 0;
+}
+.page-chip-x:hover {
+  background: var(--oa-border-strong);
+  color: var(--oa-text);
+}
+.link-btn {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--oa-info);
+}
+.link-btn:hover {
+  text-decoration: underline;
+}
+
 /* ── Surveys dashboard ────────────────────────────────────────────────── */
 .stat-grid {
   display: grid;

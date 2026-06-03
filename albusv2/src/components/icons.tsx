@@ -209,6 +209,13 @@ export const Globe = (p: P) => (
   </Base>
 );
 
+export const Search = (p: P) => (
+  <Base {...p}>
+    <circle cx="11" cy="11" r="8" />
+    <path d="m21 21-4.3-4.3" />
+  </Base>
+);
+
 export const AlertTriangle = (p: P) => (
   <Base {...p}>
     <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />

@@ -103,6 +103,30 @@ export async function fetchUsers(): Promise<SessionUser[]> {
   return r.json();
 }
 
+/* Confluence page search (backend /api/find-pages — fast, no LLM). Used by the
+   admin "New course" picker so you search by topic instead of typing page ids. */
+export interface ConfluencePage {
+  page_id: number | string;
+  page_title: string;
+  brief_description: string;
+}
+
+export async function findPages(topic: string, limit = 8): Promise<ConfluencePage[]> {
+  const p = new URLSearchParams({ topic, limit: String(limit) });
+  const r = await fetch(`/api/find-pages?${p.toString()}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data = await r.json();
+  return data.pages ?? [];
+}
+
+/** Resolve a single page by its id (returns null if it doesn't exist). */
+export async function findPage(pageId: string): Promise<ConfluencePage | null> {
+  const r = await fetch(`/api/page/${encodeURIComponent(pageId)}`);
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
 export interface ProgressRecord {
   furthest: number;
   total: number;

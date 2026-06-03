@@ -6,12 +6,15 @@ import {
   adminPublish,
   adminReviseCourse,
   adminUnpublish,
+  findPage,
+  findPages,
   type AdminCourse,
   type AdminCourseDetail,
+  type ConfluencePage,
   type CourseProfile,
 } from "../api";
 import { useAdminJobs } from "../useAdminJobs";
-import { Check, ChevronDown, Eye, Globe, GraduationCap, Pencil, Plus, RefreshCw, X } from "./icons";
+import { Check, ChevronDown, Eye, Globe, GraduationCap, Pencil, Plus, RefreshCw, Search, X } from "./icons";
 import { formatLocalDateTime as fmtDate, timeAgo } from "../format";
 
 const STATUS_FILTERS = ["all", "published", "draft", "pending", "failed"] as const;
@@ -319,17 +322,59 @@ function NewCourseModal({
   onClose: () => void;
   onCreated: (dbId: number) => void;
 }) {
-  const [pageIds, setPageIds] = useState("");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<ConfluencePage[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchErr, setSearchErr] = useState<string | null>(null);
+  const [selected, setSelected] = useState<ConfluencePage[]>([]);
   const [profile, setProfile] = useState<CourseProfile>("technical");
   const [topic, setTopic] = useState("");
   const [duration, setDuration] = useState("");
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // Debounced search as you type (from 3 chars). One box, two modes: an all-digit
+  // query is treated as a Confluence page id (exact lookup); anything else is a
+  // title/text search.
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 3) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const t = setTimeout(() => {
+      // Always search by title/text. If the query is all digits, also try an
+      // exact page-id lookup (Confluence ids are exact keys — no prefix match,
+      // so a partial id can only surface via the title search) and put any exact
+      // hit first.
+      const byText = findPages(q, 8);
+      const byId = /^\d+$/.test(q)
+        ? findPage(q).then((p) => (p ? [p] : [])).catch(() => [])
+        : Promise.resolve<ConfluencePage[]>([]);
+      Promise.all([byId, byText])
+        .then(([idHits, textHits]) => {
+          const seen = new Set(idHits.map((p) => String(p.page_id)));
+          setResults([...idHits, ...textHits.filter((p) => !seen.has(String(p.page_id)))]);
+          setSearchErr(null);
+        })
+        .catch(() => setSearchErr("Search failed."))
+        .finally(() => setSearching(false));
+    }, 400);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const isSelected = (p: ConfluencePage) => selected.some((x) => x.page_id === p.page_id);
+  const toggle = (p: ConfluencePage) =>
+    setSelected((cur) =>
+      isSelected(p) ? cur.filter((x) => x.page_id !== p.page_id) : [...cur, p],
+    );
+
   const submit = async () => {
-    const ids = pageIds.split(",").map((s) => s.trim()).filter(Boolean);
+    const ids = Array.from(new Set(selected.map((p) => String(p.page_id))));
     if (ids.length === 0) {
-      setErr("Enter at least one Confluence page id.");
+      setErr("Pick at least one page.");
       return;
     }
     setSending(true);
@@ -348,24 +393,55 @@ function NewCourseModal({
     }
   };
 
+  const showPanel = query.trim().length >= 3;
+
   return (
     <div className="admin-overlay" role="dialog" aria-modal="true">
+      <div className={`new-course-wrap ${showPanel ? "has-panel" : ""}`}>
       <div className="admin-modal">
         <button className="icon-btn modal-close" onClick={onClose}><X size={16} /></button>
         <h3>New course</h3>
         <p className="modal-sub">
-          Builds in the background (5–30 min). It starts as a Draft and appears in Activity.
+          Search Confluence and pick the source page(s). Builds in the background (5–30 min);
+          starts as a Draft and shows in the Active builds monitor.
         </p>
 
         <div className="field">
-          <label>Confluence page id(s)</label>
+          <label>Topic (what the course should focus on within the pages)</label>
           <input
             className="input"
-            value={pageIds}
-            onChange={(e) => setPageIds(e.target.value)}
-            placeholder="e.g. 1727332382  (comma-separated for several)"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="e.g. Troubleshooting & version upgrade"
           />
         </div>
+
+        <div className="field">
+          <label>Source pages</label>
+          {selected.length > 0 && (
+            <div className="selected-pages">
+              {selected.map((p) => (
+                <span className="page-chip" key={p.page_id}>
+                  {p.page_title || p.page_id}
+                  <button className="page-chip-x" onClick={() => toggle(p)} title="Remove">
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="search-wrap">
+            <Search size={15} className="search-icon" />
+            <input
+              className="input search-input"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by title, or paste a page id…"
+            />
+            {searching && <span className="spin search-spin"><RefreshCw size={14} /></span>}
+          </div>
+        </div>
+
         <div className="field">
           <label>Profile</label>
           <div className="select-wrap">
@@ -375,10 +451,6 @@ function NewCourseModal({
             </select>
             <ChevronDown size={16} className="select-caret" />
           </div>
-        </div>
-        <div className="field">
-          <label>Topic (optional)</label>
-          <input className="input" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Focus area" />
         </div>
         <div className="field">
           <label>Target duration in minutes (optional)</label>
@@ -398,6 +470,45 @@ function NewCourseModal({
             {sending ? "Starting…" : "Start build"}
           </button>
         </div>
+      </div>
+
+      {showPanel && (
+        <aside className="page-panel">
+          <div className="panel-head">
+            <Search size={14} /> Confluence pages
+            {searching && (
+              <span className="spin" style={{ marginLeft: "auto" }}><RefreshCw size={13} /></span>
+            )}
+          </div>
+          <div className="page-panel-body">
+            {searchErr && <p className="admin-error">{searchErr}</p>}
+            {!searching && results.length === 0 && !searchErr && (
+              <p className="search-hint">No match — try other words or a page id.</p>
+            )}
+            {results.length > 0 && (
+              <div className="page-results flush">
+                {results.map((p) => (
+                  <button
+                    key={p.page_id}
+                    className={`page-result ${isSelected(p) ? "selected" : ""}`}
+                    onClick={() => toggle(p)}
+                  >
+                    <span className="page-result-check">{isSelected(p) ? <Check size={14} /> : null}</span>
+                    <span className="page-result-body">
+                      <span className="page-result-title">
+                        {p.page_title || "(untitled)"} <span className="cell-muted">· {p.page_id}</span>
+                      </span>
+                      {p.brief_description && (
+                        <span className="page-result-desc">{p.brief_description}</span>
+                      )}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
+      )}
       </div>
     </div>
   );
