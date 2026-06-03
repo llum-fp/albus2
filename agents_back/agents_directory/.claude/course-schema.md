@@ -95,3 +95,20 @@ rule.
 - **Valid JSON.** Verify the file parses cleanly (`python3 -m json.tool <file>`
   or `jq . <file>`) and matches the schema before reporting done.
 - **Match the language** of the source material / the user's request.
+
+## Course length calibration
+
+Scale module and lesson count to the `duration_min` value passed in the invocation.
+Baseline: ~6 minutes per lesson (reading content + 4 questions).
+
+| `duration_min`  | Modules | Lessons per module |
+|-----------------|---------|--------------------|
+| unspecified     | 3–5     | 3–4                |
+| ≤ 20            | 1–2     | 2–3                |
+| 20–45           | 2–3     | 2–4                |
+| 45–90           | 3–5     | 3–4                |
+| > 90            | 4–6     | 4–5                |
+
+Lean toward **fewer, deeper lessons** over many shallow ones. If the source material
+volume genuinely forces a mismatch with the target duration, note it in the finish
+report rather than padding or cutting content aggressively.
