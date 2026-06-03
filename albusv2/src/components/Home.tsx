@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { fetchCourses, fetchUserProgress, fetchPaths, userKey, type CourseSummary, type PathSummary, type SessionUser } from "../api";
 import { BookOpen, GraduationCap, ArrowRight, Check, Search, X } from "./icons";
+import { formatDuration } from "../format";
 import AlbusIcon from "./AlbusIcon";
 import ThemeToggle from "./ThemeToggle";
 import UserMenu from "./UserMenu";
@@ -303,6 +304,7 @@ function CourseCard({
       <div className="course-footer">
         <span className="muted-sm">
           {c.module_count} modules · {c.lesson_count} lessons
+          {formatDuration(c.duration_min) && ` · ${formatDuration(c.duration_min)}`}
         </span>
         <span className="course-open">
           {cta} <ArrowRight size={14} />
