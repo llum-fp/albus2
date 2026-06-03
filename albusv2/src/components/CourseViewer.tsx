@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
-import { fetchCourse, mediaUrl, userKey, type Course, type Question, type SessionUser } from "../api";
-import { recordProgress, markCompleted, hasSurveyed, getProgress } from "../progress";
+import { fetchCourse, fetchUserProgress, checkSurveyed, mediaUrl, type Course, type Question, type SessionUser } from "../api";
+import { recordProgress, markCompleted } from "../progress";
 import { useChat } from "../useChat";
 import QuizQuestion from "./QuizQuestion";
 import ChatPanel from "./ChatPanel";
@@ -96,7 +96,6 @@ export default function CourseViewer({
   user: SessionUser;
   onBack: () => void;
 }) {
-  const pkey = userKey(user);
   const [course, setCourse] = useState<Course | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [active, setActive] = useState(0); // índice lineal sobre todas las lecciones
@@ -108,19 +107,26 @@ export default function CourseViewer({
   const [openModules, setOpenModules] = useState<Set<number>>(new Set());
   const [quiz, setQuiz] = useState<QuizState>({});
   const [pendingWrong, setPendingWrong] = useState<{ questionId: string; chosenIndex: number } | null>(null);
+  const [wrongFlashKey, setWrongFlashKey] = useState(0);
   // Preguntas elegidas al azar por lección (estable mientras dure la sesión).
   const [quizPick, setQuizPick] = useState<Record<string, Question[]>>({});
   const [showSurvey, setShowSurvey] = useState(false);
+  const [alreadySurveyed, setAlreadySurveyed] = useState(false);
 
   const chat = useChat(courseId);
 
   useEffect(() => {
     setState("loading");
-    fetchCourse(courseId)
-      .then((c) => {
+    Promise.all([
+      fetchCourse(courseId),
+      fetchUserProgress(user.id),
+      checkSurveyed(user.id, courseId),
+    ])
+      .then(([c, progressMap, surveyed]) => {
         setCourse(c);
-        const saved = getProgress(pkey, courseId);
-        setActive(saved?.furthest ?? 0); // retoma desde donde quedó el usuario
+        const saved = progressMap[courseId];
+        setActive(saved?.furthest ?? 0);
+        setAlreadySurveyed(surveyed);
         setView("lesson");
         setQIndex(0);
         setOpenModules(new Set(c.modules.map((_, i) => i)));
@@ -141,9 +147,9 @@ export default function CourseViewer({
   // Registrar progreso: la lección alcanzada (la más avanzada) para "Mis cursos".
   useEffect(() => {
     if (state === "ready" && flat.length > 0) {
-      recordProgress(pkey, courseId, active, flat.length, user);
+      recordProgress(courseId, active, flat.length, user).catch(() => {});
     }
-  }, [state, active, flat.length, pkey, courseId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state, active, flat.length, courseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (state !== "ready" || !course) {
     return (
@@ -198,9 +204,11 @@ export default function CourseViewer({
       setQuiz((prev) => ({ ...prev, [q.id]: { ...prev[q.id], unlocked: true } }));
 
     if (correct) {
-      chat.sendQuiz({ phase: "correct", questionId: q.id, chosenIndex: answerIdx, lessonId }).then(unlock);
+      unlock();
+      chat.sendQuiz({ phase: "correct", questionId: q.id, chosenIndex: answerIdx, lessonId });
     } else {
       setPendingWrong({ questionId: q.id, chosenIndex: answerIdx });
+      setWrongFlashKey((k) => k + 1);
       chat.sendQuiz({ phase: "wrong_ask", questionId: q.id, chosenIndex: answerIdx, lessonId });
       // Next sigue bloqueado hasta que el alumno responda a Albus (handleUserSend).
     }
@@ -227,8 +235,8 @@ export default function CourseViewer({
 
   // Finalizar el curso: marcar acabado y, si no lo ha valorado aún, lanzar el survey.
   const finishCourse = () => {
-    markCompleted(pkey, courseId, total, user);
-    if (hasSurveyed(pkey, courseId)) {
+    markCompleted(courseId, total, user).catch(() => {});
+    if (alreadySurveyed) {
       onBack();
     } else {
       setShowSurvey(true);
@@ -353,11 +361,12 @@ export default function CourseViewer({
             <ThemeToggle />
             {!chatOpen && (
               <button
-                className="icon-btn"
+                className={`icon-btn${pendingWrong ? " icon-btn--pulse" : ""}`}
                 onClick={() => setChatOpen(true)}
                 title="Open assistant"
               >
                 <MessageSquare size={18} />
+                {pendingWrong && <span className="chat-badge" />}
               </button>
             )}
           </div>
@@ -446,8 +455,8 @@ export default function CourseViewer({
                   <span className="quiz-hint">Select an answer</span>
                 )}
                 {quiz[cq.id] && !canAdvance && (
-                  <span className="quiz-hint">
-                    <AlbusIcon size={13} /> Albus is replying in the chat
+                  <span className="quiz-hint quiz-hint--action">
+                    <AlbusIcon size={13} /> Reply to Albus to continue ↓
                   </span>
                 )}
                 <button
@@ -477,6 +486,8 @@ export default function CourseViewer({
           canClose={!isQuiz}
           onClose={() => setChatOpen(false)}
           notice={pendingWrong ? "✋ Reply to Albus to continue." : undefined}
+          needsReply={!!pendingWrong}
+          wrongFlashKey={wrongFlashKey}
           onResize={setChatWidth}
         />
       )}

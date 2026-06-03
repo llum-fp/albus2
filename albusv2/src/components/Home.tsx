@@ -1,47 +1,84 @@
-import { useEffect, useState } from "react";
-import { fetchCourses, userKey, type CourseSummary, type SessionUser } from "../api";
-import { BookOpen, ArrowRight, Check } from "./icons";
+import { useEffect, useState, useMemo } from "react";
+import { fetchCourses, fetchUserProgress, fetchPaths, userKey, type CourseSummary, type PathSummary, type SessionUser } from "../api";
+import { BookOpen, GraduationCap, ArrowRight, Check, Search, X } from "./icons";
+import { formatDuration } from "../format";
 import AlbusIcon from "./AlbusIcon";
 import ThemeToggle from "./ThemeToggle";
 import UserMenu from "./UserMenu";
-import { getProgressMap, syncProgressFromBackend, progressPct, type CourseProgress } from "../progress";
+import { progressPct, type CourseProgress } from "../progress";
 
-type Tab = "catalogo" | "mios";
+type Tab = "catalogo" | "mios" | "paths";
 type MineFilter = "all" | "active" | "done";
+type SortBy = "title-asc" | "title-desc" | "modules-desc" | "modules-asc";
 
 export default function Home({
   user,
   onOpen,
+  onOpenPath,
   onAdmin,
   onLogout,
 }: {
   user: SessionUser;
   onOpen: (courseId: string) => void;
+  onOpenPath: (pathId: number) => void;
   onAdmin?: () => void;
   onLogout: () => void;
 }) {
   const [courses, setCourses] = useState<CourseSummary[]>([]);
+  const [paths, setPaths] = useState<PathSummary[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [tab, setTab] = useState<Tab>("catalogo");
   const [mineFilter, setMineFilter] = useState<MineFilter>("all");
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortBy>("title-asc");
 
   useEffect(() => {
     fetchCourses()
-      .then((c) => {
-        setCourses(c);
-        setState("ready");
-      })
+      .then((c) => { setCourses(c); setState("ready"); })
       .catch(() => setState("error"));
   }, []);
+
+  useEffect(() => {
+    fetchPaths(user.id).then(setPaths).catch(() => {});
+  }, [user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Progreso del usuario: se hidrata desde el backend al montar y se almacena en
   // estado para que Home re-renderice cuando llegan los datos remotos.
   const pkey = userKey(user);
-  const [progress, setProgress] = useState<Record<string, CourseProgress>>(() => getProgressMap(pkey));
+  const [progress, setProgress] = useState<Record<string, CourseProgress>>({});
 
   useEffect(() => {
-    syncProgressFromBackend(user, pkey).then(setProgress).catch(() => {});
+    fetchUserProgress(user.id)
+      .then((remote) => {
+        const map: Record<string, CourseProgress> = {};
+        for (const [courseId, r] of Object.entries(remote)) {
+          map[courseId] = {
+            furthest: r.furthest,
+            total: r.total,
+            completed: r.completed,
+            updatedAt: new Date(r.updated_at).getTime(),
+          };
+        }
+        setProgress(map);
+      })
+      .catch(() => {});
   }, [user.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const displayedCourses = useMemo(() => {
+    return courses
+      .filter((c) =>
+        !search ||
+        `${c.title} ${c.description}`.toLowerCase().includes(search.toLowerCase())
+      )
+      .sort((a, b) => {
+        if (sortBy === "title-asc") return a.title.localeCompare(b.title);
+        if (sortBy === "title-desc") return b.title.localeCompare(a.title);
+        if (sortBy === "modules-desc") return b.module_count - a.module_count;
+        return a.module_count - b.module_count;
+      });
+  }, [courses, search, sortBy]);
+
+  const hasActiveFilters = search !== "";
 
   const enrolled = courses.filter((c) => progress[c.id]);
   const mine = enrolled.filter((c) => {
@@ -85,6 +122,13 @@ export default function Home({
           My courses
           {enrolled.length > 0 && <span className="tab-count">{enrolled.length}</span>}
         </button>
+        <button
+          className={`tab ${tab === "paths" ? "active" : ""}`}
+          onClick={() => setTab("paths")}
+        >
+          Learning paths
+          {paths.length > 0 && <span className="tab-count">{paths.length}</span>}
+        </button>
       </nav>
 
       <main className="home-main">
@@ -95,13 +139,59 @@ export default function Home({
 
         {state === "ready" && tab === "catalogo" && (
           <>
-            <p className="eyebrow section-title">All courses</p>
-            <div className="course-grid">
-              {courses.map((c) => (
-                <CourseCard key={c.id} c={c} p={progress[c.id]} onOpen={onOpen} />
-              ))}
-              {courses.length === 0 && <p className="muted">No courses published yet.</p>}
+            <div className="catalog-controls">
+              <div className="search-wrap">
+                <Search size={15} className="search-icon" />
+                <input
+                  className="catalog-search"
+                  type="text"
+                  placeholder="Search courses…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                {search && (
+                  <button className="search-clear" onClick={() => setSearch("")}>
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+              <select
+                className="catalog-sort"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortBy)}
+              >
+                <option value="title-asc">Title A → Z</option>
+                <option value="title-desc">Title Z → A</option>
+                <option value="modules-desc">Most modules first</option>
+                <option value="modules-asc">Fewest modules first</option>
+              </select>
             </div>
+
+            <div className="catalog-meta">
+              <span className="catalog-count">
+                {hasActiveFilters
+                  ? `${displayedCourses.length} of ${courses.length} courses`
+                  : `${courses.length} course${courses.length !== 1 ? "s" : ""}`}
+              </span>
+            </div>
+
+            {displayedCourses.length === 0 ? (
+              <div className="catalog-empty">
+                <p>No courses match your search.</p>
+                <button
+                  className="chip active"
+                  onClick={() => setSearch("")}
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : (
+              <div className="course-grid">
+                {displayedCourses.map((c) => (
+                  <CourseCard key={c.id} c={c} p={progress[c.id]} onOpen={onOpen} />
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -146,6 +236,31 @@ export default function Home({
                 ))}
               </div>
             )}
+          </>
+        )}
+
+        {tab === "paths" && (
+          <>
+            <p className="eyebrow section-title">Learning paths</p>
+            {paths.length === 0 ? (
+              <p className="muted">No learning paths available yet.</p>
+            ) : (() => {
+              const filtered = paths.filter(
+                (p) => !search || `${p.title} ${p.description ?? ""}`.toLowerCase().includes(search.toLowerCase())
+              );
+              return filtered.length === 0 ? (
+                <div className="empty-search">
+                  <p>No paths match your search.</p>
+                  <button className="link-btn" onClick={() => setSearch("")}>Clear filters</button>
+                </div>
+              ) : (
+                <div className="course-grid">
+                  {filtered.map((p) => (
+                    <PathCard key={p.id} p={p} onOpen={onOpenPath} />
+                  ))}
+                </div>
+              );
+            })()}
           </>
         )}
       </main>
@@ -199,6 +314,53 @@ function CourseCard({
       <div className="course-footer">
         <span className="muted-sm">
           {c.module_count} modules · {c.lesson_count} lessons
+          {formatDuration(c.duration_min) && ` · ${formatDuration(c.duration_min)}`}
+        </span>
+        <span className="course-open">
+          {cta} <ArrowRight size={14} />
+        </span>
+      </div>
+    </button>
+  );
+}
+
+/* Tarjeta de learning path. */
+function PathCard({ p, onOpen }: { p: PathSummary; onOpen: (id: number) => void }) {
+  const pct = p.course_count > 0 ? Math.round((p.completed_count / p.course_count) * 100) : 0;
+  const started = p.completed_count > 0 && p.completed_count < p.course_count;
+  const completed = p.completed_count === p.course_count && p.course_count > 0;
+  const cta = completed ? "Review" : started ? "Continue" : "Start";
+
+  return (
+    <button className="course-card" onClick={() => onOpen(p.id)}>
+      <div className="course-card-top">
+        <span className="course-icon">
+          <GraduationCap size={20} />
+        </span>
+        {completed ? (
+          <span className="badge badge-done"><Check size={11} /> Completed</span>
+        ) : started ? (
+          <span className="badge badge-progress">In progress</span>
+        ) : (
+          <span className="badge badge-live">Path</span>
+        )}
+      </div>
+      <div className="course-title">{p.title}</div>
+      {p.description && <div className="course-desc">{p.description}</div>}
+
+      {started && (
+        <div className="course-progress">
+          <div className="course-progress-track">
+            <div className="course-progress-fill" style={{ width: `${pct}%` }} />
+          </div>
+          <span className="course-progress-pct">{pct}%</span>
+        </div>
+      )}
+
+      <div className="course-footer">
+        <span className="muted-sm">
+          {p.course_count} course{p.course_count !== 1 ? "s" : ""}
+          {p.course_count > 0 && ` · ${p.completed_count} completed`}
         </span>
         <span className="course-open">
           {cta} <ArrowRight size={14} />

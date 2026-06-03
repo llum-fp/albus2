@@ -71,6 +71,12 @@ export const ArrowLeft = (p: P) => (
   </Base>
 );
 
+export const ChevronUp = (p: P) => (
+  <Base {...p}>
+    <path d="m18 15-6-6-6 6" />
+  </Base>
+);
+
 export const ChevronLeft = (p: P) => (
   <Base {...p}>
     <path d="m15 18-6-6 6-6" />

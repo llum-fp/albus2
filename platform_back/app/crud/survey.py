@@ -12,6 +12,14 @@ def create_survey(db: Session, data: SurveyCreate) -> Survey:
     return survey
 
 
+def has_surveyed(db: Session, user_id: int, course_id: str) -> bool:
+    return (
+        db.query(Survey)
+        .filter(Survey.user_id == user_id, Survey.course_id == course_id)
+        .first()
+    ) is not None
+
+
 def get_surveys(db: Session, skip: int = 0, limit: int = 1000) -> list[Survey]:
     return (
         db.query(Survey)

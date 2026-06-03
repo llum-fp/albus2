@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class SurveyCreate(BaseModel):
     course_id: str
+    user_id: int | None = None
     user: str
     rating_overall: int
     rating_content: int

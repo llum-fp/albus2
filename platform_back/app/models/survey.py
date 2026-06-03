@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -18,7 +18,8 @@ class Survey(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     course_id: Mapped[str] = mapped_column(String(255), index=True)
-    user: Mapped[str] = mapped_column(String(50))  # Admin | Technical | Sales
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    user: Mapped[str] = mapped_column(String(50))  # nombre del usuario
     rating_overall: Mapped[int] = mapped_column(Integer)
     rating_content: Mapped[int] = mapped_column(Integer)
     rating_albus: Mapped[int] = mapped_column(Integer)

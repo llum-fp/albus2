@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Star, X } from "./icons";
-import { submitSurvey, userKey, type SessionUser } from "../api";
-import { markSurveyed } from "../progress";
+import { submitSurvey, type SessionUser } from "../api";
 
 /* Encuesta de fin de curso. Estrellas 1-5 para varias dimensiones, escalas para
    dificultad y duración, y un textbox de comentarios. Se muestra al acabar. */
@@ -87,6 +86,7 @@ export default function Survey({
     try {
       await submitSurvey({
         course_id: courseId,
+        user_id: user.id,
         user: user.name,
         rating_overall: overall,
         rating_content: content,
@@ -96,7 +96,6 @@ export default function Survey({
         duration,
         comments: comments.trim(),
       });
-      markSurveyed(userKey(user), courseId);
       onDone();
     } catch {
       setError("Couldn't submit your feedback. Please try again.");

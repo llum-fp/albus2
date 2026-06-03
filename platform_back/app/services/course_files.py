@@ -42,6 +42,28 @@ def read_course_meta(path: str | None) -> dict:
     return {k: data.get(k) for k in ("title", "description", "language")}
 
 
+def update_course_json(path: str | None, *, title: str | None = None,
+                        description: str | None = None) -> bool:
+    """Write title/description into a course JSON in place (the learner catalog
+    reads the JSON, so an admin title/description edit must land here too).
+    Returns False if the file is missing/unreadable."""
+    if not path or not os.path.exists(path):
+        return False
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        return False
+    if title is not None:
+        data["title"] = title
+    if description is not None:
+        data["description"] = description
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, ensure_ascii=False, indent=2)
+        fh.write("\n")
+    return True
+
+
 def course_counts(path: str | None) -> tuple[int, int]:
     """(module_count, lesson_count) from a course JSON, or (0, 0) if unavailable."""
     if not path or not os.path.exists(path):
