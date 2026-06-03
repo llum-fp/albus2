@@ -662,6 +662,43 @@
   color: var(--oa-text-muted);
 }
 
+/* ── Log viewer ───────────────────────────────────────────────────────── */
+.log-viewer {
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  background: var(--oa-anthracite);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-card);
+  padding: 1rem;
+  height: calc(100vh - 220px);
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.log-line {
+  color: var(--oa-text-secondary);
+}
+.log-line.log-error {
+  color: var(--oa-error);
+}
+.log-line.log-warn {
+  color: var(--oa-warning);
+}
+.log-empty {
+  color: var(--oa-text-muted);
+  font-style: italic;
+}
+.log-auto-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--oa-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
 /* Table */
 .survey-table-wrap {
   overflow-x: auto;
