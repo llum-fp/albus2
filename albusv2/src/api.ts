@@ -137,6 +137,9 @@ export interface ConfluencePage {
   page_id: number | string;
   page_title: string;
   brief_description: string;
+  /** Browser-openable Confluence URL for the page (server builds it from
+   *  CONFLUENCE_URL, which stays server-side). */
+  page_url?: string;
 }
 
 export async function findPages(topic: string, limit = 8): Promise<ConfluencePage[]> {

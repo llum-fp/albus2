@@ -18,7 +18,7 @@ import {
   type Profile,
 } from "../api";
 import { useAdminJobs } from "../useAdminJobs";
-import { Check, ChevronDown, Eye, Globe, GraduationCap, Pencil, Plus, RefreshCw, Search, Sparkles, X } from "./icons";
+import { Check, ChevronDown, ExternalLink, Eye, Globe, GraduationCap, Pencil, Plus, RefreshCw, Search, Sparkles, X } from "./icons";
 import { elapsedSince, formatLocalDateTime as fmtDate, timeAgo } from "../format";
 
 const STATUS_FILTERS = ["all", "published", "draft", "pending", "failed"] as const;
@@ -440,6 +440,16 @@ function NewCourseModal({
       isSelected(p) ? cur.filter((x) => x.page_id !== p.page_id) : [...cur, p],
     );
 
+  // Ctrl/Cmd-click (or middle-click) opens the Confluence page instead of
+  // toggling selection — same affordance as a real link.
+  const onResultClick = (e: React.MouseEvent, p: ConfluencePage) => {
+    if ((e.ctrlKey || e.metaKey) && p.page_url) {
+      window.open(p.page_url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    toggle(p);
+  };
+
   const submit = async () => {
     const ids = Array.from(new Set(selected.map((p) => String(p.page_id))));
     if (ids.length === 0) {
@@ -561,7 +571,15 @@ function NewCourseModal({
                   <button
                     key={p.page_id}
                     className={`page-result ${isSelected(p) ? "selected" : ""}`}
-                    onClick={() => toggle(p)}
+                    onClick={(e) => onResultClick(e, p)}
+                    onAuxClick={(e) => {
+                      // middle-click opens the page too
+                      if (e.button === 1 && p.page_url) {
+                        e.preventDefault();
+                        window.open(p.page_url, "_blank", "noopener,noreferrer");
+                      }
+                    }}
+                    title={p.page_url ? "Click to select · Ctrl/Cmd-click to open in Confluence" : undefined}
                   >
                     <span className="page-result-check">{isSelected(p) ? <Check size={14} /> : null}</span>
                     <span className="page-result-body">
@@ -572,6 +590,11 @@ function NewCourseModal({
                         <span className="page-result-desc">{p.brief_description}</span>
                       )}
                     </span>
+                    {p.page_url && (
+                      <span className="page-result-open" aria-hidden="true">
+                        <ExternalLink size={14} />
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>

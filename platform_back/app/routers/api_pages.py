@@ -62,6 +62,21 @@ def _coerce_id(pid):
         return pid  # keep as a string if a future id is non-numeric
 
 
+def _page_url(base: str, pid) -> str:
+    """Build a browser-openable Confluence URL for a page id. Uses the
+    id-only viewpage endpoint, which Confluence Cloud redirects to the
+    canonical /wiki/spaces/.../pages/<id> URL — so the UI can link to a page
+    without knowing its space or slug."""
+    return f"{base.rstrip('/')}/wiki/pages/viewpage.action?pageId={pid}"
+
+
+def _attach_urls(base: str, pages: list[dict]) -> list[dict]:
+    """Add a ``page_url`` to each find-pages page dict (in place)."""
+    for p in pages:
+        p["page_url"] = _page_url(base, p.get("page_id"))
+    return pages
+
+
 def _cql_search(base: str, auth: tuple[str, str], cql: str, limit: int) -> list[dict]:
     """Run a CQL search and map results into the find-pages page shape."""
     try:
@@ -133,7 +148,7 @@ def find_pages(
     if topic.isdigit():
         id_hits = page_index.prefix_search(base, auth, topic, limit)
         if id_hits:
-            return {"pages": id_hits}
+            return {"pages": _attach_urls(base, id_hits)}
 
     # Double-quotes would break the CQL string literal, so neutralize them.
     safe_topic = topic.replace('"', " ").strip()
@@ -141,11 +156,11 @@ def find_pages(
     # 2) Title match.
     title_pages = _cql_search(base, auth, f'type = page AND title ~ "{safe_topic}"', limit)
     if title_pages:
-        return {"pages": title_pages}
+        return {"pages": _attach_urls(base, title_pages)}
 
     # 3) Full-text match (original behavior).
     text_pages = _cql_search(base, auth, f'type = page AND text ~ "{safe_topic}"', limit)
-    return {"pages": text_pages}
+    return {"pages": _attach_urls(base, text_pages)}
 
 
 @router.get("/page/{page_id}")
@@ -158,6 +173,7 @@ def get_page(page_id: str):
     page = _lookup_by_id(base, (email, token), page_id)
     if page is None:
         raise HTTPException(status_code=404, detail=f"Page {page_id} not found")
+    page["page_url"] = _page_url(base, page.get("page_id"))
     return page
 
 

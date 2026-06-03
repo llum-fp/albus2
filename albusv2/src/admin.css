@@ -576,6 +576,20 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+.page-result-open {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding-top: 0.1rem;
+  color: var(--oa-text-secondary);
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s;
+}
+.page-result:hover .page-result-open {
+  opacity: 0.7;
+}
+.page-result:hover .page-result-open:hover {
+  color: var(--oa-text);
+}
 .selected-pages {
   display: flex;
   flex-wrap: wrap;
