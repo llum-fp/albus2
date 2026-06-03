@@ -17,6 +17,7 @@ export default function AdminPaths() {
   const [paths, setPaths] = useState<AdminPath[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<Modal>(null);
+  const [search, setSearch] = useState("");
 
   const reload = () =>
     adminFetchPaths()
@@ -44,9 +45,20 @@ export default function AdminPaths() {
           <h2>Learning Paths</h2>
           <p className="sub">Group courses into ordered learning journeys.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setModal({ kind: "create" })}>
-          <Plus size={15} /> New path
-        </button>
+        <div className="admin-head-right">
+          <div className="picker-search" style={{ width: 220 }}>
+            <Search size={13} className="picker-search-icon" />
+            <input
+              className="picker-search-input"
+              placeholder="Search paths…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <button className="btn btn-primary" onClick={() => setModal({ kind: "create" })}>
+            <Plus size={15} /> New path
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -65,7 +77,9 @@ export default function AdminPaths() {
             </tr>
           </thead>
           <tbody>
-            {paths.map((p) => (
+            {paths.filter((p) =>
+              !search.trim() || p.title.toLowerCase().includes(search.toLowerCase())
+            ).map((p) => (
               <tr key={p.id}>
                 <td className="cell-title">{p.title}</td>
                 <td className="cell-muted">{p.profile ? capitalize(p.profile) : "All"}</td>
