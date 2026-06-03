@@ -394,6 +394,7 @@ export interface PathSummary {
   profile: string | null;
   course_count: number;
   completed_count: number;
+  total_duration_min?: number | null;
 }
 
 export interface PathDetail extends PathSummary {

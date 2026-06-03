@@ -41,6 +41,11 @@ def list_paths(
 ):
     paths = get_visible_paths(db, x_albus_role)
     progress_map = _build_progress_map(db, user_id)
+    duration_map = {
+        r.session_id: r.duration_min
+        for r in db.query(Course.session_id, Course.duration_min).all()
+        if r.session_id
+    }
 
     result = []
     for path in paths:
@@ -50,6 +55,8 @@ def list_paths(
             if progress_map.get(session_to_stem(c.course_session_id)) and
             progress_map[session_to_stem(c.course_session_id)].completed
         )
+        durations = [duration_map.get(c.course_session_id) for c in path.courses]
+        total_duration = sum(d for d in durations if d) or None
         result.append({
             "id": path.id,
             "title": path.title,
@@ -57,6 +64,7 @@ def list_paths(
             "profile": path.profile,
             "course_count": total,
             "completed_count": completed,
+            "total_duration_min": total_duration,
         })
     return result
 
@@ -96,6 +104,9 @@ def get_path_detail(
     total = len(courses)
     completed = sum(1 for c in courses if c.get("progress") and c["progress"]["completed"])
 
+    durations = [c.get("duration_min") for c in courses]
+    total_duration = sum(d for d in durations if d) or None
+
     return {
         "id": path.id,
         "title": path.title,
@@ -103,5 +114,6 @@ def get_path_detail(
         "profile": path.profile,
         "course_count": total,
         "completed_count": completed,
+        "total_duration_min": total_duration,
         "courses": courses,
     }
