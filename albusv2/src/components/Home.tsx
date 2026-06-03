@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import { fetchCourses, type CourseSummary } from "../api";
+import { useEffect, useState } from "react";
+import { fetchCourses, userKey, type CourseSummary, type SessionUser } from "../api";
 import { BookOpen, ArrowRight, Check } from "./icons";
 import AlbusIcon from "./AlbusIcon";
 import ThemeToggle from "./ThemeToggle";
 import UserMenu from "./UserMenu";
-import type { UserRole } from "./Login";
-import { getProgressMap, progressPct, type CourseProgress } from "../progress";
+import { getProgressMap, syncProgressFromBackend, progressPct, type CourseProgress } from "../progress";
 
 type Tab = "catalogo" | "mios";
 type MineFilter = "all" | "active" | "done";
@@ -16,7 +15,7 @@ export default function Home({
   onAdmin,
   onLogout,
 }: {
-  user: UserRole;
+  user: SessionUser;
   onOpen: (courseId: string) => void;
   onAdmin?: () => void;
   onLogout: () => void;
@@ -35,9 +34,14 @@ export default function Home({
       .catch(() => setState("error"));
   }, []);
 
-  // Progreso del usuario (localStorage). Se lee en cada montaje del Home, así que
-  // al volver de un curso refleja el último avance.
-  const progress = useMemo(() => getProgressMap(user), [user]);
+  // Progreso del usuario: se hidrata desde el backend al montar y se almacena en
+  // estado para que Home re-renderice cuando llegan los datos remotos.
+  const pkey = userKey(user);
+  const [progress, setProgress] = useState<Record<string, CourseProgress>>(() => getProgressMap(pkey));
+
+  useEffect(() => {
+    syncProgressFromBackend(user, pkey).then(setProgress).catch(() => {});
+  }, [user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const enrolled = courses.filter((c) => progress[c.id]);
   const mine = enrolled.filter((c) => {

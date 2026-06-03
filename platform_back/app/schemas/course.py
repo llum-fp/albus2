@@ -31,6 +31,7 @@ class CourseRead(BaseModel):
     language: str | None
     json_path: str | None
     status: str
+    published: bool = False
     user_id: int | None
     created_at: datetime
     updated_at: datetime

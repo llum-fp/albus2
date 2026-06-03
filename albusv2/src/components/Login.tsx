@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, ChevronDown } from "./icons";
 import AlbusIcon from "./AlbusIcon";
 import ThemeToggle from "./ThemeToggle";
+import { fetchUsers, type SessionUser } from "../api";
 
-/* Perfiles de acceso a la plataforma. */
+/* Roles de acceso a la plataforma (catálogo, usado también por el panel de
+   admin para asignar rol). El login YA NO elige un rol genérico: elige un
+   usuario real existente (ver abajo). */
 export type UserRole = "Admin" | "Technical" | "Sales";
 
 export const USER_ROLES: { value: UserRole; label: string; desc: string }[] = [
@@ -12,14 +15,25 @@ export const USER_ROLES: { value: UserRole; label: string; desc: string }[] = [
   { value: "Sales", label: "Sales", desc: "Sales team training" },
 ];
 
-export default function Login({ onLogin }: { onLogin: (role: UserRole) => void }) {
-  const [role, setRole] = useState<UserRole | "">("");
+export default function Login({ onLogin }: { onLogin: (user: SessionUser) => void }) {
+  const [users, setUsers] = useState<SessionUser[]>([]);
+  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [selectedId, setSelectedId] = useState<number | "">("");
+
+  useEffect(() => {
+    fetchUsers()
+      .then((u) => {
+        setUsers(u);
+        setState("ready");
+      })
+      .catch(() => setState("error"));
+  }, []);
+
+  const current = users.find((u) => u.id === selectedId);
 
   const submit = () => {
-    if (role) onLogin(role);
+    if (current) onLogin(current);
   };
-
-  const current = USER_ROLES.find((r) => r.value === role);
 
   return (
     <div className="login">
@@ -42,27 +56,40 @@ export default function Login({ onLogin }: { onLogin: (role: UserRole) => void }
             <select
               id="user-select"
               className="select"
-              value={role}
-              onChange={(e) => setRole(e.target.value as UserRole)}
+              value={selectedId}
+              disabled={state !== "ready" || users.length === 0}
+              onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : "")}
               onKeyDown={(e) => e.key === "Enter" && submit()}
             >
               <option value="" disabled>
-                — Choose a profile —
+                {state === "loading"
+                  ? "Loading users…"
+                  : state === "error"
+                  ? "Couldn't load users"
+                  : users.length === 0
+                  ? "No users yet"
+                  : "— Choose a user —"}
               </option>
-              {USER_ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} · {u.role}
                 </option>
               ))}
             </select>
             <ChevronDown size={16} className="select-caret" />
           </div>
-          {current && <p className="login-hint">{current.desc}</p>}
+          {current && <p className="login-hint">Signing in as {current.name} ({current.role})</p>}
+          {state === "error" && (
+            <p className="login-hint">Is the backend running on :8001?</p>
+          )}
+          {state === "ready" && users.length === 0 && (
+            <p className="login-hint">Ask an admin to create a user first.</p>
+          )}
 
           <button
             className="btn btn-primary login-submit"
             onClick={submit}
-            disabled={!role}
+            disabled={!current}
           >
             Sign in <ArrowRight size={16} />
           </button>

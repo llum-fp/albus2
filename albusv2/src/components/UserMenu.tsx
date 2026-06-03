@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { LogOut, CircleDot, Shield } from "./icons";
-import type { UserRole } from "./Login";
+import type { SessionUser } from "../api";
 
 /* Avatar circular con la inicial del usuario. Al pulsarlo despliega un menú con
    "Tu cuenta", "Cerrar sesión" y, para admins, acceso al panel de administración.
@@ -11,7 +11,7 @@ export default function UserMenu({
   onAdmin,
   onLogout,
 }: {
-  user: UserRole;
+  user: SessionUser;
   onAccount: () => void;
   onAdmin?: () => void;
   onLogout: () => void;
@@ -33,14 +33,14 @@ export default function UserMenu({
     };
   }, [open]);
 
-  const initial = user.charAt(0).toUpperCase();
+  const initial = (user.name || "?").charAt(0).toUpperCase();
 
   return (
     <div className="user-menu" ref={ref}>
       <button
         className="user-avatar"
         onClick={() => setOpen((v) => !v)}
-        title={user}
+        title={user.name}
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -52,8 +52,8 @@ export default function UserMenu({
           <div className="user-dropdown-head">
             <span className="user-avatar sm">{initial}</span>
             <div>
-              <div className="user-dropdown-name">{user}</div>
-              <div className="user-dropdown-role">Active session</div>
+              <div className="user-dropdown-name">{user.name}</div>
+              <div className="user-dropdown-role">{user.role}</div>
             </div>
           </div>
           <div className="user-dropdown-sep" />

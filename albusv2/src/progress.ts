@@ -1,10 +1,12 @@
-/* Seguimiento de progreso de cursos por usuario, persistido en localStorage.
-   No hay backend para esto todavía: cada perfil (Admin/Technical/Sales) tiene su
-   propio mapa de progreso. */
+/* Seguimiento de progreso de cursos por usuario.
+   localStorage actúa como caché local para lectura inmediata; el backend es
+   la fuente de verdad y se sincroniza de forma asíncrona en ambas direcciones. */
+
+import { fetchUserProgress, upsertProgress, type SessionUser } from "./api";
 
 export interface CourseProgress {
   furthest: number; // índice (0-based) de la lección más avanzada alcanzada
-  total: number; // nº total de lecciones del curso
+  total: number;    // nº total de lecciones del curso
   completed: boolean;
   updatedAt: number; // epoch ms
 }
@@ -30,6 +32,31 @@ function save(user: string, map: ProgressMap) {
   localStorage.setItem(keyFor(user), JSON.stringify(map));
 }
 
+/* Carga el progreso desde el backend y lo fusiona en localStorage.
+   Solo avanza el "furthest" — nunca retrocede. Devuelve el mapa actualizado. */
+export async function syncProgressFromBackend(
+  sessionUser: SessionUser,
+  userKey: string,
+): Promise<ProgressMap> {
+  try {
+    const remote = await fetchUserProgress(sessionUser.id);
+    const local = getProgressMap(userKey);
+    for (const [courseId, r] of Object.entries(remote)) {
+      const prev = local[courseId];
+      local[courseId] = {
+        furthest: Math.max(prev?.furthest ?? 0, r.furthest),
+        total: r.total,
+        completed: (prev?.completed ?? false) || r.completed,
+        updatedAt: new Date(r.updated_at).getTime(),
+      };
+    }
+    save(userKey, local);
+    return local;
+  } catch {
+    return getProgressMap(userKey);
+  }
+}
+
 /* Registra que el usuario ha alcanzado la lección `lessonIndex` (0-based) de un
    curso con `total` lecciones. Marca el curso como acabado si llega a la última.
    Solo avanza el "furthest" (nunca retrocede). */
@@ -38,6 +65,7 @@ export function recordProgress(
   courseId: string,
   lessonIndex: number,
   total: number,
+  sessionUser?: SessionUser,
 ) {
   const map = getProgressMap(user);
   const prev = map[courseId];
@@ -45,18 +73,25 @@ export function recordProgress(
   const completed = (prev?.completed ?? false) || furthest >= total - 1;
   map[courseId] = { furthest, total, completed, updatedAt: Date.now() };
   save(user, map);
+  if (sessionUser) {
+    upsertProgress(sessionUser.id, courseId, furthest, total, completed).catch(() => {});
+  }
 }
 
 /* Marca explícitamente un curso como acabado (botón Finalizar). */
-export function markCompleted(user: string, courseId: string, total: number) {
+export function markCompleted(
+  user: string,
+  courseId: string,
+  total: number,
+  sessionUser?: SessionUser,
+) {
   const map = getProgressMap(user);
-  map[courseId] = {
-    furthest: Math.max(map[courseId]?.furthest ?? 0, total - 1),
-    total,
-    completed: true,
-    updatedAt: Date.now(),
-  };
+  const furthest = Math.max(map[courseId]?.furthest ?? 0, total - 1);
+  map[courseId] = { furthest, total, completed: true, updatedAt: Date.now() };
   save(user, map);
+  if (sessionUser) {
+    upsertProgress(sessionUser.id, courseId, furthest, total, true).catch(() => {});
+  }
 }
 
 /* Porcentaje 0-100 de avance. */
