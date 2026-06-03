@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.crud.learning_path import get_visible_paths, get_path
 from app.crud.progress import get_user_progress
+from app.models.course import Course
 from app.services.course_files import json_path_for_session, read_course_meta, course_counts, session_to_stem
 
 router = APIRouter(prefix="/api/paths", tags=["frontend-paths"])
@@ -17,17 +18,18 @@ def _build_progress_map(db: Session, user_id: int | None) -> dict:
     return {r.course_id: r for r in records}
 
 
-def _course_summary(session_id: str) -> dict:
+def _course_summary(session_id: str, duration_map: dict) -> dict:
     path = json_path_for_session(session_id)
     meta = read_course_meta(path)
     module_count, lesson_count = course_counts(path)
     return {
-        "id": session_to_stem(session_id),  # filename-stem format, matches /api/courses/{id}
+        "id": session_to_stem(session_id),
         "title": meta.get("title") or "",
         "description": meta.get("description") or "",
         "language": meta.get("language"),
         "module_count": module_count,
         "lesson_count": lesson_count,
+        "duration_min": duration_map.get(session_id),
     }
 
 
@@ -72,12 +74,17 @@ def get_path_detail(
         raise HTTPException(404, "Path not found")
 
     progress_map = _build_progress_map(db, user_id)
+    duration_map = {
+        r.session_id: r.duration_min
+        for r in db.query(Course.session_id, Course.duration_min).all()
+        if r.session_id
+    }
 
     courses = []
     for c in path.courses:
         sid = c.course_session_id
         prog = progress_map.get(session_to_stem(sid))
-        summary = _course_summary(sid)
+        summary = _course_summary(sid, duration_map)
         summary["position"] = c.position
         summary["progress"] = {
             "furthest": prog.furthest if prog else 0,

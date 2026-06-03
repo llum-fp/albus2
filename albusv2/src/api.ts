@@ -40,6 +40,7 @@ export interface CourseSummary {
   language?: string;
   module_count: number;
   lesson_count: number;
+  duration_min?: number | null;
 }
 
 export interface Course {
@@ -374,12 +375,13 @@ export interface AdminPath {
 }
 
 export interface PathCourseSummary {
-  id: string;           // session_id (used as courseId in CourseViewer)
+  id: string;
   title: string;
   description: string;
   language?: string;
   module_count: number;
   lesson_count: number;
+  duration_min?: number | null;
   position: number;
   progress: { furthest: number; total: number; completed: boolean } | null;
 }

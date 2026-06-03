@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchPath, type PathDetail, type PathCourseSummary, type SessionUser } from "../api";
+import { formatDuration } from "../format";
 import { ArrowLeft, ArrowRight, Check, BookOpen, CircleDot } from "./icons";
 import AlbusIcon from "./AlbusIcon";
 import ThemeToggle from "./ThemeToggle";
@@ -144,7 +145,10 @@ function PathCourseRow({
           </span>
           <div className="path-row-info">
             <span className="course-title">{c.title}</span>
-            <span className="muted-sm">{c.module_count} modules · {c.lesson_count} lessons</span>
+            <span className="muted-sm">
+              {c.module_count} modules · {c.lesson_count} lessons
+              {formatDuration(c.duration_min) && ` · ${formatDuration(c.duration_min)}`}
+            </span>
           </div>
           <button className="btn btn-secondary btn-sm" onClick={onOpen}>
             {completed ? "Review" : started ? "Continue" : "Start"} <ArrowRight size={13} />

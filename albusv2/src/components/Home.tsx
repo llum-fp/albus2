@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { fetchCourses, fetchUserProgress, fetchPaths, userKey, type CourseSummary, type PathSummary, type SessionUser } from "../api";
 import { BookOpen, GraduationCap, ArrowRight, Check, Search, X } from "./icons";
+import { formatDuration } from "../format";
 import AlbusIcon from "./AlbusIcon";
 import ThemeToggle from "./ThemeToggle";
 import UserMenu from "./UserMenu";
@@ -243,13 +244,23 @@ export default function Home({
             <p className="eyebrow section-title">Learning paths</p>
             {paths.length === 0 ? (
               <p className="muted">No learning paths available yet.</p>
-            ) : (
-              <div className="course-grid">
-                {paths.map((p) => (
-                  <PathCard key={p.id} p={p} onOpen={onOpenPath} />
-                ))}
-              </div>
-            )}
+            ) : (() => {
+              const filtered = paths.filter(
+                (p) => !search || `${p.title} ${p.description ?? ""}`.toLowerCase().includes(search.toLowerCase())
+              );
+              return filtered.length === 0 ? (
+                <div className="empty-search">
+                  <p>No paths match your search.</p>
+                  <button className="link-btn" onClick={() => setSearch("")}>Clear filters</button>
+                </div>
+              ) : (
+                <div className="course-grid">
+                  {filtered.map((p) => (
+                    <PathCard key={p.id} p={p} onOpen={onOpenPath} />
+                  ))}
+                </div>
+              );
+            })()}
           </>
         )}
       </main>
@@ -303,6 +314,7 @@ function CourseCard({
       <div className="course-footer">
         <span className="muted-sm">
           {c.module_count} modules · {c.lesson_count} lessons
+          {formatDuration(c.duration_min) && ` · ${formatDuration(c.duration_min)}`}
         </span>
         <span className="course-open">
           {cta} <ArrowRight size={14} />

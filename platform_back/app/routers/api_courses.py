@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from app.config import COURSES_DIR
 from app.crud.course import get_visible_session_ids
 from app.database import get_db
+from app.models.course import Course
 from app.services.course_files import stem_to_session
 
 router = APIRouter(prefix="/api", tags=["frontend-courses"])
@@ -37,8 +38,14 @@ def list_courses(
     if not COURSES_DIR.exists():
         return courses
     visible = get_visible_session_ids(db, x_albus_role)
+    duration_map = {
+        r.session_id: r.duration_min
+        for r in db.query(Course.session_id, Course.duration_min).all()
+        if r.session_id
+    }
     for path in sorted(COURSES_DIR.glob("*.json")):
-        if stem_to_session(path.stem) not in visible:
+        session_id = stem_to_session(path.stem)
+        if session_id not in visible:
             continue  # not published or not visible to this role
         try:
             with open(path, encoding="utf-8") as fh:
@@ -47,12 +54,13 @@ def list_courses(
             continue  # skip unreadable / partial files rather than 500 the list
         modules = data.get("modules", [])
         courses.append({
-            "id": path.stem,  # filename minus .json — the id the frontend passes back
+            "id": path.stem,
             "title": data.get("title"),
             "description": data.get("description"),
             "language": data.get("language"),
             "module_count": len(modules),
             "lesson_count": sum(len(m.get("lessons", [])) for m in modules),
+            "duration_min": duration_map.get(session_id),
         })
     return courses
 
