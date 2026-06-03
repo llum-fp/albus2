@@ -20,6 +20,14 @@ dist/
 
 # Data — keep sample courses, ignore generated ones
 
+# Database — never commit, regenerate with seed.py
+platform_back/platform.db
+
+# Local server script and its runtime files
+server.sh
+.server.pids
+.logs/
+
 # Albus chat tutor sandbox (temp system-prompt files written per request)
 platform_back/claude-sandbox/
 proyecto_exportacion/backend/claude-sandbox/
