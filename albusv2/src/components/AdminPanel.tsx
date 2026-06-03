@@ -1,16 +1,18 @@
 import { useState } from "react";
 import "../admin.css";
-import { ArrowLeft, BarChart, BookOpen, Settings, Users } from "./icons";
+import { ArrowLeft, BarChart, BookOpen, GraduationCap, Settings, Users } from "./icons";
 import AlbusIcon from "./AlbusIcon";
 import ThemeToggle from "./ThemeToggle";
 import AdminCourses from "./AdminCourses";
 import AdminUsers from "./AdminUsers";
 import AdminSurveys from "./AdminSurveys";
+import AdminPaths from "./AdminPaths";
 
-type Section = "courses" | "users" | "surveys" | "settings";
+type Section = "courses" | "paths" | "users" | "surveys" | "settings";
 
 const NAV: { id: Section; label: string; Icon: typeof BookOpen }[] = [
   { id: "courses", label: "Courses", Icon: BookOpen },
+  { id: "paths", label: "Learning Paths", Icon: GraduationCap },
   { id: "users", label: "Users", Icon: Users },
   { id: "surveys", label: "Surveys", Icon: BarChart },
   { id: "settings", label: "Settings", Icon: Settings },
@@ -63,6 +65,7 @@ export default function AdminPanel({
 
       <div className="admin-content">
         {section === "courses" && <AdminCourses onOpenCourse={onOpenCourse} />}
+        {section === "paths" && <AdminPaths />}
         {section === "users" && <AdminUsers />}
         {section === "surveys" && <AdminSurveys />}
         {section === "settings" && <AdminSettings />}

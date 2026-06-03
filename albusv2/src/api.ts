@@ -353,3 +353,83 @@ export const adminDeleteUser = (id: number) =>
 
 // Surveys
 export const adminFetchSurveys = () => adminFetch<SurveysResponse>("/surveys", { headers: adminHeaders() });
+
+// ── Learning Paths ────────────────────────────────────────────────────────────
+
+export interface PathCourse {
+  course_session_id: string;
+  position: number;
+}
+
+export interface AdminPath {
+  id: number;
+  title: string;
+  description: string | null;
+  profile: string | null;
+  published: boolean;
+  course_count: number;
+  created_at: string;
+  updated_at: string;
+  courses: PathCourse[];
+}
+
+export interface PathCourseSummary {
+  id: string;           // session_id (used as courseId in CourseViewer)
+  title: string;
+  description: string;
+  language?: string;
+  module_count: number;
+  lesson_count: number;
+  position: number;
+  progress: { furthest: number; total: number; completed: boolean } | null;
+}
+
+export interface PathSummary {
+  id: number;
+  title: string;
+  description: string | null;
+  profile: string | null;
+  course_count: number;
+  completed_count: number;
+}
+
+export interface PathDetail extends PathSummary {
+  courses: PathCourseSummary[];
+}
+
+// Learner
+export async function fetchPaths(userId: number): Promise<PathSummary[]> {
+  const r = await fetch(`/api/paths?user_id=${userId}`, {
+    headers: { "X-Albus-Role": storedRole() },
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+export async function fetchPath(pathId: number, userId: number): Promise<PathDetail> {
+  const r = await fetch(`/api/paths/${pathId}?user_id=${userId}`, {
+    headers: { "X-Albus-Role": storedRole() },
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// Admin
+export const adminFetchPaths = () =>
+  adminFetch<AdminPath[]>("/paths", { headers: adminHeaders() });
+export const adminCreatePath = (body: { title: string; description?: string; profile?: string | null }) =>
+  adminFetch<AdminPath>("/paths", { method: "POST", headers: adminHeaders(true), body: JSON.stringify(body) });
+export const adminUpdatePath = (id: number, body: { title?: string; description?: string; profile?: string | null }) =>
+  adminFetch<AdminPath>(`/paths/${id}`, { method: "PATCH", headers: adminHeaders(true), body: JSON.stringify(body) });
+export const adminPublishPath = (id: number) =>
+  adminFetch<AdminPath>(`/paths/${id}/publish`, { method: "POST", headers: adminHeaders() });
+export const adminUnpublishPath = (id: number) =>
+  adminFetch<AdminPath>(`/paths/${id}/unpublish`, { method: "POST", headers: adminHeaders() });
+export const adminSetPathCourses = (id: number, courses: PathCourse[]) =>
+  adminFetch<AdminPath>(`/paths/${id}/courses`, {
+    method: "PUT",
+    headers: adminHeaders(true),
+    body: JSON.stringify({ courses }),
+  });
+export const adminDeletePath = (id: number) =>
+  adminFetch<{ ok: boolean }>(`/paths/${id}`, { method: "DELETE", headers: adminHeaders() });

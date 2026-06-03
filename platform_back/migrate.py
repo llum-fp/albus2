@@ -93,6 +93,35 @@ def main() -> None:
         con.execute("ALTER TABLE surveys ADD COLUMN user_id INTEGER REFERENCES users(id)")
         print("Phase 2 done.")
 
+    # ── Phase 3: learning_paths + learning_path_courses ───────────────────────
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='learning_paths'")
+    if cur.fetchone():
+        print("Phase 3: already applied. Skipping.")
+    else:
+        print("Phase 3: creating learning_paths tables…")
+        con.execute("""
+            CREATE TABLE learning_paths (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                title       VARCHAR(255) NOT NULL,
+                description TEXT DEFAULT '',
+                profile     VARCHAR(50),
+                published   BOOLEAN NOT NULL DEFAULT 0,
+                created_at  DATETIME DEFAULT (CURRENT_TIMESTAMP),
+                updated_at  DATETIME DEFAULT (CURRENT_TIMESTAMP)
+            )
+        """)
+        con.execute("""
+            CREATE TABLE learning_path_courses (
+                id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                path_id           INTEGER NOT NULL REFERENCES learning_paths(id) ON DELETE CASCADE,
+                course_session_id VARCHAR(255) NOT NULL,
+                position          INTEGER NOT NULL,
+                UNIQUE (path_id, position),
+                UNIQUE (path_id, course_session_id)
+            )
+        """)
+        print("Phase 3 done.")
+
     con.close()
     print("Migration complete.")
     print(f"Rollback if needed: cp {backup.name} platform.db")
