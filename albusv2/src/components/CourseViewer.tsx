@@ -203,7 +203,8 @@ export default function CourseViewer({
       setQuiz((prev) => ({ ...prev, [q.id]: { ...prev[q.id], unlocked: true } }));
 
     if (correct) {
-      chat.sendQuiz({ phase: "correct", questionId: q.id, chosenIndex: answerIdx, lessonId }).then(unlock);
+      unlock();
+      chat.sendQuiz({ phase: "correct", questionId: q.id, chosenIndex: answerIdx, lessonId });
     } else {
       setPendingWrong({ questionId: q.id, chosenIndex: answerIdx });
       chat.sendQuiz({ phase: "wrong_ask", questionId: q.id, chosenIndex: answerIdx, lessonId });
@@ -358,11 +359,12 @@ export default function CourseViewer({
             <ThemeToggle />
             {!chatOpen && (
               <button
-                className="icon-btn"
+                className={`icon-btn${pendingWrong ? " icon-btn--pulse" : ""}`}
                 onClick={() => setChatOpen(true)}
                 title="Open assistant"
               >
                 <MessageSquare size={18} />
+                {pendingWrong && <span className="chat-badge" />}
               </button>
             )}
           </div>
@@ -451,8 +453,8 @@ export default function CourseViewer({
                   <span className="quiz-hint">Select an answer</span>
                 )}
                 {quiz[cq.id] && !canAdvance && (
-                  <span className="quiz-hint">
-                    <AlbusIcon size={13} /> Albus is replying in the chat
+                  <span className="quiz-hint quiz-hint--action">
+                    <AlbusIcon size={13} /> Reply to Albus to continue ↓
                   </span>
                 )}
                 <button
@@ -482,6 +484,7 @@ export default function CourseViewer({
           canClose={!isQuiz}
           onClose={() => setChatOpen(false)}
           notice={pendingWrong ? "✋ Reply to Albus to continue." : undefined}
+          needsReply={!!pendingWrong}
           onResize={setChatWidth}
         />
       )}
