@@ -35,8 +35,10 @@ mock backend (`proyecto_exportacion/backend/`) has been **removed** — its chat
 - **`platform_back/`** — FastAPI backend with SQLite persistence. Entry point: `run.py`.
   - `app/main.py` — FastAPI app + CORS, mounts routers, runs `create_all` on startup.
   - `app/config.py` — `COURSES_DIR` (= `agents_back/agents_directory/json`, the shared
-    course-file source of truth), loads `agents_back/.env`, back-fills `CONFLUENCE_*`
-    env names from `ATLASSIAN_*` for the chat tutor.
+    course-file source of truth) and `EXTRACTS_DIR` (= `agents_back/agents_directory/extract`,
+    the source-extractor's Markdown extracts, used by the chat tutor for reference grounding);
+    loads `agents_back/.env`, back-fills `CONFLUENCE_*` env names from `ATLASSIAN_*` (now only
+    needed for the chat's Confluence *fallback*).
   - `app/models/` — SQLAlchemy models: `Course`, `User`, `Survey`.
   - `app/schemas/` — Pydantic v2 schemas (course, user, survey).
   - `app/crud/` — DB operations for courses, users, surveys.
@@ -50,8 +52,12 @@ mock backend (`proyecto_exportacion/backend/`) has been **removed** — its chat
     - `app/routers/api_surveys.py` — `POST/GET /api/surveys` (persisted in SQLite).
     - `app/routers/chat.py` — Albus quiz-tutor: `POST /api/chat/session`, `GET /api/chat/stream`
       (SSE). Ported from the colleague backend; streams the local `claude` CLI and reads
-      courses from `COURSES_DIR`. `app/albus_persona.md` is its persona; `app/util/html.py`
-      holds `strip_html`. Sandbox: `platform_back/claude-sandbox/` (gitignored).
+      courses from `COURSES_DIR`. For per-question reference grounding it reads the
+      source-extractor's local extract (`load_extract` → `EXTRACTS_DIR/source_<sid>.md`, paired
+      with the course by session id) — faithful, image-aware, multi-page, no network — and only
+      falls back to a live Confluence fetch when a course has no extract. `app/albus_persona.md`
+      is its persona; `app/util/html.py` holds `strip_html`. Sandbox: `platform_back/claude-sandbox/`
+      (gitignored).
   - `platform.db` — SQLite database (auto-created on first run).
 - **`albusv2/`** — React 19 + Vite learner frontend (dev `:5174`). All
   backend calls go through `src/api.ts` + `src/useChat.ts` (5 `/api/*` endpoints); the Vite
