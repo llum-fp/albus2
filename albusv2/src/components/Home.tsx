@@ -1,10 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
-import { fetchCourses, userKey, type CourseSummary, type SessionUser } from "../api";
+import { fetchCourses, fetchUserProgress, userKey, type CourseSummary, type SessionUser } from "../api";
 import { BookOpen, ArrowRight, Check, Search, X } from "./icons";
 import AlbusIcon from "./AlbusIcon";
 import ThemeToggle from "./ThemeToggle";
 import UserMenu from "./UserMenu";
-import { getProgressMap, syncProgressFromBackend, progressPct, type CourseProgress } from "../progress";
+import { progressPct, type CourseProgress } from "../progress";
 
 type Tab = "catalogo" | "mios";
 type MineFilter = "all" | "active" | "done";
@@ -40,10 +40,23 @@ export default function Home({
   // Progreso del usuario: se hidrata desde el backend al montar y se almacena en
   // estado para que Home re-renderice cuando llegan los datos remotos.
   const pkey = userKey(user);
-  const [progress, setProgress] = useState<Record<string, CourseProgress>>(() => getProgressMap(pkey));
+  const [progress, setProgress] = useState<Record<string, CourseProgress>>({});
 
   useEffect(() => {
-    syncProgressFromBackend(user, pkey).then(setProgress).catch(() => {});
+    fetchUserProgress(user.id)
+      .then((remote) => {
+        const map: Record<string, CourseProgress> = {};
+        for (const [courseId, r] of Object.entries(remote)) {
+          map[courseId] = {
+            furthest: r.furthest,
+            total: r.total,
+            completed: r.completed,
+            updatedAt: new Date(r.updated_at).getTime(),
+          };
+        }
+        setProgress(map);
+      })
+      .catch(() => {});
   }, [user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayedCourses = useMemo(() => {

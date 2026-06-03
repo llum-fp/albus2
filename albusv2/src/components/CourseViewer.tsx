@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
-import { fetchCourse, mediaUrl, userKey, type Course, type Question, type SessionUser } from "../api";
-import { recordProgress, markCompleted, hasSurveyed, getProgress } from "../progress";
+import { fetchCourse, fetchUserProgress, mediaUrl, userKey, type Course, type Question, type SessionUser } from "../api";
+import { recordProgress, markCompleted, hasSurveyed } from "../progress";
 import { useChat } from "../useChat";
 import QuizQuestion from "./QuizQuestion";
 import ChatPanel from "./ChatPanel";
@@ -116,11 +116,11 @@ export default function CourseViewer({
 
   useEffect(() => {
     setState("loading");
-    fetchCourse(courseId)
-      .then((c) => {
+    Promise.all([fetchCourse(courseId), fetchUserProgress(user.id)])
+      .then(([c, progressMap]) => {
         setCourse(c);
-        const saved = getProgress(pkey, courseId);
-        setActive(saved?.furthest ?? 0); // retoma desde donde quedó el usuario
+        const saved = progressMap[courseId];
+        setActive(saved?.furthest ?? 0);
         setView("lesson");
         setQIndex(0);
         setOpenModules(new Set(c.modules.map((_, i) => i)));
@@ -141,9 +141,9 @@ export default function CourseViewer({
   // Registrar progreso: la lección alcanzada (la más avanzada) para "Mis cursos".
   useEffect(() => {
     if (state === "ready" && flat.length > 0) {
-      recordProgress(pkey, courseId, active, flat.length, user);
+      recordProgress(courseId, active, flat.length, user).catch(() => {});
     }
-  }, [state, active, flat.length, pkey, courseId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state, active, flat.length, courseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (state !== "ready" || !course) {
     return (
@@ -227,7 +227,7 @@ export default function CourseViewer({
 
   // Finalizar el curso: marcar acabado y, si no lo ha valorado aún, lanzar el survey.
   const finishCourse = () => {
-    markCompleted(pkey, courseId, total, user);
+    markCompleted(courseId, total, user).catch(() => {});
     if (hasSurveyed(pkey, courseId)) {
       onBack();
     } else {
