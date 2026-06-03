@@ -392,6 +392,12 @@ export const adminCreateProfile = (body: { name: string; description: string }) 
     body: JSON.stringify(body),
   });
 
+// Logs
+export type LogService = "platform_back" | "agents_back" | "albusv2";
+export interface LogResponse { service: LogService; lines: string[] }
+export const adminFetchLogs = (service: LogService, lines = 200) =>
+  adminFetch<LogResponse>(`/logs?service=${service}&lines=${lines}`, { headers: adminHeaders() });
+
 // ── Learning Paths ────────────────────────────────────────────────────────────
 
 export interface PathCourse {

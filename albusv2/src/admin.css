@@ -662,6 +662,43 @@
   color: var(--oa-text-muted);
 }
 
+/* ── Log viewer ───────────────────────────────────────────────────────── */
+.log-viewer {
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  background: var(--oa-anthracite);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-card);
+  padding: 1rem;
+  height: calc(100vh - 220px);
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.log-line {
+  color: var(--oa-text-secondary);
+}
+.log-line.log-error {
+  color: var(--oa-error);
+}
+.log-line.log-warn {
+  color: var(--oa-warning);
+}
+.log-empty {
+  color: var(--oa-text-muted);
+  font-style: italic;
+}
+.log-auto-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--oa-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
 /* Table */
 .survey-table-wrap {
   overflow-x: auto;
@@ -958,3 +995,45 @@
 .picker-pos { font-size: 0.72rem; font-weight: 700; color: var(--oa-text-muted); width: 16px; text-align: center; flex-shrink: 0; }
 .picker-selected-title { flex: 1; font-size: 0.84rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .picker-selected-actions { display: flex; gap: 2px; flex-shrink: 0; }
+
+/* ── Toggle switch ──────────────────────────────────────────────────────── */
+.field-label-sm {
+  font-size: 0.8rem;
+  color: var(--oa-text-secondary);
+}
+.toggle-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+.toggle-row.toggle-disabled { opacity: 0.4; cursor: not-allowed; }
+.toggle-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--oa-border);
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle-on .toggle-track { background: var(--oa-red); }
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+.toggle-on .toggle-thumb { transform: translateX(16px); }
+.toggle-label {
+  font-size: 0.88rem;
+  color: var(--oa-text);
+}

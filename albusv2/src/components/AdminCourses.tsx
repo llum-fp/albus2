@@ -314,14 +314,6 @@ export default function AdminCourses({
                     </button>
                     <button
                       className="icon-btn"
-                      title="Preview outline"
-                      disabled={busyId === c.db_id || c.status !== "completed"}
-                      onClick={() => openPreview(c)}
-                    >
-                      <Eye size={15} />
-                    </button>
-                    <button
-                      className="icon-btn"
                       title="Edit details"
                       disabled={c.status === "pending"}
                       onClick={() => setEdit(c)}
@@ -335,14 +327,6 @@ export default function AdminCourses({
                       onClick={() => setRevise(c)}
                     >
                       <Sparkles size={15} />
-                    </button>
-                    <button
-                      className="icon-btn"
-                      title={c.published ? "Unpublish" : "Publish"}
-                      disabled={busyId === c.db_id || c.status !== "completed"}
-                      onClick={() => togglePublish(c)}
-                    >
-                      <Globe size={15} />
                     </button>
                   </td>
                 </tr>
@@ -615,6 +599,7 @@ function EditDetailsModal({
   const [profile, setProfile] = useState(course.profile ?? "");
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [duration, setDuration] = useState(course.duration_min ? String(course.duration_min) : "");
+  const [published, setPublished] = useState(course.published);
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -636,7 +621,11 @@ function EditDetailsModal({
         duration_min: duration ? Number(duration) : null,
       };
       if (profile) body.profile = profile;
-      onSaved(await adminUpdateCourseDetails(course.db_id, body));
+      let updated = await adminUpdateCourseDetails(course.db_id, body);
+      if (published !== course.published) {
+        updated = published ? await adminPublish(course.db_id) : await adminUnpublish(course.db_id);
+      }
+      onSaved(updated);
     } catch {
       setErr("Couldn't save changes.");
       setSending(false);
@@ -686,6 +675,25 @@ function EditDetailsModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+        </div>
+        <div className="field">
+          <label className="field-label-sm">Visibility</label>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={published}
+            disabled={course.status !== "completed"}
+            className={`toggle-row ${published ? "toggle-on" : ""} ${course.status !== "completed" ? "toggle-disabled" : ""}`}
+            onClick={() => setPublished((p) => !p)}
+          >
+            <span className="toggle-track">
+              <span className="toggle-thumb" />
+            </span>
+            <span className="toggle-label">{published ? "Published" : "Draft"}</span>
+          </button>
+          {course.status !== "completed" && (
+            <p className="search-hint">Only completed courses can be published.</p>
+          )}
         </div>
         {err && <p className="admin-error">{err}</p>}
         <div className="modal-actions">

@@ -27,7 +27,7 @@ export default function Home({
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [paths, setPaths] = useState<PathSummary[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
-  const [tab, setTab] = useState<Tab>("catalogo");
+  const [tab, setTab] = useState<Tab>("mios");
   const [mineFilter, setMineFilter] = useState<MineFilter>("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("title-asc");
@@ -110,17 +110,17 @@ export default function Home({
 
       <nav className="tabs">
         <button
-          className={`tab ${tab === "catalogo" ? "active" : ""}`}
-          onClick={() => setTab("catalogo")}
-        >
-          Course catalog
-        </button>
-        <button
           className={`tab ${tab === "mios" ? "active" : ""}`}
           onClick={() => setTab("mios")}
         >
           My courses
           {enrolled.length > 0 && <span className="tab-count">{enrolled.length}</span>}
+        </button>
+        <button
+          className={`tab ${tab === "catalogo" ? "active" : ""}`}
+          onClick={() => setTab("catalogo")}
+        >
+          Course catalog
         </button>
         <button
           className={`tab ${tab === "paths" ? "active" : ""}`}
@@ -289,15 +289,13 @@ function CourseCard({
         <span className="course-icon">
           <BookOpen size={20} />
         </span>
-        {!p ? (
-          <span className="badge badge-live">Active</span>
-        ) : p.completed ? (
+        {p && (p.completed ? (
           <span className="badge badge-done">
             <Check size={11} /> Completed
           </span>
         ) : (
           <span className="badge badge-progress">In progress</span>
-        )}
+        ))}
       </div>
       <div className="course-title">{c.title}</div>
       <div className="course-desc">{c.description}</div>
