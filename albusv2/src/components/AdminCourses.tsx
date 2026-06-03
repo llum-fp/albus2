@@ -6,6 +6,7 @@ import {
   adminPublish,
   adminReviseCourse,
   adminUnpublish,
+  adminUpdateCourseDetails,
   findPage,
   findPages,
   type AdminCourse,
@@ -15,7 +16,7 @@ import {
   type CourseProfile,
 } from "../api";
 import { useAdminJobs } from "../useAdminJobs";
-import { Check, ChevronDown, Eye, Globe, GraduationCap, Pencil, Plus, RefreshCw, Search, X } from "./icons";
+import { Check, ChevronDown, Eye, Globe, GraduationCap, Pencil, Plus, RefreshCw, Search, Sparkles, X } from "./icons";
 import { elapsedSince, formatLocalDateTime as fmtDate, timeAgo } from "../format";
 
 const STATUS_FILTERS = ["all", "published", "draft", "pending", "failed"] as const;
@@ -62,6 +63,7 @@ export default function AdminCourses({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showNew, setShowNew] = useState(false);
   const [revise, setRevise] = useState<AdminCourse | null>(null);
+  const [edit, setEdit] = useState<AdminCourse | null>(null);
   const [preview, setPreview] = useState<AdminCourseDetail | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   // Builds launched from this browser session — kept in the monitor (so the
@@ -234,7 +236,7 @@ export default function AdminCourses({
               className={`chip ${profileFilter === "all" ? "active" : ""}`}
               onClick={() => setProfileFilter("all")}
             >
-              all profiles
+              all departments
             </button>
             {profiles.map((p) => (
               <button
@@ -261,7 +263,7 @@ export default function AdminCourses({
             <thead>
               <tr>
                 <th>Title</th>
-                <th>Profile</th>
+                <th>Department</th>
                 <th>Build</th>
                 <th>Published</th>
                 <th>Mod / Les</th>
@@ -307,11 +309,19 @@ export default function AdminCourses({
                     </button>
                     <button
                       className="icon-btn"
+                      title="Edit details"
+                      disabled={c.status === "pending"}
+                      onClick={() => setEdit(c)}
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      className="icon-btn"
                       title="Revise with feedback"
                       disabled={!c.session_id || c.status === "pending"}
                       onClick={() => setRevise(c)}
                     >
-                      <Pencil size={15} />
+                      <Sparkles size={15} />
                     </button>
                     <button
                       className="icon-btn"
@@ -347,6 +357,16 @@ export default function AdminCourses({
             setRevise(null);
             watch(dbId);
             refresh();
+          }}
+        />
+      )}
+      {edit && (
+        <EditDetailsModal
+          course={edit}
+          onClose={() => setEdit(null)}
+          onSaved={(updated) => {
+            setCourses((cur) => cur.map((x) => (x.db_id === updated.db_id ? { ...x, ...updated } : x)));
+            setEdit(null);
           }}
         />
       )}
@@ -484,7 +504,7 @@ function NewCourseModal({
         </div>
 
         <div className="field">
-          <label>Profile</label>
+          <label>Department</label>
           <div className="select-wrap">
             <select className="select" value={profile} onChange={(e) => setProfile(e.target.value as CourseProfile)}>
               <option value="technical">Technical</option>
@@ -550,6 +570,86 @@ function NewCourseModal({
           </div>
         </aside>
       )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Edit details modal (title / department / description, no rebuild) ──── */
+function EditDetailsModal({
+  course,
+  onClose,
+  onSaved,
+}: {
+  course: AdminCourse;
+  onClose: () => void;
+  onSaved: (c: AdminCourse) => void;
+}) {
+  const [title, setTitle] = useState(course.title ?? "");
+  const [description, setDescription] = useState(course.description ?? "");
+  const [profile, setProfile] = useState(course.profile ?? "");
+  const [sending, setSending] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const submit = async () => {
+    if (!title.trim()) {
+      setErr("Title is required.");
+      return;
+    }
+    setSending(true);
+    setErr(null);
+    try {
+      const body: { title: string; description: string; profile?: string } = {
+        title: title.trim(),
+        description: description,
+      };
+      if (profile) body.profile = profile; // only set a real department
+      onSaved(await adminUpdateCourseDetails(course.db_id, body));
+    } catch {
+      setErr("Couldn't save changes.");
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="admin-overlay" role="dialog" aria-modal="true">
+      <div className="admin-modal">
+        <button className="icon-btn modal-close" onClick={onClose}><X size={16} /></button>
+        <h3>Edit details</h3>
+        <p className="modal-sub">Change the course info without rebuilding it.</p>
+        <div className="field">
+          <label>Title</label>
+          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Department</label>
+          <div className="select-wrap">
+            <select className="select" value={profile} onChange={(e) => setProfile(e.target.value)}>
+              <option value="" disabled>— select a department —</option>
+              <option value="technical">Technical</option>
+              <option value="sales">Sales</option>
+            </select>
+            <ChevronDown size={16} className="select-caret" />
+          </div>
+          {!course.profile && !profile && (
+            <p className="search-hint">Unassigned courses aren't shown to learners until they have a department.</p>
+          )}
+        </div>
+        <div className="field">
+          <label>Description</label>
+          <textarea
+            className="textarea"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+        {err && <p className="admin-error">{err}</p>}
+        <div className="modal-actions">
+          <button className="btn btn-secondary" onClick={onClose} disabled={sending}>Cancel</button>
+          <button className="btn btn-primary" onClick={submit} disabled={sending}>
+            {sending ? "Saving…" : "Save changes"}
+          </button>
+        </div>
       </div>
     </div>
   );

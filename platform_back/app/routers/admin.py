@@ -27,10 +27,17 @@ from app.crud.course import (
     get_course,
     get_courses,
     set_course_published,
+    update_course_details,
 )
 from app.crud.user import create_user, delete_user, get_user_by_email, get_users, update_user
 from app.crud.survey import get_surveys, survey_stats
-from app.schemas.admin import AdminCourseDetail, AdminCourseRead, BuildJobRead, SurveyStatsItem
+from app.schemas.admin import (
+    AdminCourseDetail,
+    AdminCourseRead,
+    BuildJobRead,
+    CourseDetailsUpdate,
+    SurveyStatsItem,
+)
 from app.schemas.course import CourseRequest, CourseUpdateRequest
 from app.schemas.survey import SurveyRead
 from app.schemas.user import UserCreate, UserRead, UserUpdate
@@ -40,6 +47,7 @@ from app.services.course_files import (
     course_counts,
     read_course_meta,
     session_to_stem,
+    update_course_json,
 )
 
 
@@ -243,6 +251,26 @@ def admin_revise_course(db_id: int, body: CourseUpdateRequest, db: Session = Dep
     db.commit()
     _spawn(_revise_worker, course.id, course.session_id, body.feedback)
     return {"db_id": course.id, "status": "pending"}
+
+
+@router.patch("/courses/{db_id}/details", response_model=AdminCourseRead)
+def admin_update_course_details(db_id: int, body: CourseDetailsUpdate, db: Session = Depends(get_db)):
+    """Edit course metadata in place (no rebuild): title/description (written to
+    the JSON the learner reads + the DB cache) and department/profile (DB)."""
+    course = get_course(db, db_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    profile = body.profile
+    if profile is not None:
+        profile = profile.strip().lower()
+        if profile not in ("technical", "sales"):
+            raise HTTPException(status_code=400, detail="department must be 'technical' or 'sales'")
+    if (body.title is not None or body.description is not None) and course.json_path:
+        update_course_json(course.json_path, title=body.title, description=body.description)
+    updated = update_course_details(
+        db, db_id, title=body.title, description=body.description, profile=profile
+    )
+    return _admin_course_dict(updated)
 
 
 @router.post("/courses/{db_id}/publish", response_model=AdminCourseRead)

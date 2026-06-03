@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models.course import Course
 
@@ -59,6 +60,48 @@ def get_published_session_ids(db: Session) -> set[str]:
     """session_ids of all published courses (for the learner catalog filter)."""
     rows = db.query(Course.session_id).filter(Course.published.is_(True)).all()
     return {r[0] for r in rows if r[0]}
+
+
+def get_visible_session_ids(db: Session, role: str | None) -> set[str]:
+    """Published session_ids a learner role may see in the catalog:
+    - ``Admin``      -> every published course;
+    - ``Technical`` / ``Sales`` -> published courses whose department (profile)
+      matches the role;
+    - anything else / a course with no department -> not shown (hidden until an
+      admin assigns a department)."""
+    q = db.query(Course.session_id).filter(Course.published.is_(True))
+    if role == "Admin":
+        pass  # sees everything published
+    elif role in ("Technical", "Sales"):
+        q = q.filter(func.lower(Course.profile) == role.lower())
+    else:
+        return set()  # unknown / missing role
+    return {r[0] for r in q.all() if r[0]}
+
+
+def update_course_details(
+    db: Session,
+    course_id: int,
+    *,
+    title: str | None = None,
+    description: str | None = None,
+    profile: str | None = None,
+) -> Course | None:
+    """Admin edit of a course's metadata (title/description/department). Only the
+    provided fields are changed. The JSON file is updated separately by the router."""
+    course = db.get(Course, course_id)
+    if not course:
+        return None
+    if title is not None:
+        course.title = title
+    if description is not None:
+        course.description = description
+    if profile is not None:
+        course.profile = profile
+    course.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(course)
+    return course
 
 
 def update_course_status(db: Session, course_id: int, status: str) -> Course | None:

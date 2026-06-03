@@ -21,9 +21,9 @@ from app.schemas.user import UserCreate, UserUpdate
 Base.metadata.create_all(bind=engine)
 
 USERS = [
-    UserCreate(email="admin@omniaccess.com", name="Admin User", role="Admin"),
-    UserCreate(email="technical@omniaccess.com", name="Technical User", role="Technical"),
-    UserCreate(email="sales@omniaccess.com", name="Sales User", role="Sales"),
+    UserCreate(email="test1@example.com", name="Severus", role="Admin"),
+    UserCreate(email="test2@example.com", name="Hermione", role="Technical"),
+    UserCreate(email="admin@example.com", name="Dobby", role="Sales"),
 ]
 
 db = SessionLocal()

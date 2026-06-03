@@ -41,6 +41,13 @@ class BuildJobRead(BaseModel):
     updated_at: datetime
 
 
+class CourseDetailsUpdate(BaseModel):
+    """Admin edit of a course's editable metadata (any subset)."""
+    title: str | None = None
+    description: str | None = None
+    profile: str | None = None  # department: "technical" | "sales"
+
+
 class SurveyStatsItem(BaseModel):
     course_id: str
     count: int

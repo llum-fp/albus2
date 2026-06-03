@@ -52,7 +52,8 @@ export interface Course {
 }
 
 export async function fetchCourses(): Promise<CourseSummary[]> {
-  const r = await fetch("/api/courses");
+  // Send the role so the catalog is filtered to what this user may see.
+  const r = await fetch("/api/courses", { headers: { "X-Albus-Role": storedRole() } });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }
@@ -314,6 +315,15 @@ export const adminReviseCourse = (dbId: number, feedback: string) =>
     method: "PATCH",
     headers: adminHeaders(true),
     body: JSON.stringify({ feedback }),
+  });
+export const adminUpdateCourseDetails = (
+  dbId: number,
+  body: { title?: string; description?: string; profile?: string },
+) =>
+  adminFetch<AdminCourse>(`/courses/${dbId}/details`, {
+    method: "PATCH",
+    headers: adminHeaders(true),
+    body: JSON.stringify(body),
   });
 export const adminPublish = (dbId: number) =>
   adminFetch<AdminCourse>(`/courses/${dbId}/publish`, { method: "POST", headers: adminHeaders() });
