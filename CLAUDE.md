@@ -14,9 +14,9 @@ albusv2 frontend (:5174) ─▶ platform_back (:8001) ─▶ agents_back (:8000)
                                    └─ /api/* surface (courses, surveys, Albus chat tutor)
 ```
 
-The React learner UI (`proyecto_exportacion/albusv2/`) talks only to platform_back's
+The React learner UI (`albusv2/`) talks only to platform_back's
 `/api/*` routes; platform_back is the single `:8001` origin. The colleague's original
-mock backend (`proyecto_exportacion/backend/`) is **not run** — its chat tutor
+mock backend (`proyecto_exportacion/backend/`) has been **removed** — its chat tutor
 (`chat.py`) and persona were ported into platform_back.
 
 ## Layout
@@ -53,11 +53,9 @@ mock backend (`proyecto_exportacion/backend/`) is **not run** — its chat tutor
       courses from `COURSES_DIR`. `app/albus_persona.md` is its persona; `app/util/html.py`
       holds `strip_html`. Sandbox: `platform_back/claude-sandbox/` (gitignored).
   - `platform.db` — SQLite database (auto-created on first run).
-- **`proyecto_exportacion/albusv2/`** — React 19 + Vite learner frontend (dev `:5174`). All
+- **`albusv2/`** — React 19 + Vite learner frontend (dev `:5174`). All
   backend calls go through `src/api.ts` + `src/useChat.ts` (5 `/api/*` endpoints); the Vite
   proxy forwards `/api` → `:8001`. No source changes were needed to target platform_back.
-- **`proyecto_exportacion/backend/`** — the colleague's original mock backend. **Not run**;
-  kept as reference. Holds a live `.env` (gitignored) — rotate before any push.
 - **`.venv/`** — shared virtualenv (FastAPI, uvicorn, SQLAlchemy 2.x, pydantic v2, httpx,
   requests, beautifulsoup4, anthropic). `example.json` — sample payload.
 
@@ -71,7 +69,7 @@ cd agents_back && ../.venv/bin/python api.py            # :8000
 cd platform_back && ../.venv/bin/python run.py          # :8001
 
 # albusv2 learner frontend — terminal 3
-cd proyecto_exportacion/albusv2 && npm install && npm run dev   # :5174 (proxies /api → :8001)
+cd albusv2 && npm install && npm run dev   # :5174 (proxies /api → :8001)
 ```
 
 Open the UI at `http://localhost:5174`. The Albus chat tutor needs the `claude` CLI on
