@@ -689,16 +689,6 @@
   color: var(--oa-text-muted);
   font-style: italic;
 }
-.log-auto-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.8rem;
-  color: var(--oa-text-secondary);
-  cursor: pointer;
-  user-select: none;
-}
-
 /* Table */
 .survey-table-wrap {
   overflow-x: auto;

@@ -90,14 +90,16 @@ export default function AdminLogs() {
             {label}
           </button>
         ))}
-        <label className="log-auto-toggle">
-          <input
-            type="checkbox"
-            checked={autoRefresh}
-            onChange={(e) => setAutoRefresh(e.target.checked)}
-          />
-          Auto-refresh
-        </label>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={autoRefresh}
+          className={`toggle-row ${autoRefresh ? "toggle-on" : ""}`}
+          onClick={() => setAutoRefresh((v) => !v)}
+        >
+          <span className="toggle-track"><span className="toggle-thumb" /></span>
+          <span className="toggle-label">Auto-refresh</span>
+        </button>
         <button className="icon-btn" onClick={() => load(service)} title="Refrescar ahora">
           <RefreshCw size={15} />
         </button>
