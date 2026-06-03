@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routers import courses, users, api_courses, api_surveys, chat
+from app.routers import courses, users, api_courses, api_surveys, api_pages, chat
 import app.models  # noqa: F401 — ensure models are registered before create_all
 
 Base.metadata.create_all(bind=engine)
@@ -25,6 +25,7 @@ app.include_router(users.router)
 # surveys, and the Albus chat tutor (SSE).
 app.include_router(api_courses.router)
 app.include_router(api_surveys.router)
+app.include_router(api_pages.router)
 app.include_router(chat.router)
 
 
