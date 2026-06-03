@@ -241,6 +241,8 @@ export interface AdminCourseDetail extends AdminCourse {
   content: Course | null;
 }
 
+export type BuildStage = "reading_source" | "writing_course" | "finishing" | "done" | "failed";
+
 export interface BuildJob {
   db_id: number;
   session_id: string | null;
@@ -249,6 +251,7 @@ export interface BuildJob {
   profile: string | null;
   status: BuildStatus;
   running: boolean;
+  stage?: BuildStage | null;
   created_at: string;
   updated_at: string;
 }

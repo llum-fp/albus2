@@ -13,13 +13,14 @@ gating, not real security. Real auth is out of scope until the login is real.
 """
 import os
 import threading
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
-from app.config import COURSES_DIR
+from app.config import COURSES_DIR, EXTRACTS_DIR
 from app.database import SessionLocal, get_db
 from app.models.course import Course
 from app.crud.course import (
@@ -131,6 +132,26 @@ def _course_stem(course: Course) -> str:
     return ""
 
 
+def _build_stage(course: Course) -> str | None:
+    """Coarse build stage for the Activity monitor, derived from which per-session
+    files exist on the shared agents_directory disk (cheap os.path.exists, only on
+    poll — never touches the build). reading_source -> writing_course -> finishing."""
+    if course.status == "completed":
+        return "done"
+    if course.status == "failed":
+        return "failed"
+    if course.status != "pending":
+        return None
+    sid = course.session_id
+    if not sid:
+        return "reading_source"  # build just started, id not yet known
+    if os.path.exists(COURSES_DIR / f"course_{sid}.json"):
+        return "finishing"
+    if os.path.exists(EXTRACTS_DIR / f"source_{sid}.md"):
+        return "writing_course"
+    return "reading_source"
+
+
 def _admin_course_dict(course: Course) -> dict:
     modules, lessons = course_counts(course.json_path)
     return {
@@ -184,10 +205,15 @@ def admin_create_course(body: CourseRequest, db: Session = Depends(get_db)):
     page_ids = payload.pop("page_id", None)
     if page_ids:
         payload["page_ids"] = page_ids
-    payload.pop("session_id", None)
     payload.pop("feedback", None)
 
+    # Generate the session_id here (not in agents_back) and hand it over, so we
+    # know it up front and can derive the build stage from its files.
+    session_id = str(uuid.uuid4())
+    payload["session_id"] = session_id
+
     course = Course(
+        session_id=session_id,
         page_id=body.page_id,
         topic=body.topic,
         profile=body.profile,
@@ -261,6 +287,7 @@ def admin_list_jobs(limit: int = 50, db: Session = Depends(get_db)):
             "profile": c.profile,
             "status": c.status,
             "running": c.status == "pending",
+            "stage": _build_stage(c),
             "created_at": c.created_at,
             "updated_at": c.updated_at,
         }

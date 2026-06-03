@@ -75,6 +75,10 @@ class CreateCourseRequest(BaseModel):
     profile: str = ""
     duration_min: str | int = ""
     harcoded: bool = False
+    # Optional caller-supplied id. When given (e.g. platform_back), the build
+    # uses it instead of generating one, so the caller knows it up front and can
+    # track progress by watching the per-session files this build writes.
+    session_id: str | None = None
 
 
 class UpdateCourseRequest(BaseModel):
@@ -121,7 +125,7 @@ def _run(session_id: str, prompt: str, resume: bool) -> dict:
 
 def build_new_course(req: CreateCourseRequest) -> dict:
     """Build a brand-new course from a Confluence page via the create-course skill."""
-    session_id = str(uuid.uuid4())
+    session_id = req.session_id or str(uuid.uuid4())
     ids = normalize_page_ids(req.page_id, req.page_ids)
     rel_path = f"json/course_{session_id}.json"
     extract_path = f"extract/source_{session_id}.md"

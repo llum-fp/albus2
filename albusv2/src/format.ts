@@ -16,6 +16,16 @@ export function formatLocalDate(s: string): string {
   return new Date(asUtc(s)).toLocaleDateString();
 }
 
+/** Elapsed time since a timestamp, e.g. "0:42" or "12:07" (mm:ss, or h:mm:ss). */
+export function elapsedSince(s: string): string {
+  const sec = Math.max(0, Math.floor((Date.now() - new Date(asUtc(s)).getTime()) / 1000));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const ss = sec % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(ss)}` : `${m}:${pad(ss)}`;
+}
+
 /** Compact relative time, e.g. "just now", "3 min ago", "2 h ago", "4 d ago". */
 export function timeAgo(s: string): string {
   const diffMs = Date.now() - new Date(asUtc(s)).getTime();

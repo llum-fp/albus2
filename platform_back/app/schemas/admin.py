@@ -36,6 +36,7 @@ class BuildJobRead(BaseModel):
     profile: str | None
     status: str
     running: bool
+    stage: str | None = None
     created_at: datetime
     updated_at: datetime
 

@@ -10,18 +10,44 @@ import {
   findPages,
   type AdminCourse,
   type AdminCourseDetail,
+  type BuildStage,
   type ConfluencePage,
   type CourseProfile,
 } from "../api";
 import { useAdminJobs } from "../useAdminJobs";
 import { Check, ChevronDown, Eye, Globe, GraduationCap, Pencil, Plus, RefreshCw, Search, X } from "./icons";
-import { formatLocalDateTime as fmtDate, timeAgo } from "../format";
+import { elapsedSince, formatLocalDateTime as fmtDate, timeAgo } from "../format";
 
 const STATUS_FILTERS = ["all", "published", "draft", "pending", "failed"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 function StatusBadge({ status }: { status: string }) {
   return <span className={`badge badge-${status}`}>{status}</span>;
+}
+
+const BUILD_STEPS: { key: BuildStage; label: string }[] = [
+  { key: "reading_source", label: "Reading source" },
+  { key: "writing_course", label: "Writing course" },
+  { key: "finishing", label: "Finishing" },
+];
+
+/* Real build stage from the backend (derived from which files exist), shown as a
+   3-step progress indicator on a running build. */
+function BuildStepper({ stage }: { stage?: BuildStage | null }) {
+  const active = Math.max(0, BUILD_STEPS.findIndex((s) => s.key === stage));
+  return (
+    <div className="build-steps">
+      {BUILD_STEPS.map((s, i) => {
+        const state = i < active ? "done" : i === active ? "active" : "todo";
+        return (
+          <span key={s.key} className={`build-step ${state}`}>
+            <span className="build-step-dot">{state === "done" ? <Check size={11} /> : i + 1}</span>
+            {s.label}
+          </span>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function AdminCourses({
@@ -67,6 +93,15 @@ export default function AdminCourses({
   useEffect(() => {
     refresh();
   }, [runningKey, refresh]);
+
+  // 1s ticker (only while a build runs) so the elapsed timers advance smoothly,
+  // independent of the 4s jobs polling.
+  const [, setNowTick] = useState(0);
+  useEffect(() => {
+    if (!runningKey) return;
+    const id = setInterval(() => setNowTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [runningKey]);
 
   const watch = (dbId: number) => {
     setWatched((s) => new Set(s).add(dbId));
@@ -143,25 +178,26 @@ export default function AdminCourses({
                 {j.running ? (
                   <span className="spin"><RefreshCw size={15} /></span>
                 ) : j.status === "completed" ? (
-                  <Check size={15} className="md-warn" style={{ color: "var(--oa-success)" }} />
+                  <Check size={15} style={{ color: "var(--oa-success)" }} />
                 ) : (
                   <X size={15} style={{ color: "var(--oa-error)" }} />
                 )}
               </span>
-              <span className="build-title">
-                {j.running ? (
-                  <>Building… {j.title ?? (j.page_id ? `page ${j.page_id.join(", ")}` : "new course")}</>
-                ) : (
-                  j.title ?? "Course"
-                )}
-              </span>
-              <span className="build-meta">
-                {j.running
-                  ? j.page_id
-                    ? `page ${j.page_id.join(", ")}`
-                    : ""
-                  : `${j.status} · ${timeAgo(j.updated_at)}`}
-              </span>
+              <div className="build-main">
+                <div className="build-line">
+                  <span className="build-title">
+                    {j.running ? (
+                      <>Building… {j.title ?? (j.page_id ? `page ${j.page_id.join(", ")}` : "new course")}</>
+                    ) : (
+                      j.title ?? "Course"
+                    )}
+                  </span>
+                  <span className="build-meta">
+                    {j.running ? elapsedSince(j.created_at) : `${j.status} · ${timeAgo(j.updated_at)}`}
+                  </span>
+                </div>
+                {j.running && <BuildStepper stage={j.stage} />}
+              </div>
               {!j.running && (
                 <button
                   className="icon-btn"
@@ -173,6 +209,11 @@ export default function AdminCourses({
               )}
             </div>
           ))}
+          {monitorJobs.some((j) => j.running) && (
+            <div className="builds-note">
+              Builds run in the background — you can leave this page and come back. Usually 5–30 min.
+            </div>
+          )}
         </div>
       )}
 
