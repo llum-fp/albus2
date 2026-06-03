@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { fetchCourse, fetchUserProgress, checkSurveyed, mediaUrl, type Course, type Question, type SessionUser } from "../api";
 import { recordProgress, markCompleted } from "../progress";
 import { useChat } from "../useChat";
@@ -381,7 +382,7 @@ export default function CourseViewer({
           <article className="lesson">
             <h2 className="lesson-title">{lesson.title}</h2>
             <div className="lesson-body markdown">
-              <ReactMarkdown rehypePlugins={[rehypeLessonIcons]} components={MARKDOWN_COMPONENTS}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeLessonIcons]} components={MARKDOWN_COMPONENTS}>
                 {lesson.content}
               </ReactMarkdown>
             </div>

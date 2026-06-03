@@ -78,6 +78,12 @@ export default function PathViewer({
             <span className="muted-sm">{path.course_count} course{path.course_count !== 1 ? "s" : ""}</span>
             <span className="muted-sm">·</span>
             <span className="muted-sm">{path.completed_count} completed</span>
+            {formatDuration(path.total_duration_min) && (
+              <>
+                <span className="muted-sm">·</span>
+                <span className="muted-sm">{formatDuration(path.total_duration_min)}</span>
+              </>
+            )}
             {path.course_count > 0 && (
               <>
                 <div className="course-progress-track" style={{ width: 120 }}>

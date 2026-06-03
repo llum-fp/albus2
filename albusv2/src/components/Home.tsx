@@ -361,6 +361,7 @@ function PathCard({ p, onOpen }: { p: PathSummary; onOpen: (id: number) => void 
         <span className="muted-sm">
           {p.course_count} course{p.course_count !== 1 ? "s" : ""}
           {p.course_count > 0 && ` · ${p.completed_count} completed`}
+          {formatDuration(p.total_duration_min) && ` · ${formatDuration(p.total_duration_min)}`}
         </span>
         <span className="course-open">
           {cta} <ArrowRight size={14} />
