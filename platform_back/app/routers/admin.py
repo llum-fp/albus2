@@ -20,7 +20,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
-from app.config import COURSES_DIR, EXTRACTS_DIR
+from app.config import COURSES_DIR, EXTRACTS_DIR, LOGS_DIR
 from app.database import SessionLocal, get_db
 from app.models.course import Course
 from app.crud.course import (
@@ -321,6 +321,27 @@ def admin_list_jobs(limit: int = 50, db: Session = Depends(get_db)):
         }
         for c in courses
     ]
+
+
+# --------------------------------------------------------------------------- #
+# Logs
+# --------------------------------------------------------------------------- #
+_ANSI = __import__("re").compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+_ALLOWED_SERVICES = {"agents_back", "platform_back", "albusv2"}
+
+
+@router.get("/logs")
+def admin_get_logs(service: str = "platform_back", lines: int = 200):
+    """Tail the last ``lines`` lines of a service log file from .logs/."""
+    if service not in _ALLOWED_SERVICES:
+        raise HTTPException(status_code=400, detail=f"service must be one of: {', '.join(sorted(_ALLOWED_SERVICES))}")
+    log_path = LOGS_DIR / f"{service}.log"
+    if not log_path.exists():
+        return {"service": service, "lines": []}
+    from collections import deque
+    with open(log_path, encoding="utf-8", errors="replace") as fh:
+        tail = list(deque(fh, maxlen=lines))
+    return {"service": service, "lines": [_ANSI.sub("", ln).rstrip("\n") for ln in tail]}
 
 
 # --------------------------------------------------------------------------- #

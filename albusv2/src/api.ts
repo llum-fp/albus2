@@ -353,3 +353,9 @@ export const adminDeleteUser = (id: number) =>
 
 // Surveys
 export const adminFetchSurveys = () => adminFetch<SurveysResponse>("/surveys", { headers: adminHeaders() });
+
+// Logs
+export type LogService = "platform_back" | "agents_back" | "albusv2";
+export interface LogResponse { service: LogService; lines: string[] }
+export const adminFetchLogs = (service: LogService, lines = 200) =>
+  adminFetch<LogResponse>(`/logs?service=${service}&lines=${lines}`, { headers: adminHeaders() });

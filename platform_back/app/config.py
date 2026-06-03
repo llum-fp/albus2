@@ -29,6 +29,7 @@ EXTRACTS_DIR = REPO_ROOT / "agents_back" / "agents_directory" / "extract"
 # them by the relative path "images/<session>/<file>.png"; we serve this dir over
 # HTTP so the learner UI can load them (see main.py mount + frontend mediaUrl()).
 IMAGES_DIR = REPO_ROOT / "agents_back" / "agents_directory" / "images"
+LOGS_DIR = REPO_ROOT / ".logs"
 
 # Load the agents_back .env (Atlassian creds, CONFLUENCE_URL, CLAUDE_MODEL).
 load_dotenv(REPO_ROOT / "agents_back" / ".env")
