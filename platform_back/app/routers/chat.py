@@ -28,7 +28,7 @@ from requests.auth import HTTPBasicAuth
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.config import COURSES_DIR
+from app.config import COURSES_DIR, EXTRACTS_DIR
 from app.util.html import strip_html
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -100,6 +100,34 @@ def load_course(course_id: str) -> Optional[dict]:
         return None
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def _extract_header_field(md: str, field: str) -> Optional[str]:
+    """Pull a value out of the extract's `| Field | Value |` header table."""
+    m = re.search(rf"^\|\s*{re.escape(field)}\s*\|\s*(.+?)\s*\|", md, re.MULTILINE)
+    return m.group(1).strip() if m else None
+
+
+def load_extract(course_id: str) -> Optional[dict]:
+    """Load the source-extractor's Markdown extract for a course, if present.
+
+    The build pipeline pairs artifacts by session id:
+    ``json/course_<sid>.json`` <-> ``extract/source_<sid>.md``. We derive the
+    extract path from the course filename stem and parse the source URL/Title out
+    of the extract's header table (for the reference link). This local, faithful,
+    image-aware, multi-page extract is preferred over a live Confluence re-fetch.
+    Returns ``{"text", "url", "title"}`` or ``None`` if there is no extract.
+    """
+    sid = course_id[len("course_"):] if course_id.startswith("course_") else course_id
+    path = EXTRACTS_DIR / f"source_{sid}.md"
+    if not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8")
+    return {
+        "text": text,
+        "url": _extract_header_field(text, "URL"),
+        "title": _extract_header_field(text, "Title"),
+    }
 
 
 def build_course_context(course: dict) -> str:
@@ -502,19 +530,30 @@ async def chat_stream(
                 quiz_instruction = build_quiz_prompt(quiz_phase, question, chosen_index, msg)
                 retrieval_query = quiz_search_query(question)
 
-        # Búsqueda en Confluence al recibir la pregunta (NO se pre-carga la doc):
-        # se trae la página (cacheada, fetch bloqueante en hilo) y se recuperan solo
-        # los fragmentos relevantes. Si falla, se sigue solo con el curso.
+        # Reference docs (the "source of truth" excerpts injected per question).
+        # PRIMARY: the source-extractor's local Markdown extract for this course
+        # (faithful, image-aware, multi-page, no network, no creds). FALLBACK: a
+        # live Confluence fetch, only when no extract exists (e.g. the hardcoded
+        # sample course). Either way we feed the same retrieve/build pipeline.
         reference_block = ""
-        page_id = extract_confluence_page_id(course)
-        if page_id and retrieval_query:
-            loop = asyncio.get_event_loop()
-            ref = await loop.run_in_executor(None, fetch_confluence_ref, page_id)
-            if ref and ref.get("text"):
-                chunks = retrieve_relevant_chunks(retrieval_query, ref["text"])
+        if retrieval_query:
+            extract = load_extract(course_id)
+            if extract and extract.get("text"):
+                chunks = retrieve_relevant_chunks(retrieval_query, extract["text"])
                 reference_block = build_reference_block(
-                    chunks, ref.get("url"), ref.get("title")
+                    chunks, extract.get("url"), extract.get("title")
                 )
+            else:
+                # No local extract — fall back to re-fetching Confluence (best-effort).
+                page_id = extract_confluence_page_id(course)
+                if page_id:
+                    loop = asyncio.get_event_loop()
+                    ref = await loop.run_in_executor(None, fetch_confluence_ref, page_id)
+                    if ref and ref.get("text"):
+                        chunks = retrieve_relevant_chunks(retrieval_query, ref["text"])
+                        reference_block = build_reference_block(
+                            chunks, ref.get("url"), ref.get("title")
+                        )
 
         focus = build_focus_context(course, lesson_id)
         body = quiz_instruction if quiz_instruction else msg
