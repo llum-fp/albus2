@@ -107,6 +107,28 @@ language tag (e.g., ` ```bash `, ` ```json `, ` ```yaml `, ` ```sql `). Do not
 paraphrase commands. If a command has flags or parameters, explain each one in a
 following bullet list. Code is not an optional illustration — it is the lesson.
 
+**Exception — Rundeck automation scripts:** If the extract references Rundeck
+jobs or configuration scripts, acknowledge their existence in the relevant
+lesson (e.g. "a Rundeck job automates this step") but do **not** reproduce
+script content, parameter lists, or any URLs/links to the job. Rundeck links
+rot and script contents change; the course should teach the concept and
+delegate the specifics to the live Rundeck catalog.
+
+### Images — treat numbers as untrusted
+
+Specific numerical values that appear only in images (quotas, bandwidth limits,
+kbps/Mbps figures, device counts, thresholds, percentages) **must not** be
+treated as ground truth. Dashboard screenshots and topology diagrams may be
+outdated snapshots that no longer reflect real configuration or real customer
+data.
+
+- **Do not** quote or cite a number that comes exclusively from an image.
+- **Do** reference the image conceptually — e.g. ask "based on the diagram,
+  what happens when a user reaches the bandwidth quota?" without hard-coding
+  the value shown.
+- If a number also appears in the page text, it can be used from the text;
+  the image is still not the authority.
+
 ## Course design
 
 **Default module progression:** concepts → architecture → flows → configuration →

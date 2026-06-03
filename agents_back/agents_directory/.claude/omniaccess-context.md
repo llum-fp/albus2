@@ -23,9 +23,11 @@ context — quote them as written here, never embellish.
 - Tagline: *"Delivering Possibilities Anywhere"*. Vision: *"Pushing boundaries
   to reach the unreachable."*
 - Operating model: **fully managed service**, not a box-seller — 24/7
-  Technical Support Center (TSC), fully owned teleports, world-class Network
-  Operations Centres, and a fully certified 24/7 Security Operations Center
-  (SOC).
+  **Technical Support Center (TSC)** (formerly called the NOC / Network
+  Operations Centre — "TSC" is the current term; use it, and treat any "NOC"
+  reference as the same thing), fully owned teleports, and a fully certified
+  24/7 Security Operations Center (SOC). These (TSC, SOC, teleports) are
+  **OmniAccess's own** service functions — never the customer's internal teams.
 
 **Key company figures** (from omniaccess.com, 2026):
 
@@ -34,7 +36,7 @@ context — quote them as written here, never embellish.
 | 800+ vessels managed | ~600+ superyachts, 100+ boutique cruise ships, plus research vessels/USVs |
 | 230 employees, 15+ countries | international expert team |
 | 20+ years experience | in maritime connectivity |
-| 24/7 | TSC support, NOC monitoring, SOC protection |
+| 24/7 | TSC support & network monitoring, SOC protection |
 | 1,900+ vessels | protected by the (Marlink group) cyber SOC |
 | 150+ cyber experts, 11 countries | threat intel, pentesters, GRC, maritime SOC |
 | SLA 1-6-24 (Network/NaaS) | first response 1h, remote solution 6h, 24/7 support |

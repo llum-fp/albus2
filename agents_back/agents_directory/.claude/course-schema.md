@@ -82,12 +82,27 @@ rule.
 - **Exactly 4 answers, one correct.** Every question has 4 plausible options and
   a valid `correctAnswerIndex` (0–3). Distractors must be plausible, not
   obviously wrong, and grounded in the source.
+- **No structural tell for the correct answer.** A reader who hasn't studied the
+  material must not be able to guess it from form alone. Vary answer length and
+  detail naturally across the question set — some short, some long, for both
+  correct answers and distractors — but ensure length, specificity, grammatical
+  completeness and hedging do **not** correlate with correctness. Do not default
+  to making the correct answer the longest or most-qualified option; sometimes
+  the correct answer is the **short** one. Distractors must be wrong on
+  *substance*, not merely vaguer or shorter than the key. Also vary the position
+  of the correct answer across the course (spread `correctAnswerIndex` roughly
+  evenly over 0–3, never default to one slot).
 - **Exclude sensitive data.** Do NOT copy personal data (guest/crew names, DOBs,
-  booking IDs, passwords beyond what's operationally necessary) or large raw data
-  dumps into the course. Note in `description` (or report) that PII was excluded.
+  booking IDs), passwords, API keys, tokens, or any credentials into the course.
+  Note in `description` (or the finish report) that sensitive data was excluded.
 - **Preserve warnings.** Source "WARNING"/"IMPORTANT" notes are high-value — fold
   them into the relevant lesson `content` (e.g. a "⚠️ Important:" line), never
   drop them.
+- **Strip self-referential source language.** When the source material refers to
+  itself as a guide, manual, or document (e.g. "as described in this guide",
+  "refer to this manual", "see this document for details"), omit that phrase from
+  lesson content. The course stands alone — it is not a companion to the original
+  document.
 - **Screenshots:** when the extractor saved an image file, prefer embedding it
   via the optional lesson `images` field (using the saved `path` and a
   `caption`). Otherwise — when only a text description exists — keep the
