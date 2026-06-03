@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Send, X } from "./icons";
 import type { ChatMsg } from "../useChat";
 import Markdown from "./Markdown";
@@ -12,6 +12,8 @@ export default function ChatPanel({
   canClose,
   onClose,
   notice,
+  needsReply,
+  wrongFlashKey,
   onResize,
 }: {
   messages: ChatMsg[];
@@ -20,15 +22,25 @@ export default function ChatPanel({
   canClose: boolean;
   onClose: () => void;
   notice?: string;
+  needsReply?: boolean;
+  wrongFlashKey?: number;
   onResize?: (px: number) => void;
 }) {
   const [draft, setDraft] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [flashing, setFlashing] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!wrongFlashKey) return;
+    setFlashing(true);
+  }, [wrongFlashKey]);
+
+  const stopFlash = useCallback(() => setFlashing(false), []);
 
   // Redimensionado arrastrando el borde izquierdo del chat.
   useEffect(() => {
@@ -59,6 +71,7 @@ export default function ChatPanel({
 
   return (
     <aside className="chat">
+      {flashing && <div key={wrongFlashKey} className="chat-flash-overlay" onAnimationEnd={stopFlash} />}
       {onResize && (
         <div
           className={`chat-resizer ${dragging ? "active" : ""}`}
@@ -69,7 +82,7 @@ export default function ChatPanel({
           title="Drag to widen the chat"
         />
       )}
-      <div className="chat-header">
+      <div className={`chat-header${needsReply ? " chat-header--needs-reply" : ""}`}>
         <span className="chat-title">
           <img src="/dumbly.svg" alt="" aria-hidden="true" className="chat-avatar" /> Albus
         </span>

@@ -107,6 +107,7 @@ export default function CourseViewer({
   const [openModules, setOpenModules] = useState<Set<number>>(new Set());
   const [quiz, setQuiz] = useState<QuizState>({});
   const [pendingWrong, setPendingWrong] = useState<{ questionId: string; chosenIndex: number } | null>(null);
+  const [wrongFlashKey, setWrongFlashKey] = useState(0);
   // Preguntas elegidas al azar por lección (estable mientras dure la sesión).
   const [quizPick, setQuizPick] = useState<Record<string, Question[]>>({});
   const [showSurvey, setShowSurvey] = useState(false);
@@ -203,9 +204,11 @@ export default function CourseViewer({
       setQuiz((prev) => ({ ...prev, [q.id]: { ...prev[q.id], unlocked: true } }));
 
     if (correct) {
-      chat.sendQuiz({ phase: "correct", questionId: q.id, chosenIndex: answerIdx, lessonId }).then(unlock);
+      unlock();
+      chat.sendQuiz({ phase: "correct", questionId: q.id, chosenIndex: answerIdx, lessonId });
     } else {
       setPendingWrong({ questionId: q.id, chosenIndex: answerIdx });
+      setWrongFlashKey((k) => k + 1);
       chat.sendQuiz({ phase: "wrong_ask", questionId: q.id, chosenIndex: answerIdx, lessonId });
       // Next sigue bloqueado hasta que el alumno responda a Albus (handleUserSend).
     }
@@ -358,11 +361,12 @@ export default function CourseViewer({
             <ThemeToggle />
             {!chatOpen && (
               <button
-                className="icon-btn"
+                className={`icon-btn${pendingWrong ? " icon-btn--pulse" : ""}`}
                 onClick={() => setChatOpen(true)}
                 title="Open assistant"
               >
                 <MessageSquare size={18} />
+                {pendingWrong && <span className="chat-badge" />}
               </button>
             )}
           </div>
@@ -451,8 +455,8 @@ export default function CourseViewer({
                   <span className="quiz-hint">Select an answer</span>
                 )}
                 {quiz[cq.id] && !canAdvance && (
-                  <span className="quiz-hint">
-                    <AlbusIcon size={13} /> Albus is replying in the chat
+                  <span className="quiz-hint quiz-hint--action">
+                    <AlbusIcon size={13} /> Reply to Albus to continue ↓
                   </span>
                 )}
                 <button
@@ -482,6 +486,8 @@ export default function CourseViewer({
           canClose={!isQuiz}
           onClose={() => setChatOpen(false)}
           notice={pendingWrong ? "✋ Reply to Albus to continue." : undefined}
+          needsReply={!!pendingWrong}
+          wrongFlashKey={wrongFlashKey}
           onResize={setChatWidth}
         />
       )}
