@@ -19,3 +19,15 @@ def update_course(session_id: str, feedback: str, base_url: str = AGENTS_BACK_UR
         response = client.post(url, json={"session_id": session_id, "feedback": feedback})
     response.raise_for_status()
     return response.json()
+
+
+def create_role(payload: dict, base_url: str = AGENTS_BACK_URL) -> dict:
+    """Ask agents_back to author a new <slug>-course-creator.md agent.
+    payload: {"name": str, "slug": str, "description": str}
+    returns: {"session_id": str, "agent_path": str, "agent_exists": bool}
+    """
+    url = f"{base_url.rstrip('/')}/create-role"
+    with httpx.Client(timeout=TIMEOUT) as client:
+        response = client.post(url, json=payload)
+    response.raise_for_status()
+    return response.json()

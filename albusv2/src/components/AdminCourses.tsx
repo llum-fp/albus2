@@ -7,6 +7,7 @@ import {
   adminReviseCourse,
   adminUnpublish,
   adminUpdateCourseDetails,
+  fetchProfiles,
   findPage,
   findPages,
   type AdminCourse,
@@ -14,6 +15,7 @@ import {
   type BuildStage,
   type ConfluencePage,
   type CourseProfile,
+  type Profile,
 } from "../api";
 import { useAdminJobs } from "../useAdminJobs";
 import { Check, ChevronDown, Eye, Globe, GraduationCap, Pencil, Plus, RefreshCw, Search, Sparkles, X } from "./icons";
@@ -399,11 +401,22 @@ function NewCourseModal({
   const [searching, setSearching] = useState(false);
   const [searchErr, setSearchErr] = useState<string | null>(null);
   const [selected, setSelected] = useState<ConfluencePage[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [profile, setProfile] = useState<CourseProfile>("technical");
   const [topic, setTopic] = useState("");
   const [duration, setDuration] = useState("");
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Department options come from the backend (any profile created at runtime).
+  useEffect(() => {
+    fetchProfiles()
+      .then((ps) => {
+        setProfiles(ps);
+        setProfile((cur) => (ps.some((p) => p.slug === cur) ? cur : ps[0]?.slug ?? cur));
+      })
+      .catch(() => {});
+  }, []);
 
   // Debounced search as you type (from 3 chars). One box, two modes: an all-digit
   // query is treated as a Confluence page id (exact lookup); anything else is a
@@ -518,8 +531,9 @@ function NewCourseModal({
           <label>Department</label>
           <div className="select-wrap">
             <select className="select" value={profile} onChange={(e) => setProfile(e.target.value as CourseProfile)}>
-              <option value="technical">Technical</option>
-              <option value="sales">Sales</option>
+              {profiles.map((p) => (
+                <option key={p.slug} value={p.slug}>{p.name}</option>
+              ))}
             </select>
             <ChevronDown size={16} className="select-caret" />
           </div>
@@ -599,9 +613,14 @@ function EditDetailsModal({
   const [title, setTitle] = useState(course.title ?? "");
   const [description, setDescription] = useState(course.description ?? "");
   const [profile, setProfile] = useState(course.profile ?? "");
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [duration, setDuration] = useState(course.duration_min ? String(course.duration_min) : "");
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchProfiles().then(setProfiles).catch(() => {});
+  }, []);
 
   const submit = async () => {
     if (!title.trim()) {
@@ -639,8 +658,9 @@ function EditDetailsModal({
           <div className="select-wrap">
             <select className="select" value={profile} onChange={(e) => setProfile(e.target.value)}>
               <option value="" disabled>— select a department —</option>
-              <option value="technical">Technical</option>
-              <option value="sales">Sales</option>
+              {profiles.map((p) => (
+                <option key={p.slug} value={p.slug}>{p.name}</option>
+              ))}
             </select>
             <ChevronDown size={16} className="select-caret" />
           </div>

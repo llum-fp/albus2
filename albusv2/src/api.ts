@@ -114,6 +114,23 @@ export async function fetchUsers(): Promise<SessionUser[]> {
   return r.json();
 }
 
+/** A learner profile (department/role) for dropdowns. `slug` is the value to tag
+   a course's department with; `name` is the human label. `agent_status` is the
+   state of its course-creator agent build. Public endpoint. */
+export type AgentStatus = "ready" | "pending" | "failed" | "none";
+export interface Profile {
+  id: number;
+  name: string;
+  slug: string;
+  agent_status: AgentStatus;
+}
+
+export async function fetchProfiles(): Promise<Profile[]> {
+  const r = await fetch("/api/profiles");
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
 /* Confluence page search (backend /api/find-pages — fast, no LLM). Used by the
    admin "New course" picker so you search by topic instead of typing page ids. */
 export interface ConfluencePage {
@@ -230,7 +247,9 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export type BuildStatus = "pending" | "completed" | "failed";
-export type CourseProfile = "technical" | "sales";
+// A profile is now any department/role slug created at runtime (no longer a
+// fixed union). Dropdowns populate from fetchProfiles().
+export type CourseProfile = string;
 
 export interface AdminCourse {
   id: string; // filename-stem id the learner UI uses
@@ -355,6 +374,23 @@ export const adminDeleteUser = (id: number) =>
 
 // Surveys
 export const adminFetchSurveys = () => adminFetch<SurveysResponse>("/surveys", { headers: adminHeaders() });
+
+// Profiles (departments / learner roles). Creation is async: the POST returns
+// immediately with agent_status "pending"; poll fetchProfiles() for the agent
+// build to flip to "ready"/"failed".
+export interface ProfileCreateResult {
+  role_id: number;
+  name: string;
+  slug: string;
+  profile: string;
+  agent_status: AgentStatus;
+}
+export const adminCreateProfile = (body: { name: string; description: string }) =>
+  adminFetch<ProfileCreateResult>("/profiles", {
+    method: "POST",
+    headers: adminHeaders(true),
+    body: JSON.stringify(body),
+  });
 
 // ── Learning Paths ────────────────────────────────────────────────────────────
 

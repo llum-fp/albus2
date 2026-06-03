@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models.course import Course
+from app.util.slug import slugify
 
 
 def get_course(db: Session, course_id: int) -> Course | None:
@@ -64,18 +65,19 @@ def get_published_session_ids(db: Session) -> set[str]:
 
 def get_visible_session_ids(db: Session, role: str | None) -> set[str]:
     """Published session_ids a learner role may see in the catalog:
-    - ``Admin``      -> every published course;
-    - ``Technical`` / ``Sales`` -> published courses whose department (profile)
-      matches the role;
-    - anything else / a course with no department -> not shown (hidden until an
-      admin assigns a department)."""
+    - ``Admin``        -> every published course;
+    - any other role   -> published courses whose department (profile) matches
+      the role's slug (``slugify(role)``), so any profile created at runtime
+      works without code changes (and multi-word roles slug correctly);
+    - no role / a course with no department -> not shown (hidden until an admin
+      assigns a department)."""
     q = db.query(Course.session_id).filter(Course.published.is_(True))
     if role == "Admin":
         pass  # sees everything published
-    elif role in ("Technical", "Sales"):
-        q = q.filter(func.lower(Course.profile) == role.lower())
+    elif role:
+        q = q.filter(func.lower(Course.profile) == slugify(role))
     else:
-        return set()  # unknown / missing role
+        return set()  # no role / not signed in
     return {r[0] for r in q.all() if r[0]}
 
 

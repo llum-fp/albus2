@@ -6,16 +6,17 @@ from app.database import engine, Base, SessionLocal
 from app.routers import (
     courses, users, api_courses, api_surveys, api_pages, api_users, api_progress, chat, admin,
 )
-from app.routers import admin_paths, api_paths
+from app.routers import admin_paths, api_paths, api_profiles
 import app.models  # noqa: F401 — ensure models are registered before create_all
-from app.services.course_sync import ensure_published_column, reconcile
+from app.services.course_sync import ensure_base_roles, ensure_published_column, reconcile
 
 Base.metadata.create_all(bind=engine)
 # Add courses.published if missing (create_all never ALTERs existing tables),
-# then reconcile the DB with the JSON files on disk (back-fill rows, fail
-# orphan pending builds). See app/services/course_sync.py.
+# then ensure the built-in roles exist and reconcile the DB with the JSON files
+# on disk (back-fill rows, fail orphan pending builds). See course_sync.py.
 ensure_published_column(engine)
 with SessionLocal() as _db:
+    ensure_base_roles(_db)
     reconcile(_db)
 
 app = FastAPI(title="Platform Back", version="1.0.0")
@@ -42,6 +43,7 @@ app.include_router(api_users.router)
 app.include_router(api_progress.router)
 app.include_router(chat.router)
 app.include_router(api_paths.router)
+app.include_router(api_profiles.router)
 # Admin console surface (/api/admin/*), role-gated.
 app.include_router(admin.router)
 app.include_router(admin_paths.router)

@@ -4,13 +4,12 @@ import {
   adminDeleteUser,
   adminFetchUsers,
   adminUpdateUser,
+  fetchProfiles,
+  type Profile,
   type User,
 } from "../api";
-import { USER_ROLES } from "./Login";
 import { ChevronDown, Pencil, Plus, Trash, X } from "./icons";
 import { formatLocalDate as fmtDate } from "../format";
-
-const ROLE_OPTIONS = USER_ROLES.map((r) => r.value); // Admin | Technical | Sales
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
@@ -18,6 +17,9 @@ export default function AdminUsers() {
   const [error, setError] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [edit, setEdit] = useState<User | null>(null);
+  // Assignable roles: Admin (access role) + every profile/department. Dynamic so
+  // a profile created at runtime is immediately assignable to users.
+  const [roleOptions, setRoleOptions] = useState<string[]>(["Admin"]);
 
   const refresh = async () => {
     try {
@@ -32,6 +34,9 @@ export default function AdminUsers() {
 
   useEffect(() => {
     refresh();
+    fetchProfiles()
+      .then((ps) => setRoleOptions(["Admin", ...ps.map((p) => p.name)]))
+      .catch(() => {});
   }, []);
 
   const remove = async (u: User) => {
@@ -100,6 +105,7 @@ export default function AdminUsers() {
 
       {showNew && (
         <NewUserModal
+          roleOptions={roleOptions}
           onClose={() => setShowNew(false)}
           onCreated={() => {
             setShowNew(false);
@@ -110,6 +116,7 @@ export default function AdminUsers() {
       {edit && (
         <EditUserModal
           user={edit}
+          roleOptions={roleOptions}
           onClose={() => setEdit(null)}
           onSaved={(updated) => {
             setUsers((cur) => cur.map((x) => (x.id === updated.id ? updated : x)));
@@ -123,10 +130,12 @@ export default function AdminUsers() {
 
 function EditUserModal({
   user,
+  roleOptions,
   onClose,
   onSaved,
 }: {
   user: User;
+  roleOptions: string[];
   onClose: () => void;
   onSaved: (u: User) => void;
 }) {
@@ -177,12 +186,12 @@ function EditUserModal({
           <label>Role</label>
           <div className="select-wrap">
             <select className="select" value={role} onChange={(e) => setRole(e.target.value)}>
-              {!ROLE_OPTIONS.includes(role as never) && (
+              {!roleOptions.includes(role) && (
                 <option value={role} disabled>
                   {role}
                 </option>
               )}
-              {ROLE_OPTIONS.map((r) => (
+              {roleOptions.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
             </select>
@@ -201,10 +210,19 @@ function EditUserModal({
   );
 }
 
-function NewUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function NewUserModal({
+  roleOptions,
+  onClose,
+  onCreated,
+}: {
+  roleOptions: string[];
+  onClose: () => void;
+  onCreated: () => void;
+}) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<string>(ROLE_OPTIONS[1]); // Technical
+  // Default to the first non-Admin role (a department) when available.
+  const [role, setRole] = useState<string>(roleOptions[1] ?? roleOptions[0] ?? "");
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -242,7 +260,7 @@ function NewUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           <label>Role</label>
           <div className="select-wrap">
             <select className="select" value={role} onChange={(e) => setRole(e.target.value)}>
-              {ROLE_OPTIONS.map((r) => (
+              {roleOptions.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
             </select>

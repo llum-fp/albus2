@@ -3,7 +3,8 @@ import {
   adminFetchPaths, adminCreatePath, adminUpdatePath,
   adminPublishPath, adminUnpublishPath, adminSetPathCourses, adminDeletePath,
   adminFetchCourses,
-  type AdminPath, type AdminCourse, type PathCourse,
+  fetchProfiles,
+  type AdminPath, type AdminCourse, type PathCourse, type Profile,
 } from "../api";
 import { Plus, Pencil, Trash, X, Check, ChevronUp, ChevronDown, ChevronRight, Search } from "./icons";
 
@@ -149,8 +150,13 @@ function PathFormModal({
   const [title, setTitle] = useState(path?.title ?? "");
   const [description, setDescription] = useState(path?.description ?? "");
   const [profile, setProfile] = useState(path?.profile ?? "");
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchProfiles().then(setProfiles).catch(() => {});
+  }, []);
 
   const submit = async () => {
     if (!title.trim()) { setErr("Title is required."); return; }
@@ -186,8 +192,9 @@ function PathFormModal({
           <div className="select-wrap">
             <select className="select" value={profile} onChange={(e) => setProfile(e.target.value)}>
               <option value="">All roles</option>
-              <option value="technical">Technical</option>
-              <option value="sales">Sales</option>
+              {profiles.map((p) => (
+                <option key={p.slug} value={p.slug}>{p.name}</option>
+              ))}
             </select>
             <ChevronDown size={14} className="select-chevron" />
           </div>

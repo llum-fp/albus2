@@ -19,6 +19,7 @@ Usage:
     ./create_course.py 1727332382 --profile sales   # technical (default) or sales
 """
 import os
+import re
 import subprocess
 import sys
 import uuid
@@ -103,6 +104,30 @@ def build_course_prompt(ids, profile, topic, duration_min, extract_path,
         f'topic="{topic or "the whole page"}" '
         f"duration_min={duration_min or 'unspecified'} "
         f"extract_path={extract_path} out_path={out_path}"
+    )
+
+
+def slugify(name: str) -> str:
+    """Turn a profile display name into a filesystem-safe slug: lowercase,
+    whitespace/underscores -> hyphens, drop anything else, collapse repeats.
+    e.g. 'Marketing & Comms' -> 'marketing-comms', 'End-user' -> 'end-user'."""
+    s = re.sub(r"[\s_]+", "-", name.strip().lower())
+    s = re.sub(r"[^a-z0-9-]", "", s)
+    return re.sub(r"-{2,}", "-", s).strip("-")
+
+
+def build_role_prompt(name: str, slug: str, description: str, out_path: str,
+                      overwrite: bool) -> str:
+    """Build the /create-role skill invocation string. Mirrors
+    build_course_prompt: one deterministic slash-command line with quoted
+    free-text args (quotes in name/description are downgraded so they don't
+    break the args)."""
+    safe_name = name.replace('"', "'")
+    safe_desc = description.replace('"', "'")
+    return (
+        f'/create-role name="{safe_name}" slug={slug} '
+        f'description="{safe_desc}" '
+        f"out_path={out_path} overwrite={'true' if overwrite else 'false'}"
     )
 
 

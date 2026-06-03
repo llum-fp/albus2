@@ -21,6 +21,12 @@ and edits the same course file in place:
 Both return:
     { "session_id": "<uuid>", "json_path": "<abs path>", "json_exists": true }
 
+POST /create-role — author a NEW profile course-creator agent on demand. Pass a
+display `name` (e.g. "Marketing"), an optional `slug` (derived from name if
+omitted), and a free-text `description` of the audience. It runs the create-role
+skill, which writes `.claude/agents/<slug>-course-creator.md`, and returns:
+    { "session_id": "<uuid>", "agent_path": "<abs path>", "agent_exists": true }
+
 Run (use the project venv that has FastAPI + uvicorn):
     ./.venv/bin/python api.py            # listens on 0.0.0.0:8000 (override with PORT)
     ./.venv/bin/uvicorn api:app --host 0.0.0.0 --port 8000   # or run uvicorn directly
@@ -32,8 +38,10 @@ Call:
 """
 import logging
 import os
+import shutil
 import time
 import uuid
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -43,8 +51,10 @@ from create_course import (
     AGENTS_DIR,
     DEFAULT_MODEL,
     build_course_prompt,
+    build_role_prompt,
     normalize_page_ids,
     run_claude,
+    slugify,
 )
 
 PORT = int(os.environ.get("PORT", "8000"))
@@ -92,6 +102,24 @@ class CourseResponse(BaseModel):
     json_exists: bool
 
 
+class CreateRoleRequest(BaseModel):
+    name: str
+    # Optional explicit slug; derived from `name` (slugify) when omitted.
+    slug: str | None = None
+    description: str = ""
+    # Allow replacing an existing <slug>-course-creator.md (the skill refuses by
+    # default so it can't clobber technical/sales/end-user).
+    overwrite: bool = False
+    # Optional caller-supplied id, same semantics as create-course.
+    session_id: str | None = None
+
+
+class RoleResponse(BaseModel):
+    session_id: str
+    agent_path: str
+    agent_exists: bool
+
+
 def _run(session_id: str, prompt: str, resume: bool) -> dict:
     """Shared runner: invoke one headless claude turn for `session_id`, time it,
     log it, and return the standard {session_id, json_path, json_exists} reply."""
@@ -121,6 +149,28 @@ def _run(session_id: str, prompt: str, resume: bool) -> dict:
         "json_path": str(json_path),
         "json_exists": exists,
     }
+
+
+def _run_for_output(session_id: str, prompt: str, rel_out_path: str,
+                    resume: bool) -> tuple[bool, Path]:
+    """Like `_run` but checks an arbitrary output file (not the course JSON).
+    Invokes one headless claude turn and returns (exists, abs_out_path)."""
+    out_path = AGENTS_DIR / rel_out_path
+    AGENTS_DIR.mkdir(parents=True, exist_ok=True)
+    log.info("[%s] invoking claude (resume=%s) -> %s", session_id, resume, rel_out_path)
+    log.info("[%s] model: %s", session_id, DEFAULT_MODEL)
+    log.debug("[%s] prompt: %s", session_id, prompt)
+    started = time.monotonic()
+    rc = run_claude(prompt, AGENTS_DIR, session_id, resume=resume, model=DEFAULT_MODEL)
+    elapsed = time.monotonic() - started
+    if rc != 0:
+        log.error("[%s] claude exited with code %s after %.1fs", session_id, rc, elapsed)
+        raise RuntimeError(f"claude exited with code {rc}")
+    exists = out_path.is_file()
+    log.info("[%s] done in %.1fs: exists=%s path=%s", session_id, elapsed, exists, out_path)
+    if not exists:
+        log.warning("[%s] claude exited 0 but no output at %s", session_id, out_path)
+    return exists, out_path
 
 
 def build_new_course(req: CreateCourseRequest) -> dict:
@@ -159,6 +209,50 @@ def revise_course(req: UpdateCourseRequest) -> dict:
     return _run(session_id, prompt, resume=True)
 
 
+def create_new_role(req: CreateRoleRequest) -> dict:
+    """Author a new profile course-creator agent via the create-role skill.
+
+    The agent file must live in `.claude/agents/`, but the headless `claude` run
+    cannot write into `.claude/` (it's protected even under acceptEdits). So the
+    skill authors the file into a normal staging path that is auto-accepted, and
+    we (trusted server code, not subject to Claude permissions) move it into
+    `.claude/agents/`."""
+    session_id = req.session_id or str(uuid.uuid4())
+    slug = (req.slug or slugify(req.name)).strip()
+    if not slug:
+        raise ValueError("could not derive a slug from 'name'; pass an explicit 'slug'")
+
+    dest_rel = f".claude/agents/{slug}-course-creator.md"
+    dest = AGENTS_DIR / dest_rel
+    # Clobber guard (server-side, against the real destination): never overwrite an
+    # existing agent (technical/sales/end-user/another profile) unless asked.
+    if dest.is_file() and not req.overwrite:
+        log.info("[%s] agent already exists at %s; overwrite not set — keeping it", session_id, dest)
+        return {"session_id": session_id, "agent_path": str(dest), "agent_exists": True}
+
+    staging_rel = f"agents_staging/{slug}-course-creator.md"
+    staging = AGENTS_DIR / staging_rel
+    staging.parent.mkdir(parents=True, exist_ok=True)
+    if staging.exists():
+        staging.unlink()
+
+    log.info(
+        "[%s] new role: name=%r slug=%r overwrite=%s (staging -> %s)",
+        session_id, req.name, slug, req.overwrite, dest_rel,
+    )
+    prompt = build_role_prompt(req.name, slug, req.description, staging_rel, req.overwrite)
+    authored, _ = _run_for_output(session_id, prompt, staging_rel, resume=False)
+    if authored:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(staging), str(dest))
+        log.info("[%s] moved staged agent into %s", session_id, dest)
+    return {
+        "session_id": session_id,
+        "agent_path": str(dest),
+        "agent_exists": dest.is_file(),
+    }
+
+
 # Endpoints are sync `def` so Starlette runs them in a threadpool — the blocking
 # `claude` subprocess never stalls the event loop.
 @app.post("/create-course", response_model=CourseResponse)
@@ -193,6 +287,22 @@ def update_course(req: UpdateCourseRequest):
         raise HTTPException(status_code=500, detail=str(exc))
 
 
+@app.post("/create-role", response_model=RoleResponse)
+def create_role(req: CreateRoleRequest):
+    log.info("POST /create-role: %s", req.model_dump())
+    if not (req.name or req.slug):
+        log.warning("rejected request: missing 'name' (required to create a role)")
+        raise HTTPException(status_code=400, detail="missing 'name' (required to create a role)")
+    try:
+        return create_new_role(req)
+    except Exception as exc:  # noqa: BLE001 - surface any failure as JSON
+        log.exception("create_new_role failed: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
 if __name__ == "__main__":
-    log.info("Listening on http://0.0.0.0:%s  (POST /create-course, /update-course)", PORT)
+    log.info(
+        "Listening on http://0.0.0.0:%s  (POST /create-course, /update-course, /create-role)",
+        PORT,
+    )
     uvicorn.run(app, host="0.0.0.0", port=PORT)

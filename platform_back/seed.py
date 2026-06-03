@@ -27,6 +27,7 @@ USERS = [
     UserCreate(email="test1@example.com", name="Severus", role="Admin"),
     UserCreate(email="test2@example.com", name="Hermione", role="Technical"),
     UserCreate(email="admin@example.com", name="Dobby", role="Sales"),
+    UserCreate(email="enduser@example.com", name="Luna", role="End-user"),
 ]
 
 COURSES = [

@@ -45,8 +45,32 @@ class CourseDetailsUpdate(BaseModel):
     """Admin edit of a course's editable metadata (any subset)."""
     title: str | None = None
     description: str | None = None
-    profile: str | None = None  # department: "technical" | "sales"
+    profile: str | None = None  # department slug, e.g. "technical" | "sales" | "marketing"
     duration_min: int | None = None
+
+
+class ProfileCreate(BaseModel):
+    """Admin request to create a new learner profile (department/role): a roles
+    row + a Claude course-creator agent authored by agents_back."""
+    name: str                 # display name, e.g. "Marketing"
+    description: str = ""      # audience + emphasis, forwarded to agents_back
+
+
+class ProfileCreateResult(BaseModel):
+    role_id: int
+    name: str                 # "Marketing"
+    slug: str                 # "marketing"
+    profile: str              # "marketing" (the value to tag courses with == slug)
+    agent_status: str         # "pending" right after creation (build runs in background)
+
+
+class ProfileRead(BaseModel):
+    """A learner profile for dropdowns/lists: the role name, its slug, and the
+    state of its course-creator agent build (ready | pending | failed | none)."""
+    id: int
+    name: str
+    slug: str
+    agent_status: str = "none"
 
 
 class SurveyStatsItem(BaseModel):

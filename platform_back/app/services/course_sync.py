@@ -21,10 +21,22 @@ from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
 from app.config import COURSES_DIR
+from app.crud.role import get_or_create_role
 from app.models.course import Course
+from app.models.role import VALID_ROLES
 from app.services.course_files import read_course_meta, stem_to_session
 
 log = logging.getLogger("platform_back.course_sync")
+
+
+def ensure_base_roles(db: Session) -> None:
+    """Make sure the built-in roles (VALID_ROLES) exist on every startup, so an
+    already-created platform.db picks up newly-added base roles (e.g. End-user)
+    without needing a re-seed. Idempotent: get_or_create_role is a no-op when the
+    role is already present."""
+    for name in VALID_ROLES:
+        get_or_create_role(db, name)
+    log.info("Ensured base roles: %s", ", ".join(VALID_ROLES))
 
 
 def ensure_published_column(engine) -> bool:

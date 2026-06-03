@@ -2,6 +2,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models.learning_path import LearningPath, LearningPathCourse
 from app.schemas.learning_path import LearningPathCreate, LearningPathUpdate, LearningPathCoursesUpdate
+from app.util.slug import slugify
 
 
 def get_paths(db: Session) -> list[LearningPath]:
@@ -16,10 +17,10 @@ def get_visible_paths(db: Session, role: str | None) -> list[LearningPath]:
     q = db.query(LearningPath).filter(LearningPath.published.is_(True))
     if role == "Admin":
         pass
-    elif role in ("Technical", "Sales"):
+    elif role:
         q = q.filter(
             (LearningPath.profile.is_(None)) |
-            (func.lower(LearningPath.profile) == role.lower())
+            (func.lower(LearningPath.profile) == slugify(role))
         )
     else:
         return []

@@ -26,8 +26,10 @@ contain spaces):
 - `page_ids` — comma-separated list of Confluence page ids to combine into one
   course (e.g. `page_ids=123,456`). Either `page_id` (single) **or** `page_ids`
   (multiple) is required; if both appear, use the union of all ids.
-- `profile` — audience: `technical` / `technical support`, or `sales`. Defaults
-  to technical if missing or unrecognized.
+- `profile` — audience profile, e.g. `technical` / `technical support`, `sales`,
+  or any profile created via `/create-role` (e.g. `marketing`). Resolved to
+  `<slug>-course-creator` (see below); falls back to `technical-course-creator`
+  if missing or no matching agent exists.
 - `out_path` — exact path to write the final course JSON (e.g.
   `json/course_<id>.json`). **Required.**
 - `extract_path` — exact path to write the intermediate Markdown extract (e.g.
@@ -35,15 +37,26 @@ contain spaces):
 - `topic` — optional focus for the course (default: the whole page).
 - `duration_min` — optional target duration in minutes (default: unspecified).
 
-## Profile → course-creator agent
+## Profile → course-creator agent (by convention)
 
-Pick the authoring agent from `profile`:
+Derive the authoring agent from `profile` by convention — there is no fixed table
+to maintain as new profiles are added (they are created with the `/create-role`
+skill, which writes `.claude/agents/<slug>-course-creator.md`):
 
-| profile                         | agent                       |
-|---------------------------------|-----------------------------|
-| `sales`                         | `sales-course-creator`      |
-| `technical`, `technical support`| `technical-course-creator`  |
-| anything else / missing         | `technical-course-creator`  |
+1. **Slugify** `profile`: lowercase it, replace spaces with hyphens, drop any
+   other punctuation (e.g. `Technical Support` → `technical-support`,
+   `Marketing` → `marketing`).
+2. Use the agent named `<slug>-course-creator` — its file is
+   `.claude/agents/<slug>-course-creator.md`.
+3. **Aliases:** treat `technical support` / `technical-support` as `technical`,
+   so both map to `technical-course-creator`.
+4. **Fallback:** if `profile` is missing/empty, **or** no agent file exists at
+   `.claude/agents/<slug>-course-creator.md`, use `technical-course-creator`.
+
+So `profile=sales` → `sales-course-creator`, `profile=technical` (or
+`technical support`) → `technical-course-creator`, `profile=marketing` →
+`marketing-course-creator` if that agent has been created, otherwise
+`technical-course-creator`.
 
 ## Steps
 
@@ -58,9 +71,11 @@ table of contents. This agent runs on the stronger model and is responsible for
 reading 100% of every page.
 
 **STEP 2 — Author the course.**
-Use the profile's course-creator agent (from the table above) to read the
-extract at `extract_path` and write the course to exactly `out_path` (create the
-`json/` directory if needed). The agent must follow the schema and quality rules
+Resolve the profile's course-creator agent by the convention above
+(`<slug>-course-creator`, with the `technical` alias and the
+`technical-course-creator` fallback when the agent file is absent). Use that
+agent to read the extract at `extract_path` and write the course to exactly
+`out_path` (create the `json/` directory if needed). The agent must follow the schema and quality rules
 in `.claude/course-schema.md` (modules → lessons → multiple-choice questions,
 each question with exactly 4 options and one correct answer). Steer it with:
 - Audience/profile: `profile`

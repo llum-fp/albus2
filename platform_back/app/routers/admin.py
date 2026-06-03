@@ -30,19 +30,25 @@ from app.crud.course import (
     update_course_details,
 )
 from app.crud.user import create_user, delete_user, get_user_by_email, get_users, update_user
+from app.crud.role import get_or_create_role, get_role_by_name, get_roles
 from app.crud.survey import get_surveys, survey_stats
 from app.schemas.admin import (
     AdminCourseDetail,
     AdminCourseRead,
     BuildJobRead,
     CourseDetailsUpdate,
+    ProfileCreate,
+    ProfileCreateResult,
     SurveyStatsItem,
 )
 from app.schemas.course import CourseRequest, CourseUpdateRequest
 from app.schemas.survey import SurveyRead
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.services.agents_back import create_course as agents_create
+from app.services.agents_back import create_role as agents_create_role
 from app.services.agents_back import update_course as agents_update
+from app.services import profile_builds
+from app.util.slug import slugify
 from app.services.course_files import (
     course_counts,
     read_course_meta,
@@ -263,8 +269,12 @@ def admin_update_course_details(db_id: int, body: CourseDetailsUpdate, db: Sessi
     profile = body.profile
     if profile is not None:
         profile = profile.strip().lower()
-        if profile not in ("technical", "sales"):
-            raise HTTPException(status_code=400, detail="department must be 'technical' or 'sales'")
+        valid = {slugify(r.name) for r in get_roles(db) if r.name != "Admin"}
+        if profile not in valid:
+            raise HTTPException(
+                status_code=400,
+                detail=f"department must be one of: {', '.join(sorted(valid))}",
+            )
     if (body.title is not None or body.description is not None) and course.json_path:
         update_course_json(course.json_path, title=body.title, description=body.description)
     updated = update_course_details(
@@ -355,6 +365,59 @@ def admin_update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_
 def admin_delete_user(user_id: int, db: Session = Depends(get_db)):
     if not delete_user(db, user_id):
         raise HTTPException(status_code=404, detail="User not found")
+
+
+# --------------------------------------------------------------------------- #
+# Profiles (departments / learner roles)
+# --------------------------------------------------------------------------- #
+def _profile_worker(slug: str, name: str, description: str) -> None:
+    """Author the profile's course-creator agent in the background (a ~minutes
+    headless build). Updates the in-memory build status when it finishes."""
+    try:
+        result = agents_create_role({"name": name, "slug": slug, "description": description})
+        if result.get("agent_exists"):
+            profile_builds.clear(slug)        # success -> status derives "ready" from the file
+        else:
+            profile_builds.mark_failed(slug)
+    except Exception:  # noqa: BLE001
+        profile_builds.mark_failed(slug)
+
+
+@router.post("/profiles", response_model=ProfileCreateResult, status_code=202)
+def admin_create_profile(body: ProfileCreate, db: Session = Depends(get_db)):
+    """Create a new learner profile (department/role): a ``roles`` row so learners
+    can be assigned it and the catalog filtered to it, plus a Claude
+    course-creator agent authored by agents_back.
+
+    Returns immediately (202): the role is created synchronously, but the agent
+    build runs in a background thread (it takes minutes). Poll ``GET /api/profiles``
+    for ``agent_status`` (pending -> ready/failed). A role persists even if the
+    agent build fails — courses then fall back to the technical-course-creator
+    agent — and re-POSTing such a profile retries the build."""
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="name is required")
+    slug = slugify(name)
+    if not slug:
+        raise HTTPException(status_code=400, detail="could not derive a slug from name")
+
+    existing = get_role_by_name(db, name)
+    status = profile_builds.agent_status(slug)
+    if existing and status in ("ready", "pending"):
+        # Already has (or is building) its agent — nothing to retry.
+        raise HTTPException(status_code=409, detail="Profile already exists")
+
+    role = existing or get_or_create_role(db, name)  # commits
+
+    profile_builds.mark_pending(slug)
+    _spawn(_profile_worker, slug, name, body.description)
+    return {
+        "role_id": role.id,
+        "name": role.name,
+        "slug": slug,
+        "profile": slug,
+        "agent_status": "pending",
+    }
 
 
 # --------------------------------------------------------------------------- #
