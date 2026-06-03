@@ -593,6 +593,99 @@
   font-size: 0.78rem;
 }
 
+/* ====================== CATALOG CONTROLS ====================== */
+.catalog-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+}
+.search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--oa-text-muted);
+  pointer-events: none;
+}
+.catalog-search {
+  width: 100%;
+  padding: 0.45rem 2rem 0.45rem 2.1rem;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--oa-border);
+  background: var(--oa-card);
+  color: var(--oa-text);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.catalog-search:focus {
+  border-color: var(--oa-red);
+}
+.catalog-search::placeholder {
+  color: var(--oa-text-muted);
+}
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--oa-text-muted);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.search-clear:hover {
+  color: var(--oa-text);
+}
+.catalog-sort {
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--oa-border);
+  background: var(--oa-card);
+  color: var(--oa-text);
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  white-space: nowrap;
+}
+.catalog-sort:focus,
+.catalog-sort:hover {
+  border-color: var(--oa-border-strong);
+}
+.catalog-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.catalog-count {
+  font-size: 0.78rem;
+  color: var(--oa-text-muted);
+  white-space: nowrap;
+}
+.catalog-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 60px 0;
+  color: var(--oa-text-secondary);
+  font-size: 0.9rem;
+}
+
 /* ====================== VIEWER (3 paneles) ====================== */
 .viewer {
   display: grid;
