@@ -1,27 +1,31 @@
 import { useEffect, useState, useMemo } from "react";
-import { fetchCourses, fetchUserProgress, userKey, type CourseSummary, type SessionUser } from "../api";
-import { BookOpen, ArrowRight, Check, Search, X } from "./icons";
+import { fetchCourses, fetchUserProgress, fetchPaths, userKey, type CourseSummary, type PathSummary, type SessionUser } from "../api";
+import { BookOpen, GraduationCap, ArrowRight, Check, Search, X } from "./icons";
+import { formatDuration } from "../format";
 import AlbusIcon from "./AlbusIcon";
 import ThemeToggle from "./ThemeToggle";
 import UserMenu from "./UserMenu";
 import { progressPct, type CourseProgress } from "../progress";
 
-type Tab = "catalogo" | "mios";
+type Tab = "catalogo" | "mios" | "paths";
 type MineFilter = "all" | "active" | "done";
 type SortBy = "title-asc" | "title-desc" | "modules-desc" | "modules-asc";
 
 export default function Home({
   user,
   onOpen,
+  onOpenPath,
   onAdmin,
   onLogout,
 }: {
   user: SessionUser;
   onOpen: (courseId: string) => void;
+  onOpenPath: (pathId: number) => void;
   onAdmin?: () => void;
   onLogout: () => void;
 }) {
   const [courses, setCourses] = useState<CourseSummary[]>([]);
+  const [paths, setPaths] = useState<PathSummary[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [tab, setTab] = useState<Tab>("catalogo");
   const [mineFilter, setMineFilter] = useState<MineFilter>("all");
@@ -30,12 +34,13 @@ export default function Home({
 
   useEffect(() => {
     fetchCourses()
-      .then((c) => {
-        setCourses(c);
-        setState("ready");
-      })
+      .then((c) => { setCourses(c); setState("ready"); })
       .catch(() => setState("error"));
   }, []);
+
+  useEffect(() => {
+    fetchPaths(user.id).then(setPaths).catch(() => {});
+  }, [user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Progreso del usuario: se hidrata desde el backend al montar y se almacena en
   // estado para que Home re-renderice cuando llegan los datos remotos.
@@ -116,6 +121,13 @@ export default function Home({
         >
           My courses
           {enrolled.length > 0 && <span className="tab-count">{enrolled.length}</span>}
+        </button>
+        <button
+          className={`tab ${tab === "paths" ? "active" : ""}`}
+          onClick={() => setTab("paths")}
+        >
+          Learning paths
+          {paths.length > 0 && <span className="tab-count">{paths.length}</span>}
         </button>
       </nav>
 
@@ -226,6 +238,31 @@ export default function Home({
             )}
           </>
         )}
+
+        {tab === "paths" && (
+          <>
+            <p className="eyebrow section-title">Learning paths</p>
+            {paths.length === 0 ? (
+              <p className="muted">No learning paths available yet.</p>
+            ) : (() => {
+              const filtered = paths.filter(
+                (p) => !search || `${p.title} ${p.description ?? ""}`.toLowerCase().includes(search.toLowerCase())
+              );
+              return filtered.length === 0 ? (
+                <div className="empty-search">
+                  <p>No paths match your search.</p>
+                  <button className="link-btn" onClick={() => setSearch("")}>Clear filters</button>
+                </div>
+              ) : (
+                <div className="course-grid">
+                  {filtered.map((p) => (
+                    <PathCard key={p.id} p={p} onOpen={onOpenPath} />
+                  ))}
+                </div>
+              );
+            })()}
+          </>
+        )}
       </main>
 
       <footer className="home-footer">OmniAccess Albus — Training Platform</footer>
@@ -277,6 +314,54 @@ function CourseCard({
       <div className="course-footer">
         <span className="muted-sm">
           {c.module_count} modules · {c.lesson_count} lessons
+          {formatDuration(c.duration_min) && ` · ${formatDuration(c.duration_min)}`}
+        </span>
+        <span className="course-open">
+          {cta} <ArrowRight size={14} />
+        </span>
+      </div>
+    </button>
+  );
+}
+
+/* Tarjeta de learning path. */
+function PathCard({ p, onOpen }: { p: PathSummary; onOpen: (id: number) => void }) {
+  const pct = p.course_count > 0 ? Math.round((p.completed_count / p.course_count) * 100) : 0;
+  const started = p.completed_count > 0 && p.completed_count < p.course_count;
+  const completed = p.completed_count === p.course_count && p.course_count > 0;
+  const cta = completed ? "Review" : started ? "Continue" : "Start";
+
+  return (
+    <button className="course-card" onClick={() => onOpen(p.id)}>
+      <div className="course-card-top">
+        <span className="course-icon">
+          <GraduationCap size={20} />
+        </span>
+        {completed ? (
+          <span className="badge badge-done"><Check size={11} /> Completed</span>
+        ) : started ? (
+          <span className="badge badge-progress">In progress</span>
+        ) : (
+          <span className="badge badge-live">Path</span>
+        )}
+      </div>
+      <div className="course-title">{p.title}</div>
+      {p.description && <div className="course-desc">{p.description}</div>}
+
+      {started && (
+        <div className="course-progress">
+          <div className="course-progress-track">
+            <div className="course-progress-fill" style={{ width: `${pct}%` }} />
+          </div>
+          <span className="course-progress-pct">{pct}%</span>
+        </div>
+      )}
+
+      <div className="course-footer">
+        <span className="muted-sm">
+          {p.course_count} course{p.course_count !== 1 ? "s" : ""}
+          {p.course_count > 0 && ` · ${p.completed_count} completed`}
+          {formatDuration(p.total_duration_min) && ` · ${formatDuration(p.total_duration_min)}`}
         </span>
         <span className="course-open">
           {cta} <ArrowRight size={14} />

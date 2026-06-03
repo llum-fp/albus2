@@ -51,10 +51,15 @@ mock backend (`proyecto_exportacion/backend/`) has been **removed** — its chat
       (full course JSON served verbatim from `COURSES_DIR` with `id` injected from the filename).
     - `app/routers/api_surveys.py` — `POST/GET /api/surveys` (persisted in SQLite).
     - `app/routers/api_pages.py` — `GET /api/find-pages?topic=&limit=` — fast Confluence page
-      search (direct REST `text ~` CQL against Confluence's own index; no LLM, ~0.5s). Returns
-      `{ "pages": [ { "page_id", "page_title", "brief_description" } ] }` where
-      `brief_description` is Confluence's relevance excerpt. Creds (CONFLUENCE_URL + ATLASSIAN_*)
-      stay server-side, so the UI can call it directly.
+      search (no LLM). Returns `{ "pages": [ { "page_id", "page_title", "brief_description" } ] }`.
+      Runs a 3-step cascade, stopping at the first hit: (1) **page-id prefix** — if `topic` is all
+      digits, returns pages whose id *begins with* those digits via a local id index
+      (`app/services/page_index.py`; Confluence CQL has no id-prefix operator, so it's served
+      locally); (2) **title** (CQL `title ~`); (3) **full text** (CQL `text ~`, the original path).
+      `GET /api/page/{id}` does an exact id lookup. `POST /api/page-index/refresh` rebuilds the
+      local id index by crawling every page (cursor pagination via `_links.next`, cached in memory
+      + `platform_back/page_index.json`, 1h TTL). Creds (CONFLUENCE_URL + ATLASSIAN_*) stay
+      server-side, so the UI can call it directly.
     - `app/routers/chat.py` — Albus quiz-tutor: `POST /api/chat/session`, `GET /api/chat/stream`
       (SSE). Ported from the colleague backend; streams the local `claude` CLI and reads
       courses from `COURSES_DIR`. For per-question reference grounding it reads the

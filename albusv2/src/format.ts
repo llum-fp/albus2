@@ -26,6 +26,15 @@ export function elapsedSince(s: string): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(ss)}` : `${m}:${pad(ss)}`;
 }
 
+/** Format duration in minutes, e.g. 90 → "1h 30min", 10 → "10 min". */
+export function formatDuration(min: number | null | undefined): string | null {
+  if (!min) return null;
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const rem = min % 60;
+  return rem > 0 ? `${h}h ${rem}min` : `${h}h`;
+}
+
 /** Compact relative time, e.g. "just now", "3 min ago", "2 h ago", "4 d ago". */
 export function timeAgo(s: string): string {
   const diffMs = Date.now() - new Date(asUtc(s)).getTime();

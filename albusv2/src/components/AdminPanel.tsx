@@ -1,17 +1,19 @@
 import { useState } from "react";
 import "../admin.css";
-import { ArrowLeft, BarChart, BookOpen, Settings, Terminal, Users } from "./icons";
+import { ArrowLeft, BarChart, BookOpen, GraduationCap, Settings, Terminal, Users } from "./icons";
 import AlbusIcon from "./AlbusIcon";
 import ThemeToggle from "./ThemeToggle";
 import AdminCourses from "./AdminCourses";
 import AdminUsers from "./AdminUsers";
 import AdminSurveys from "./AdminSurveys";
 import AdminLogs from "./AdminLogs";
+import AdminPaths from "./AdminPaths";
 
-type Section = "courses" | "users" | "surveys" | "logs" | "settings";
+type Section = "courses" | "paths" | "users" | "surveys" | "logs" | "settings";
 
 const NAV: { id: Section; label: string; Icon: typeof BookOpen }[] = [
   { id: "courses", label: "Courses", Icon: BookOpen },
+  { id: "paths", label: "Learning Paths", Icon: GraduationCap },
   { id: "users", label: "Users", Icon: Users },
   { id: "surveys", label: "Surveys", Icon: BarChart },
   { id: "logs", label: "Logs", Icon: Terminal },
@@ -65,6 +67,7 @@ export default function AdminPanel({
 
       <div className="admin-content">
         {section === "courses" && <AdminCourses onOpenCourse={onOpenCourse} />}
+        {section === "paths" && <AdminPaths />}
         {section === "users" && <AdminUsers />}
         {section === "surveys" && <AdminSurveys />}
         {section === "logs" && <AdminLogs />}
@@ -83,8 +86,13 @@ function AdminSettings() {
           <p className="sub">Platform configuration.</p>
         </div>
       </div>
-      <div className="admin-empty">
-        Branding follows the OmniAccess design tokens. No editable settings yet.
+      <div className="admin-empty" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+        <img
+          src="https://c.tenor.com/KHkxIgIlHAgAAAAC/magic-spongebob.gif"
+          alt="Nothing to see here"
+          style={{ width: 200, borderRadius: "0.75rem" }}
+        />
+        <span>No settings yet. Check back later.</span>
       </div>
     </>
   );

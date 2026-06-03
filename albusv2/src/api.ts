@@ -40,6 +40,7 @@ export interface CourseSummary {
   language?: string;
   module_count: number;
   lesson_count: number;
+  duration_min?: number | null;
 }
 
 export interface Course {
@@ -239,6 +240,7 @@ export interface AdminCourse {
   description: string | null;
   language: string | null;
   profile: string | null;
+  duration_min: number | null;
   status: BuildStatus;
   published: boolean;
   module_count: number;
@@ -327,7 +329,7 @@ export const adminReviseCourse = (dbId: number, feedback: string) =>
   });
 export const adminUpdateCourseDetails = (
   dbId: number,
-  body: { title?: string; description?: string; profile?: string },
+  body: { title?: string; description?: string; profile?: string; duration_min?: number | null },
 ) =>
   adminFetch<AdminCourse>(`/courses/${dbId}/details`, {
     method: "PATCH",
@@ -359,3 +361,85 @@ export type LogService = "platform_back" | "agents_back" | "albusv2";
 export interface LogResponse { service: LogService; lines: string[] }
 export const adminFetchLogs = (service: LogService, lines = 200) =>
   adminFetch<LogResponse>(`/logs?service=${service}&lines=${lines}`, { headers: adminHeaders() });
+
+// ── Learning Paths ────────────────────────────────────────────────────────────
+
+export interface PathCourse {
+  course_session_id: string;
+  position: number;
+}
+
+export interface AdminPath {
+  id: number;
+  title: string;
+  description: string | null;
+  profile: string | null;
+  published: boolean;
+  course_count: number;
+  created_at: string;
+  updated_at: string;
+  courses: PathCourse[];
+}
+
+export interface PathCourseSummary {
+  id: string;
+  title: string;
+  description: string;
+  language?: string;
+  module_count: number;
+  lesson_count: number;
+  duration_min?: number | null;
+  position: number;
+  progress: { furthest: number; total: number; completed: boolean } | null;
+}
+
+export interface PathSummary {
+  id: number;
+  title: string;
+  description: string | null;
+  profile: string | null;
+  course_count: number;
+  completed_count: number;
+  total_duration_min?: number | null;
+}
+
+export interface PathDetail extends PathSummary {
+  courses: PathCourseSummary[];
+}
+
+// Learner
+export async function fetchPaths(userId: number): Promise<PathSummary[]> {
+  const r = await fetch(`/api/paths?user_id=${userId}`, {
+    headers: { "X-Albus-Role": storedRole() },
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+export async function fetchPath(pathId: number, userId: number): Promise<PathDetail> {
+  const r = await fetch(`/api/paths/${pathId}?user_id=${userId}`, {
+    headers: { "X-Albus-Role": storedRole() },
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// Admin
+export const adminFetchPaths = () =>
+  adminFetch<AdminPath[]>("/paths", { headers: adminHeaders() });
+export const adminCreatePath = (body: { title: string; description?: string; profile?: string | null }) =>
+  adminFetch<AdminPath>("/paths", { method: "POST", headers: adminHeaders(true), body: JSON.stringify(body) });
+export const adminUpdatePath = (id: number, body: { title?: string; description?: string; profile?: string | null }) =>
+  adminFetch<AdminPath>(`/paths/${id}`, { method: "PATCH", headers: adminHeaders(true), body: JSON.stringify(body) });
+export const adminPublishPath = (id: number) =>
+  adminFetch<AdminPath>(`/paths/${id}/publish`, { method: "POST", headers: adminHeaders() });
+export const adminUnpublishPath = (id: number) =>
+  adminFetch<AdminPath>(`/paths/${id}/unpublish`, { method: "POST", headers: adminHeaders() });
+export const adminSetPathCourses = (id: number, courses: PathCourse[]) =>
+  adminFetch<AdminPath>(`/paths/${id}/courses`, {
+    method: "PUT",
+    headers: adminHeaders(true),
+    body: JSON.stringify({ courses }),
+  });
+export const adminDeletePath = (id: number) =>
+  adminFetch<{ ok: boolean }>(`/paths/${id}`, { method: "DELETE", headers: adminHeaders() });

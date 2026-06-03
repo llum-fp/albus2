@@ -20,6 +20,28 @@ dist/
 
 # Data — keep sample courses, ignore generated ones
 
+# Database — never commit, regenerate with seed.py
+platform_back/platform.db
+platform_back/platform.db-shm
+platform_back/platform.db-wal
+platform_back/platform.pre-*.db
+
+# Generated course content (written by agents at runtime)
+agents_back/agents_directory/json/
+agents_back/agents_directory/extract/
+agents_back/agents_directory/images/
+
+# Claude Code local config
+.claude/settings.local.json
+
+# Local server script and its runtime files
+server.sh
+.server.pids
+.logs/
+
+# Local Confluence page-id index (rebuilt on demand; cache only)
+platform_back/page_index.json
+
 # Albus chat tutor sandbox (temp system-prompt files written per request)
 platform_back/claude-sandbox/
 proyecto_exportacion/backend/claude-sandbox/

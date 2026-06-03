@@ -686,6 +686,106 @@
   font-size: 0.9rem;
 }
 
+/* ====================== PATH VIEWER ====================== */
+.path-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 28px 32px;
+  background: var(--oa-card);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-card);
+  margin-bottom: 28px;
+}
+.path-hero-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 4px 0;
+}
+.path-hero-desc {
+  color: var(--oa-text-secondary);
+  font-size: 0.88rem;
+  margin: 0;
+}
+.path-hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.path-course-list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.path-row {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+}
+.path-row-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40px;
+  flex-shrink: 0;
+  padding-top: 16px;
+}
+.path-row-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--oa-border);
+  background: var(--oa-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--oa-text-muted);
+  flex-shrink: 0;
+  z-index: 1;
+}
+.path-row-dot.cur {
+  border-color: var(--oa-red);
+  color: var(--oa-red);
+}
+.path-row-dot.done {
+  background: var(--oa-success);
+  border-color: var(--oa-success);
+  color: #fff;
+}
+.path-row-line {
+  width: 2px;
+  flex: 1;
+  min-height: 24px;
+  background: var(--oa-border);
+  margin: 4px 0;
+}
+.path-row-line.done {
+  background: var(--oa-success);
+}
+.path-row-body {
+  flex: 1;
+  padding: 12px 0 20px 16px;
+}
+.path-row-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.path-row-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.btn-sm {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+
 /* ====================== VIEWER (3 paneles) ====================== */
 .viewer {
   display: grid;
@@ -1263,6 +1363,23 @@
   overflow: hidden;
   position: relative;
 }
+.chat-flash-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  border-radius: inherit;
+  animation: chat-flash 2.4s ease-in-out forwards;
+}
+@keyframes chat-flash {
+  0%   { background: rgba(193, 3, 47, 0); }
+  16%  { background: rgba(193, 3, 47, 0.22); }
+  32%  { background: rgba(193, 3, 47, 0.02); }
+  50%  { background: rgba(193, 3, 47, 0.22); }
+  66%  { background: rgba(193, 3, 47, 0.02); }
+  83%  { background: rgba(193, 3, 47, 0.18); }
+  100% { background: rgba(193, 3, 47, 0); }
+}
 .chat-resizer {
   position: absolute;
   left: 0;
@@ -1442,6 +1559,45 @@
 .quiz-hint svg {
   color: var(--oa-red);
 }
+.quiz-hint--action {
+  color: var(--oa-red);
+  font-weight: 500;
+  animation: hint-pulse 1.6s ease-in-out infinite;
+}
+@keyframes hint-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+/* Chat header pulsante cuando el alumno tiene que responder */
+.chat-header--needs-reply {
+  animation: header-glow 1.6s ease-in-out infinite;
+}
+@keyframes header-glow {
+  0%, 100% { background: transparent; }
+  50%       { background: rgba(193, 3, 47, 0.07); }
+}
+
+/* Badge rojo en el botón de abrir chat */
+.icon-btn {
+  position: relative;
+}
+.chat-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--oa-red);
+  border: 1.5px solid var(--oa-bg);
+  animation: badge-pop 0.2s ease-out;
+}
+@keyframes badge-pop {
+  from { transform: scale(0); }
+  to   { transform: scale(1); }
+}
+
 .chat-input {
   display: flex;
   gap: 8px;

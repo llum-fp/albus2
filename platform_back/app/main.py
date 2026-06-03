@@ -6,6 +6,7 @@ from app.database import engine, Base, SessionLocal
 from app.routers import (
     courses, users, api_courses, api_surveys, api_pages, api_users, api_progress, chat, admin,
 )
+from app.routers import admin_paths, api_paths
 import app.models  # noqa: F401 — ensure models are registered before create_all
 from app.services.course_sync import ensure_published_column, reconcile
 
@@ -40,8 +41,10 @@ app.include_router(api_pages.router)
 app.include_router(api_users.router)
 app.include_router(api_progress.router)
 app.include_router(chat.router)
+app.include_router(api_paths.router)
 # Admin console surface (/api/admin/*), role-gated.
 app.include_router(admin.router)
+app.include_router(admin_paths.router)
 
 # Serve course screenshots over HTTP. A JSON image path "images/<session>/x.png"
 # is served at "/api/media/<session>/x.png" (the frontend strips the leading
