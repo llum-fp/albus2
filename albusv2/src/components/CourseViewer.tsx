@@ -107,6 +107,7 @@ export default function CourseViewer({
   const [openModules, setOpenModules] = useState<Set<number>>(new Set());
   const [quiz, setQuiz] = useState<QuizState>({});
   const [pendingWrong, setPendingWrong] = useState<{ questionId: string; chosenIndex: number } | null>(null);
+  const [wrongFlashKey, setWrongFlashKey] = useState(0);
   // Preguntas elegidas al azar por lección (estable mientras dure la sesión).
   const [quizPick, setQuizPick] = useState<Record<string, Question[]>>({});
   const [showSurvey, setShowSurvey] = useState(false);
@@ -207,6 +208,7 @@ export default function CourseViewer({
       chat.sendQuiz({ phase: "correct", questionId: q.id, chosenIndex: answerIdx, lessonId });
     } else {
       setPendingWrong({ questionId: q.id, chosenIndex: answerIdx });
+      setWrongFlashKey((k) => k + 1);
       chat.sendQuiz({ phase: "wrong_ask", questionId: q.id, chosenIndex: answerIdx, lessonId });
       // Next sigue bloqueado hasta que el alumno responda a Albus (handleUserSend).
     }
@@ -485,6 +487,7 @@ export default function CourseViewer({
           onClose={() => setChatOpen(false)}
           notice={pendingWrong ? "✋ Reply to Albus to continue." : undefined}
           needsReply={!!pendingWrong}
+          wrongFlashKey={wrongFlashKey}
           onResize={setChatWidth}
         />
       )}

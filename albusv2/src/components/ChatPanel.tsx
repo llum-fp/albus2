@@ -13,6 +13,7 @@ export default function ChatPanel({
   onClose,
   notice,
   needsReply,
+  wrongFlashKey,
   onResize,
 }: {
   messages: ChatMsg[];
@@ -22,23 +23,25 @@ export default function ChatPanel({
   onClose: () => void;
   notice?: string;
   needsReply?: boolean;
+  wrongFlashKey?: number;
   onResize?: (px: number) => void;
 }) {
   const [draft, setDraft] = useState("");
   const [dragging, setDragging] = useState(false);
   const [flashing, setFlashing] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
-  const prevNeedsReply = useRef(false);
 
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  // Dispara el flash solo cuando needsReply pasa de false → true.
+  // Cada vez que wrongFlashKey sube (nueva respuesta incorrecta), dispara el flash.
   useEffect(() => {
-    if (needsReply && !prevNeedsReply.current) setFlashing(true);
-    prevNeedsReply.current = !!needsReply;
-  }, [needsReply]);
+    if (!wrongFlashKey) return;
+    setFlashing(false);
+    const id = requestAnimationFrame(() => setFlashing(true));
+    return () => cancelAnimationFrame(id);
+  }, [wrongFlashKey]);
 
   const stopFlash = useCallback(() => setFlashing(false), []);
 
