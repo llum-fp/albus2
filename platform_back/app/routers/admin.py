@@ -268,7 +268,8 @@ def admin_update_course_details(db_id: int, body: CourseDetailsUpdate, db: Sessi
     if (body.title is not None or body.description is not None) and course.json_path:
         update_course_json(course.json_path, title=body.title, description=body.description)
     updated = update_course_details(
-        db, db_id, title=body.title, description=body.description, profile=profile
+        db, db_id, title=body.title, description=body.description,
+        profile=profile, duration_min=body.duration_min,
     )
     return _admin_course_dict(updated)
 

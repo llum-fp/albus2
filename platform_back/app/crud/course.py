@@ -86,6 +86,7 @@ def update_course_details(
     title: str | None = None,
     description: str | None = None,
     profile: str | None = None,
+    duration_min: int | None = None,
 ) -> Course | None:
     """Admin edit of a course's metadata (title/description/department). Only the
     provided fields are changed. The JSON file is updated separately by the router."""
@@ -98,6 +99,8 @@ def update_course_details(
         course.description = description
     if profile is not None:
         course.profile = profile
+    if duration_min is not None:
+        course.duration_min = duration_min
     course.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(course)

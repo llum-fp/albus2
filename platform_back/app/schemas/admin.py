@@ -46,6 +46,7 @@ class CourseDetailsUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     profile: str | None = None  # department: "technical" | "sales"
+    duration_min: int | None = None
 
 
 class SurveyStatsItem(BaseModel):

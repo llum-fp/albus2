@@ -588,6 +588,7 @@ function EditDetailsModal({
   const [title, setTitle] = useState(course.title ?? "");
   const [description, setDescription] = useState(course.description ?? "");
   const [profile, setProfile] = useState(course.profile ?? "");
+  const [duration, setDuration] = useState(course.duration_min ? String(course.duration_min) : "");
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -599,11 +600,12 @@ function EditDetailsModal({
     setSending(true);
     setErr(null);
     try {
-      const body: { title: string; description: string; profile?: string } = {
+      const body: { title: string; description: string; profile?: string; duration_min?: number | null } = {
         title: title.trim(),
         description: description,
+        duration_min: duration ? Number(duration) : null,
       };
-      if (profile) body.profile = profile; // only set a real department
+      if (profile) body.profile = profile;
       onSaved(await adminUpdateCourseDetails(course.db_id, body));
     } catch {
       setErr("Couldn't save changes.");
@@ -634,6 +636,17 @@ function EditDetailsModal({
           {!course.profile && !profile && (
             <p className="search-hint">Unassigned courses aren't shown to learners until they have a department.</p>
           )}
+        </div>
+        <div className="field">
+          <label>Duration (minutes, optional)</label>
+          <input
+            className="input"
+            type="number"
+            min="1"
+            placeholder="e.g. 30"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+          />
         </div>
         <div className="field">
           <label>Description</label>

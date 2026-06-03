@@ -240,6 +240,7 @@ export interface AdminCourse {
   description: string | null;
   language: string | null;
   profile: string | null;
+  duration_min: number | null;
   status: BuildStatus;
   published: boolean;
   module_count: number;
@@ -328,7 +329,7 @@ export const adminReviseCourse = (dbId: number, feedback: string) =>
   });
 export const adminUpdateCourseDetails = (
   dbId: number,
-  body: { title?: string; description?: string; profile?: string },
+  body: { title?: string; description?: string; profile?: string; duration_min?: number | null },
 ) =>
   adminFetch<AdminCourse>(`/courses/${dbId}/details`, {
     method: "PATCH",
