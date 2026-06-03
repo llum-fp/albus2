@@ -1,0 +1,206 @@
+{
+  "title": "Proxmox Bugs and Known Issues (v7.4)",
+  "description": "",
+  "source": "Confluence page 781058422, space SA (Solutions Architecture) — https://redevelopment-omniaccess.atlassian.net/wiki/spaces/SA/pages/781058422/Reported+proxmox+bugs+or+issues",
+  "language": "en",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Bug 1 — Default Gateway Not Applied via Web UI",
+      "summary": "Proxmox 7.4 fails to apply a default gateway change correctly when multiple network changes are submitted through the web UI simultaneously. This module explains the failure mode and the documented workaround.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Symptom and Root Cause",
+          "content": "## Affected version\n\nProxmox VE **7.4**\n\n## What happens\n\nWhen an operator makes multiple network configuration changes in the Proxmox web UI and applies them together, the default gateway change may not be committed correctly. The node retains its previous (or empty) gateway after the apply, even though the UI reports success.\n\n## Why it matters\n\nA missing or incorrect default gateway causes the Proxmox node to lose outbound IP reachability. This can affect:\n- Node management access (if the management interface relies on the default route)\n- VM network flows that exit through the host\n- Cluster communication if nodes rely on routed paths\n\n## Workaround\n\nMake a **dummy (no-op) change** on the node's network configuration — for example, add and immediately remove a comment in an interface definition — and apply again. This forces Proxmox to re-evaluate and correctly write the gateway to `/etc/network/interfaces`.\n\n> **Important:** Do not batch multiple network changes (including gateway edits) in a single apply when running Proxmox 7.4. Apply gateway changes in isolation to avoid the race condition.",
+          "questions": [
+            {
+              "id": "q1-1-1",
+              "question": "A Proxmox 7.4 node loses outbound connectivity immediately after an operator applied several network changes at once via the web UI. The interface is up and the IP address is correct, but packets cannot leave the node. What is the most likely cause?",
+              "answers": [
+                "The default gateway was not applied correctly because multiple changes were submitted in the same web UI apply operation",
+                "The networking service crashed and needs to be restarted with systemctl restart networking",
+                "The VLAN tag on the uplink interface was stripped during the apply",
+                "The ZFS pool ran out of space, preventing the config file from being written"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "Proxmox 7.4 has a known bug where the default gateway is not committed correctly when multiple network changes are applied together via the web UI. The symptom is correct IP assignment but no outbound routing. The workaround is a dummy change + re-apply, not a service restart."
+            },
+            {
+              "id": "q1-1-2",
+              "question": "What is the documented workaround for the Proxmox 7.4 default gateway application bug?",
+              "answers": [
+                "Reboot the Proxmox node to force /etc/network/interfaces to be re-read",
+                "Make a dummy change on the node network configuration and apply again",
+                "Edit /etc/network/interfaces directly and run ifreload -a",
+                "Remove all network changes and re-enter them one at a time from scratch"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Confluence source explicitly states the workaround is to make a dummy change on the node network so that Proxmox is forced to re-apply the gateway change correctly. A reboot or direct file edit are not the documented procedure for this specific bug."
+            },
+            {
+              "id": "q1-1-3",
+              "question": "To avoid triggering the default gateway bug in Proxmox 7.4, what is the safest operational practice when changing network configuration via the web UI?",
+              "answers": [
+                "Always change the gateway and interface IPs together in a single apply to reduce total downtime",
+                "Use the CLI exclusively; the web UI cannot write gateway changes at all",
+                "Apply gateway changes in isolation, not batched with other network changes",
+                "Enable HA mode before making any network changes so the cluster can compensate"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source notes that the bug is triggered when multiple changes are applied simultaneously. Applying the gateway change alone (not batched) avoids the race condition. The bug is web-UI-specific, but the fix is batching discipline, not CLI-only operation."
+            },
+            {
+              "id": "q1-1-4",
+              "question": "After applying the dummy-change workaround for the gateway bug, an operator verifies the route table with `ip route show`. Which output confirms the gateway was applied correctly?",
+              "answers": [
+                "The output is empty, which means the routing table was successfully reset",
+                "A default route entry (0.0.0.0/0) appears pointing to the correct gateway IP",
+                "The management bridge (vmbr0) shows status UP with no gateway line, which is expected",
+                "The output shows only host routes (/32), confirming gateway delegation is handled by the VM layer"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "A correctly applied default gateway will appear as a `default via <gateway-IP>` (i.e., 0.0.0.0/0) entry in `ip route show`. An empty table or host-routes-only table means the gateway is still missing."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Bug 2 — FortiGate FortiLink Loses Communication After Networking Restart",
+      "summary": "Executing `systemctl restart networking` on a Proxmox 7.4 host can break FortiGate FortiLink communication on net4. This module covers the failure scenario and the VLAN re-tag workaround.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "FortiLink Disruption: Cause and Workaround",
+          "content": "## Affected version\n\nProxmox VE **7.4**\n\n> **Note:** This issue was pending lab confirmation at time of documentation. The workaround is confirmed functional but the underlying root cause in Proxmox/Linux networking is still under investigation.\n\n## What happens\n\nWhen an operator runs:\n\n```bash\nsystemctl restart networking\n```\n\non a Proxmox 7.4 host that has a FortiGate VM with a FortiLink interface, the FortiLink interface (mapped to **net4** on the VM) loses communication with the FortiGate management fabric. The FortiLink session does not recover on its own.\n\n## Why it matters\n\nFortiLink is the control-plane channel between a FortiGate and its managed FortiSwitch devices. Loss of FortiLink causes:\n- FortiSwitch devices to fall back to standalone/unmanaged mode\n- Policy enforcement gaps until FortiLink is re-established\n- Potential network outages if FortiSwitch VLANs are centrally managed\n\n## Workaround\n\n1. On the FortiGate VM, navigate to the FortiLink interface configuration (net4).\n2. **Remove** the VLAN tag from the FortiLink interface.\n3. **Re-add** the VLAN tag to the FortiLink interface.\n4. FortiLink will recover communication automatically after the tag is restored.\n\n> **Important:** Do NOT run `systemctl restart networking` as a routine procedure on Proxmox hosts running FortiGate with FortiLink. If a networking restart is unavoidable, execute the VLAN re-tag procedure immediately afterward to restore FortiLink.\n\n> **Warning:** Avoid using `systemctl restart networking` in production environments without a change window. The networking restart itself (independent of FortiLink) can cause brief interruptions to all interfaces on the host.",
+          "questions": [
+            {
+              "id": "q2-1-1",
+              "question": "After an operator runs `systemctl restart networking` on a Proxmox 7.4 host, the FortiGate reports that FortiLink is down and managed FortiSwitches have gone unmanaged. What is the immediate cause according to the documented bug?",
+              "answers": [
+                "The FortiGate VM was powered off by the networking restart and needs to be started again",
+                "The FortiLink interface (net4) loses communication after systemctl restart networking on Proxmox 7.4",
+                "The ZFS pool unmounted during the restart, corrupting the FortiGate disk image",
+                "The default gateway was lost on the FortiGate's WAN interface, breaking the FortiLink tunnel"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The documented bug states that executing `systemctl restart networking` on Proxmox 7.4 causes the FortiGate FortiLink interface (net4) to lose communication. The VM is not powered off; the issue is specific to the FortiLink interface state."
+            },
+            {
+              "id": "q2-1-2",
+              "question": "What is the correct procedure to restore FortiLink communication after it has been broken by a networking restart on Proxmox 7.4?",
+              "answers": [
+                "Reboot the FortiGate VM to reinitialize all network interfaces",
+                "Run `systemctl restart networking` a second time to re-sync the interface state",
+                "Remove the VLAN tag on the FortiGate FortiLink interface (net4) and add it back again",
+                "Delete and recreate the net4 interface from the Proxmox VM hardware tab"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The documented workaround is to remove the VLAN tag on the FortiGate FortiLink interface (net4) and add it again. This causes FortiLink to recover communication. A full VM reboot or networking restart is not the documented procedure."
+            },
+            {
+              "id": "q2-1-3",
+              "question": "A change window requires restarting networking on a Proxmox 7.4 host that runs a FortiGate with FortiLink. What should the runbook include immediately after `systemctl restart networking` completes?",
+              "answers": [
+                "Verify that the ZFS pool is mounted and all VHDs are accessible before checking FortiLink",
+                "Check FortiLink status and, if down, perform the VLAN re-tag procedure on net4",
+                "Trigger a Proxmox HA failover to move the FortiGate to a healthy node",
+                "Run `ifreload -a` to reload interfaces and wait 5 minutes for FortiLink to auto-recover"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Because this bug is known to break FortiLink after a networking restart, the runbook should include a FortiLink status check immediately after the restart. If FortiLink is down, the VLAN re-tag workaround on net4 must be executed. There is no documented auto-recovery without the re-tag."
+            },
+            {
+              "id": "q2-1-4",
+              "question": "What is the operational risk of not addressing a broken FortiLink session on a FortiGate managing multiple FortiSwitches?",
+              "answers": [
+                "The FortiGate will lose internet connectivity but local LAN switching will be unaffected",
+                "Managed FortiSwitch devices will revert to standalone/unmanaged mode, potentially causing policy enforcement gaps",
+                "The Proxmox cluster will lose quorum because FortiLink is also used for node heartbeats",
+                "ZFS snapshots will fail because FortiLink backup traffic uses the same storage pool"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "FortiLink is the control-plane channel between the FortiGate and managed FortiSwitches. When it goes down, FortiSwitch devices fall back to standalone mode, meaning centrally configured VLANs and policies may not be enforced. This is not related to Proxmox cluster quorum or ZFS."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Bug 3 — ZFS Storage Over-Reservation and the Discard/TRIM Fix",
+      "summary": "Without Discard enabled on Proxmox ZFS-backed virtual disks, ZFS over-reserves storage via refreservation, consuming far more pool space than the VM actually uses. This module explains the mechanism, the impact, and how to configure Discard to prevent it.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "ZFS Over-Reservation: Symptoms and Root Cause",
+          "content": "## Affected version\n\nProxmox VE **7.4** (ZFS storage backend)\n\n## Observed symptom\n\nA Unity VM with **400 GB** of virtual disk space was found consuming **546 GB** of ZFS pool space (`refreservation=546G`). This is **146 GB** of over-reservation — 36.5% more space than the virtual disk size.\n\nYou can check the current refreservation of a ZFS dataset with:\n\n```bash\nzfs get refreservation <pool>/<dataset>\n```\n\n## Root cause\n\nWhen **Discard** is not enabled on the VM's virtual disk, the guest OS cannot send **TRIM** commands to the underlying ZFS storage. As a result:\n\n1. Deleted files inside the guest still appear as used blocks from ZFS's perspective.\n2. ZFS maintains a `refreservation` to guarantee space for all blocks it believes are in use.\n3. Over time, as the guest writes and deletes data, ZFS accumulates reserved space that cannot be reclaimed.\n4. The pool fills up much faster than the actual data footprint of the guest would suggest.\n\n> **Important:** This issue compounds over time. On a busy VM with frequent file creation/deletion (e.g., log rotation, temp files, database writes), the over-reservation can reach or exceed the virtual disk size itself, effectively doubling the storage consumed per VM.",
+          "questions": [
+            {
+              "id": "q3-1-1",
+              "question": "A Unity VM has a 400 GB virtual disk but the ZFS pool shows `refreservation=546G` for its dataset. What is the most likely cause of this over-reservation?",
+              "answers": [
+                "The VM has snapshots that have grown to 146 GB and are included in the refreservation",
+                "Discard is not enabled on the virtual disk, so the guest OS cannot send TRIM commands to ZFS to free unused blocks",
+                "The ZFS pool is using RAID-Z2 and the parity overhead adds 36% to the raw disk usage",
+                "The VM's memory balloon driver is leaking memory pages into the ZFS dataset"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The documented root cause is the absence of Discard on the virtual disk. Without Discard/TRIM, deleted blocks inside the guest are not communicated to ZFS, causing ZFS to maintain refreservation for blocks it believes are still in use. The example in the source shows 400 GB virtual disk → 546 GB refreservation."
+            },
+            {
+              "id": "q3-1-2",
+              "question": "What does enabling the Discard option on a Proxmox ZFS virtual disk actually do at the storage layer?",
+              "answers": [
+                "It compresses all writes in real time using LZ4, reducing the effective block count",
+                "It enables TRIM support, allowing the guest OS to inform ZFS when blocks are no longer in use",
+                "It disables refreservation entirely, setting it to zero for the dataset",
+                "It mounts the dataset with the `relatime` flag to reduce metadata write overhead"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The Discard option enables TRIM support for the VM's virtual disk. When enabled, the guest OS can send TRIM commands to ZFS to indicate which blocks are no longer needed (e.g., after file deletion), allowing ZFS to reclaim that space and reduce refreservation."
+            },
+            {
+              "id": "q3-1-3",
+              "question": "Which of the following is a documented benefit of enabling Discard on a ZFS-backed virtual disk in Proxmox?",
+              "answers": [
+                "It automatically increases the virtual disk size when the pool has free space available",
+                "It prevents the guest OS from writing more data than the thin-provisioned limit allows",
+                "It helps ZFS free up storage blocks no longer needed by the VM, preventing unnecessary disk growth",
+                "It encrypts blocks at rest using AES-256 before writing them to the pool"
+              ],
+              "correctAnswerIndex": 2,
+              "explanation": "The source explicitly lists 'Reclaims unused space: It helps ZFS free up storage blocks that are no longer needed by the VM, preventing unnecessary disk growth' as the primary benefit of Discard. Disk auto-expansion and encryption are unrelated features."
+            },
+            {
+              "id": "q3-1-4",
+              "question": "Beyond space reclamation, what two additional benefits does the source document for enabling Discard/TRIM on ZFS-backed Proxmox VMs?",
+              "answers": [
+                "Automated ZFS scrub scheduling and increased ARC cache hit rate",
+                "Improved I/O efficiency (especially on SSD-backed pools) and smaller snapshots with more effective deduplication/compression",
+                "Faster VM live migration and reduced CPU overhead from the QEMU block layer",
+                "Automatic refreservation capping and NFS export compatibility"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "The source documents three benefits: (1) space reclamation, (2) improved I/O performance especially on SSD-backed ZFS pools, and (3) better snapshot/dedup efficiency because less stale data means smaller snapshots and more effective deduplication and compression."
+            },
+            {
+              "id": "q3-1-5",
+              "question": "An operator discovers that a VM's ZFS dataset refreservation is growing faster than expected on a busy log server. Discard is currently disabled. What is the expected long-term outcome if Discard remains disabled?",
+              "answers": [
+                "ZFS will automatically thin-provision the dataset after 30 days of inactivity",
+                "The pool will appear to fill up faster than actual VM data footprint warrants, potentially exhausting available storage",
+                "The guest OS will crash once it cannot allocate new blocks, alerting the operator",
+                "Proxmox will migrate the VM to a different node when the dataset exceeds 80% of the pool"
+              ],
+              "correctAnswerIndex": 1,
+              "explanation": "Without Discard, ZFS cannot reclaim deleted blocks and refreservation grows over time. On a busy VM (log rotation, temp files, DB writes), over-reservation compounds and the pool fills up much faster than actual data footprint. This is the documented risk: significantly faster filling of total available server space."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

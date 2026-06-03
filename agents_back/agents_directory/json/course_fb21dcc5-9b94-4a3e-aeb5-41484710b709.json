@@ -1,0 +1,531 @@
+{
+  "title": "(sales) Building AI Cartels on the AI Hub Platform",
+  "description": "A sales-oriented introduction to AI Cartels — what they are, the business value they unlock, and how to position the AI Hub platform to customers exploring AI-powered automation and integration.",
+  "source": "Confluence page 1727332382 (AI Core - MCP Cartel / Building AI Cartels), space AD",
+  "language": "en",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "What is an AI Cartel and Why Does It Matter?",
+      "summary": "Frame the concept of a cartel in terms customers understand: a domain service that plugs into a shared AI fabric, reducing integration effort and accelerating time-to-value.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "The Core Concept: Cartels as Domain Services",
+          "content": "An AI Cartel is a long-running Python service that connects a team's domain logic to the AI Hub platform. Think of it as the integration point where a team's system — whether a network device, a SaaS API, or a proprietary service — becomes part of a shared, AI-powered ecosystem.\n\nEvery cartel shares two platform capabilities automatically:\n- It registers with a shared command bus (RabbitMQ via mesh_core) so it is reachable by name from any other cartel or the platform CLI.\n- It runs as its own deployable unit with its own container, logs, quota, and audit trail.\n\nThe business implication: teams build once and contribute to a platform that grows more capable with every new cartel. A firewall integration, once published as a cartel, becomes available to every AI workflow on the platform — no point-to-point wiring, no repeated integration work.",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "A customer asks: 'What does an AI Cartel actually do for my team?' Which answer best captures the value?",
+              "answers": [
+                "It connects your team's system to a shared AI platform, making your capabilities available to every AI workflow without point-to-point integration.",
+                "It is a Python class that wraps REST API calls into functions.",
+                "It provides a managed Kubernetes deployment for any microservice.",
+                "It replaces RabbitMQ with a simpler message queue for smaller teams."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "A cartel plugs domain logic into the AI Hub platform's command bus and tool catalog, so the team's capabilities become reachable by any other cartel or workflow — eliminating repeated point-to-point integration work."
+            },
+            {
+              "id": "q2",
+              "question": "Which two platform capabilities does EVERY cartel get automatically, regardless of its purpose?",
+              "answers": [
+                "Named service registration on the command bus, and an independent deployable unit with its own audit trail.",
+                "A managed Postgres database and an automatic REST API surface.",
+                "LLM model routing and a pre-built Temporal workflow engine.",
+                "A Grafana dashboard and a built-in Slack notification channel."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "Every cartel registers with the platform's command bus (reachable by name) and runs as its own container with its own logs, quota, and audit trail. These are common to all cartel shapes."
+            },
+            {
+              "id": "q3",
+              "question": "A prospect says: 'We already have a Fortigate integration built in-house. Why would we rebuild it as a cartel?' What is the strongest response?",
+              "answers": [
+                "Once it is a cartel, every AI workflow on the platform can call your Fortigate tools by name — your integration becomes a shared asset instead of a silo.",
+                "The platform will automatically upgrade your Fortigate firmware on a schedule.",
+                "Building it as a cartel means you no longer need your own credentials management.",
+                "A cartel removes the need for any Python code, making the integration maintenance-free."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "Publishing a system as an MCP cartel registers it with the Gateway's tool catalog, making it callable by any AI workflow across the platform — multiplying the value of the integration beyond a single team's use."
+            },
+            {
+              "id": "q4",
+              "question": "Which statement about cartel deployment is accurate according to the source?",
+              "answers": [
+                "Each cartel runs as its own container with its own logs and quota.",
+                "All cartels share a single container to reduce infrastructure overhead.",
+                "Cartel deployment is managed entirely by the customer's DevOps team without platform support.",
+                "Cartels are serverless functions that spin up only when called."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source states each cartel runs as its own deployable unit — its own container, its own logs, its own quota and audit trail."
+            }
+          ]
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Two Roles, One Platform: Publish vs. Consume",
+          "content": "The power of the AI Hub platform comes from how cartels collaborate. Every cartel has up to two interaction surfaces:\n\n**Publish surface:** A cartel exposes its team's system as tools that other cartels' AI agents can call. Examples already on the platform include Fortigate (firewall), Proxmox (hypervisor), Alanis (fleet telemetry), and Freshdesk (support tickets).\n\n**Consume surface:** A cartel runs AI workflows that combine reasoning from LLMs with tools published by other cartels. Examples include anomaly-detection and remediation cartels.\n\nThis publish/consume model is the network effect argument: the more teams that publish their systems as cartels, the richer the tool catalog available to every AI workflow. A remediation cartel that today calls Fortigate and Proxmox tools can tomorrow call a new storage cartel — with no changes to its own code.",
+          "questions": [
+            {
+              "id": "q5",
+              "question": "A customer's network team owns a proprietary SD-WAN controller. Which cartel surface is most relevant to them first?",
+              "answers": [
+                "Publish — they expose their SD-WAN operations as tools so other teams' AI workflows can call them.",
+                "Consume — they build an AI workflow that calls tools from the existing catalog.",
+                "Neither — SD-WAN controllers are not compatible with the AI Hub platform.",
+                "Both surfaces simultaneously are required before any value is delivered."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "A team that owns a specific system (like an SD-WAN controller) should start with the publish surface — wrapping their system's operations as tools so other AI workflows on the platform can call them. This is exactly the MCP cartel pattern."
+            },
+            {
+              "id": "q6",
+              "question": "Which of these is the best description of the platform's network-effect value proposition?",
+              "answers": [
+                "Every new team that publishes a cartel enriches the tool catalog available to all AI workflows, compounding value across the platform.",
+                "The platform automatically generates AI workflows when new cartels are registered.",
+                "Each cartel operates independently, and teams benefit only from their own integrations.",
+                "The platform's value is fixed at deployment time and does not grow with usage."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source shows a catalog of published cartels (Fortigate, Proxmox, Alanis, Freshdesk) and consuming cartels (anomaly-detection, remediation). Each new publish-surface cartel expands the tool catalog that all AI cartels can leverage."
+            },
+            {
+              "id": "q7",
+              "question": "A customer says: 'We want AI-driven anomaly detection that can also trigger network remediation automatically.' Which platform pattern fits?",
+              "answers": [
+                "AI (consume) cartels calling tools published by MCP cartels — combining LLM reasoning with domain tools from the catalog.",
+                "A single MCP cartel that exposes both anomaly detection and remediation as tools.",
+                "Two independent REST APIs with no platform integration.",
+                "A hybrid cartel is required for any use case that involves more than one system."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source lists anomaly-detection and remediation-cartel as examples of AI (consume) cartels that call tools from the platform catalog. This is the right pattern — consume-surface cartels use LLM reasoning plus published tools to make decisions and trigger actions."
+            },
+            {
+              "id": "q8",
+              "question": "Which statement accurately describes what a 'consume surface' cartel does?",
+              "answers": [
+                "It runs AI workflows that call tools from the platform catalog and use LLMs to make decisions.",
+                "It exposes its team's system as tools for other cartels to call.",
+                "It acts as a message broker between the publish and consume cartels.",
+                "It stores and indexes all tool outputs in a centralized data lake."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "A consume-surface (AI) cartel runs agents and workflows that call tools from the catalog and use LLMs to make decisions or react to events — it does not itself publish tools."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "The Three Cartel Shapes: Choosing the Right Fit",
+      "summary": "Walk through the three cartel archetypes — MCP, AI, and Hybrid — and the decision criteria that map a customer's use case to the right shape.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "MCP Cartel: Exposing Systems as AI-Ready Tools",
+          "content": "The **MCP cartel** is the right choice when a team owns a system — a SaaS API, a network device, a domain service — and wants other teams' AI workflows to be able to call it.\n\nWhat the team ships: a service that wraps the system's operations as named, typed tools, registers them with the platform's Gateway catalog, and stops there. The team does not run its own agents or import AI reasoning libraries.\n\nReal examples on the platform today:\n- **cartels/alanis** — surfaces fleet telemetry\n- **cartels/fortigate** — exposes firewall state and operations\n- **cartels/proxmox** — exposes hypervisor operations\n- **cartels/freshdesk** — exposes support ticket operations\n\nPositioning tip: MCP cartels are the integration investment that pays dividends over time. Once a system is published, any future AI workflow can call it — the team's integration work is done once, not repeated per use case.",
+          "questions": [
+            {
+              "id": "q9",
+              "question": "A customer's operations team wants their Freshdesk instance to be callable by future AI automation. Which cartel shape is recommended?",
+              "answers": [
+                "MCP cartel — expose Freshdesk operations as tools in the platform catalog.",
+                "AI cartel — build a workflow that reads Freshdesk tickets using LLM reasoning.",
+                "Hybrid cartel — required because Freshdesk is a SaaS API.",
+                "No cartel is needed; Freshdesk can be called directly without platform integration."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source lists cartels/freshdesk as a reference MCP cartel. When a team owns a SaaS system and wants others' AI workflows to call it, the MCP (publish) shape is correct."
+            },
+            {
+              "id": "q10",
+              "question": "What does a team building an MCP cartel explicitly NOT do?",
+              "answers": [
+                "Run its own AI agents or import AI reasoning libraries.",
+                "Register its tools with the platform Gateway catalog.",
+                "Define input and output schemas for its tool functions.",
+                "Operate the cartel as its own independently deployed service."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source states that an MCP cartel team 'ships a service that wraps your system's operations as tools, registers them with the platform, and stops there. You don't import ai-core and you don't run agents yourself.'"
+            },
+            {
+              "id": "q11",
+              "question": "Which is the strongest 'publish once, use many times' argument for an MCP cartel?",
+              "answers": [
+                "Any future AI workflow on the platform can call the published tools — the integration investment is made once.",
+                "The platform automatically replicates MCP cartel tools to all cloud regions.",
+                "MCP cartels can be called by any REST client without authentication.",
+                "Publishing a cartel automatically generates a user interface for each tool."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "Once tools are registered in the Gateway catalog via an MCP cartel, every AI (consume) cartel on the platform can discover and call them. This is the compounding value: integration work done once benefits all future workflows."
+            },
+            {
+              "id": "q12",
+              "question": "A prospect asks which systems are already available as MCP cartels on the platform. Which answer reflects the source?",
+              "answers": [
+                "Alanis (fleet telemetry), Fortigate (firewall), Proxmox (hypervisor), and Freshdesk (support tickets).",
+                "Anomaly-detection and remediation-cartel.",
+                "Temporal, RabbitMQ, and Postgres.",
+                "Only custom cartels built by the customer are supported; no reference cartels ship with the platform."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source explicitly lists cartels/alanis, cartels/fortigate, cartels/proxmox, and cartels/freshdesk as reference MCP cartels."
+            }
+          ]
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "AI Cartel: Running Intelligent Workflows",
+          "content": "The **AI cartel** is the right choice when a team is building an AI workflow — combining tools from the platform catalog with LLM reasoning to make decisions, react to events, or automate domain processes.\n\nThe AI cartel does not publish new tools. It only consumes what is already in the catalog. This makes it the 'intelligence layer' that sits on top of the integration layer provided by MCP cartels.\n\nReal examples on the platform today:\n- **cartels/anomaly-detection** — detects anomalies using platform telemetry tools\n- **cartels/remediation-cartel** — combines network and infrastructure tools to execute automated remediation\n\nPositioning tip: AI cartels are where the visible business value lives for customers — reduced manual triage time, faster incident response, automated workflows that previously required human decision-making. They are the output that stakeholders see.",
+          "questions": [
+            {
+              "id": "q13",
+              "question": "A network operations team wants to build a workflow that automatically detects and remediates network anomalies. Which cartel shape fits?",
+              "answers": [
+                "AI cartel — it consumes platform tools (like Fortigate and Alanis) and uses LLM reasoning to detect and act.",
+                "MCP cartel — it exposes network anomaly detection as a tool for others.",
+                "Hybrid cartel — because remediation involves both reading and writing to network devices.",
+                "No cartel type fits; this use case requires a standalone application."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source lists anomaly-detection and remediation-cartel as reference AI (consume) cartels. This use case — combining tools and LLM reasoning to detect and act — is exactly the AI cartel pattern."
+            },
+            {
+              "id": "q14",
+              "question": "Which statement best describes what an AI cartel contributes to the platform catalog?",
+              "answers": [
+                "Nothing — AI cartels only consume tools from the catalog; they do not add new tools.",
+                "New LLM model endpoints that other cartels can call.",
+                "Workflow templates that other teams can reuse without modification.",
+                "New authentication providers for the Gateway."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source states: 'You don't expose anything new — your cartel only calls the catalog, not contributes to it.' AI cartels are pure consumers of the tool catalog."
+            },
+            {
+              "id": "q15",
+              "question": "A customer's CTO asks: 'Where does the AI reasoning actually happen?' For an AI cartel, what is the honest answer?",
+              "answers": [
+                "Inside the AI cartel's workflows and activities, which use the platform's LLM routing to call models without hardcoding provider names.",
+                "Inside the MCP cartel, which runs the LLM calls before returning tool results.",
+                "In a separate AI engine service that the customer must deploy independently.",
+                "The platform uses rule-based logic only; there is no actual LLM reasoning."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source describes the AI cartel's consume surface: LLM model resolution routes 'light' and 'advanced' model tiers through the Gateway, with no provider names in the cartel code. The reasoning lives in the AI cartel's own workflow and activity code."
+            },
+            {
+              "id": "q16",
+              "question": "Which cartel shape is most directly associated with customer-visible outcomes like faster incident response and automated remediation?",
+              "answers": [
+                "AI (consume) cartel — it combines tools and LLM reasoning to make decisions and automate workflows.",
+                "MCP (publish) cartel — it exposes system operations that reduce manual API calls.",
+                "Hybrid cartel — it is the only shape that produces visible business outcomes.",
+                "Platform infrastructure components, not cartels, are responsible for business outcomes."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "AI cartels — exemplified by anomaly-detection and remediation-cartel — are the layer where domain decisions are automated using LLM reasoning plus the tool catalog. These are the workflows that deliver the visible outcomes stakeholders care about."
+            }
+          ]
+        },
+        {
+          "id": "lesson-2-3",
+          "title": "Hybrid Cartel: Owning and Consuming in One Service",
+          "content": "The **Hybrid cartel** combines both surfaces: it publishes its team's system as tools AND runs its own AI workflows that consume those (and other) tools. This is the right shape when a team owns a unique system that should be usable by other teams, while also needing AI automation around that same system.\n\nThe platform fully supports the hybrid shape — the AI cartel library already includes the publish surface machinery — but as of the source document, no production cartel currently uses this shape end-to-end. The first team to deploy a hybrid will be validating it in production.\n\n**Caveat to preserve:** The source explicitly notes that the hybrid shape is supported but unvalidated in production. This should be communicated honestly to customers considering it — it is a supported architectural option, not a battle-tested reference pattern yet.\n\nPositioning note: Hybrid is the answer when a customer objects 'do we need two separate cartels?' — the platform is designed so one service can do both, reducing operational overhead.",
+          "questions": [
+            {
+              "id": "q17",
+              "question": "A customer asks: 'If my team owns a proprietary monitoring system AND wants to build AI automation around it, do we need two separate cartels?' What is the accurate answer?",
+              "answers": [
+                "No — a hybrid cartel can publish your system as tools and run AI workflows in one service, though no production cartel uses this shape yet.",
+                "Yes — the platform requires separate services for publish and consume functions.",
+                "No — an MCP cartel can also run AI workflows with no additional configuration.",
+                "Yes — two cartels are always required to maintain clear separation of concerns."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source describes the hybrid shape as supported — 'ai-core already pulls in the publishing machinery' — but notes no production cartel exercises it yet. The honest answer is: one service is possible, but the pattern has not been validated end-to-end in production."
+            },
+            {
+              "id": "q18",
+              "question": "What is the most important caveat to share with a customer evaluating the hybrid cartel shape?",
+              "answers": [
+                "The platform supports it architecturally, but no production cartel has validated the hybrid shape end-to-end yet.",
+                "Hybrid cartels require a separate paid license beyond the standard platform fee.",
+                "The hybrid shape is deprecated and will be removed in the next major version.",
+                "Hybrid cartels cannot use the LLM routing features of the consume surface."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source explicitly states: 'no production cartel does it today, so the first team to ship a hybrid will be validating the shape end-to-end.' This is an important honest caveat when positioning the hybrid option."
+            },
+            {
+              "id": "q19",
+              "question": "Which is the correct decision criterion for recommending a hybrid cartel over two separate cartels?",
+              "answers": [
+                "When the team owns a system that other teams need AND also needs its own AI automation around that same system.",
+                "When the team wants to run more than five simultaneous AI workflows.",
+                "When the team is migrating from a legacy integration and wants a gradual cutover.",
+                "Hybrid is always preferable to MCP or AI cartels for new projects."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source states: 'Hybrid is the right shape when your AI workflow consumes a system that only your team owns AND those same capabilities should be available for other teams to use independently.'"
+            },
+            {
+              "id": "q20",
+              "question": "Why does the platform make the hybrid shape technically feasible without extra cost to the cartel developer?",
+              "answers": [
+                "The ai-core library already includes the MCP publish surface machinery, so both surfaces are available in one import.",
+                "The platform charges for each surface separately, making hybrid the most cost-effective option.",
+                "The Gateway automatically detects when a cartel should be hybrid and activates both surfaces.",
+                "Hybrid cartels share a container with an existing MCP cartel to reduce resource usage."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source states: 'ai-core already pulls in the publishing machinery.' This means a team using ai-core gets the publish surface without any additional library, making the hybrid shape a zero-extra-dependency option."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "What the Platform Handles — The Value Under the Hood",
+      "summary": "Translate the platform's technical responsibilities into customer-facing value: what teams do NOT have to build, maintain, or worry about when they build on AI Hub.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Infrastructure the Platform Owns (Publish Surface)",
+          "content": "When a team builds an MCP (publish) cartel, the platform takes care of the heavy infrastructure work. Teams focus exclusively on domain logic — the actual tool functions and their schemas. Everything else is handled:\n\n**What the platform provides on the publish surface:**\n- RabbitMQ command routing — each registered tool is reachable as a named RPC handler, no messaging code needed.\n- Tool registration with the Gateway catalog so AI cartels discover tools via a standard API (`GET /v1/tools`).\n- Authentication on incoming calls — the Gateway validates the caller's JWT and propagates identity before the tool function runs.\n- Per-call audit — every invocation is recorded with caller, arguments, duration, and outcome automatically.\n- Container build, secret distribution, and full observability (OpenTelemetry traces, metrics, and logs).\n\n**What the team writes:** the async tool function and its schema; domain authorization logic (if behavior depends on caller identity); any custom metrics beyond the built-in audit.",
+          "questions": [
+            {
+              "id": "q21",
+              "question": "A prospect's security team asks: 'Who handles authentication when an AI workflow calls our published tools?' What is the correct answer?",
+              "answers": [
+                "The platform Gateway validates the caller's JWT and propagates identity before the tool function runs — the cartel team does not write auth code.",
+                "The cartel team must implement a custom auth middleware for each tool function.",
+                "Authentication is handled by the caller's cartel, not the platform.",
+                "All calls are unauthenticated inside the platform — security is enforced at the network perimeter."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source states: 'Authentication on incoming calls — the Gateway validates the caller's JWT and propagates project/user identity before your function runs.' Teams only need to add domain authorization when behavior depends on caller identity."
+            },
+            {
+              "id": "q22",
+              "question": "An operations manager asks: 'If something goes wrong with a tool call, how do we know what happened?' Which platform capability addresses this?",
+              "answers": [
+                "Built-in per-call audit records every invocation with caller, arguments, duration, and outcome automatically.",
+                "Teams must implement their own logging within each tool function to capture invocation details.",
+                "Audit is available only for AI cartels; MCP cartels do not have built-in audit.",
+                "The platform stores audit data for 24 hours only; long-term retention requires a custom database."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source explicitly lists 'Per-call audit — every invocation is recorded with caller, args, duration, and outcome in the Gateway's audit tables' as a platform-handled capability on the publish surface."
+            },
+            {
+              "id": "q23",
+              "question": "Which of the following does a team building an MCP cartel still have to write themselves?",
+              "answers": [
+                "The tool functions (async Python) and their input/output schemas.",
+                "The RabbitMQ topic configuration and message routing rules.",
+                "The JWT validation logic for authenticating incoming calls.",
+                "The OTel trace exporter and metrics instrumentation."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source's publish surface table shows: 'The tool function (an async Python function) and its input/output schema' is in the 'You write' column. RabbitMQ routing, JWT auth, and OTel are all platform-handled."
+            },
+            {
+              "id": "q24",
+              "question": "How does the platform make MCP cartel tools discoverable to AI workflows?",
+              "answers": [
+                "By registering them in the Gateway catalog, which AI cartels query via GET /v1/tools.",
+                "By broadcasting tool names over a shared Kafka topic at startup.",
+                "Tools are not automatically discoverable — AI cartels must be configured with explicit tool addresses.",
+                "Through a shared DNS entry that each cartel registers during deployment."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source states the platform handles 'Tool registration with the Gateway catalog so AI cartels discover your tools through GET /v1/tools.' Discovery is automatic once the MCP cartel is deployed."
+            }
+          ]
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Infrastructure the Platform Owns (Consume Surface)",
+          "content": "For AI (consume) cartels, the platform similarly eliminates infrastructure boilerplate so teams focus on building intelligence, not wiring:\n\n**What the platform provides on the consume surface:**\n- Gateway client pre-wired with auth, circuit breaker, and audit — `self.gateway.tools.*` and `self.gateway.llm.*` are ready to use.\n- LLM model routing — `self.llm_models['light']` and `self.llm_models['advanced']` route through the Gateway; no provider names appear in cartel code.\n- Temporal worker, auto-started from workflow and activity class declarations.\n- Agent factory — `build_agent_with_tools(...)` fetches the tool catalog and registers each tool as a typed function automatically.\n- Full audit pipeline — OTel spans automatically carry canonical session and tool attributes, joinable with Gateway spans by trace ID.\n- Skills loader and mesh_core extras (commands, periodic tasks, event pub/sub, ORM proxy).\n\n**What the team writes:** workflow logic, prompt content, which tools to allow-list, structured output types, and any domain-specific commands or event payloads.",
+          "questions": [
+            {
+              "id": "q25",
+              "question": "A customer asks: 'If we switch from OpenAI to a different LLM provider, how much of our AI cartel code changes?' What is the honest answer?",
+              "answers": [
+                "None of the cartel code changes — LLM routing is handled by the platform Gateway, so no provider names appear in cartel code.",
+                "The team must update every workflow that calls the LLM to use the new provider SDK.",
+                "Only the agent factory configuration needs updating, but all workflow code remains the same.",
+                "The cartel must be rebuilt from scratch because the LLM client is tightly coupled to the provider."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source states LLM model resolution uses 'light' and 'advanced' tiers routed through the Gateway — 'no provider names anywhere in your code.' A provider switch is a platform-level change, not a cartel code change."
+            },
+            {
+              "id": "q26",
+              "question": "Which platform capability lets an AI cartel use any tool in the catalog without manually wiring each one?",
+              "answers": [
+                "The agent factory (build_agent_with_tools) fetches the Gateway's tool catalog and registers each tool as a typed function automatically.",
+                "Each AI cartel developer must manually list every tool dependency in a configuration file.",
+                "Tools are injected by the platform at runtime only for cartels with advanced licensing.",
+                "The consume surface does not support dynamic tool discovery; tools must be hardcoded."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source describes: 'Agent factory — build_agent_with_tools(...) fetches the Gateway's tool catalog and registers each tool as a typed PydanticAI function.' This is the automated discovery mechanism."
+            },
+            {
+              "id": "q27",
+              "question": "A compliance officer asks: 'Can we trace exactly which AI workflow called which tool, with what inputs, at what time?' What does the platform provide?",
+              "answers": [
+                "Yes — the audit pipeline automatically records OTel spans with canonical session and tool attributes, joinable with Gateway spans by trace ID.",
+                "Partial — only tool outputs are recorded; input arguments are not stored for privacy reasons.",
+                "No — distributed tracing requires the team to instrument each activity manually.",
+                "Only MCP cartels produce audit records; AI cartel invocations are not audited by default."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source describes: 'AuditHook is auto-prepended so OTel spans carry canonical ai.session.* / ai.tool.* attributes joinable with Gateway spans by trace_id.' Full, correlated audit is built in for AI cartels."
+            },
+            {
+              "id": "q28",
+              "question": "Which is the most accurate description of what a team building an AI cartel provides versus what the platform provides?",
+              "answers": [
+                "The team writes workflow logic, prompts, and domain commands; the platform handles Gateway wiring, LLM routing, Temporal workers, and the audit pipeline.",
+                "The team builds the entire stack including message broker, LLM client, and observability; the platform only provides deployment scripts.",
+                "The team and the platform split infrastructure 50/50 — each is responsible for half the components.",
+                "The platform writes all workflow code automatically; the team only approves the generated output."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source's consume surface table clearly divides responsibilities: the platform handles Gateway client, LLM routing, Temporal worker, agent factory, and audit; the team writes workflow classes, activity code, prompts, and domain logic."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-4",
+      "title": "Positioning, Objection Handling, and Next Steps",
+      "summary": "Equip account executives and pre-sales engineers to handle common customer questions, position the platform against alternatives, and guide customers to the right starting point.",
+      "lessons": [
+        {
+          "id": "lesson-4-1",
+          "title": "Common Customer Objections and How to Address Them",
+          "content": "These are the objections most commonly encountered when positioning AI Cartels to new customers. Each has a grounded response based on what the platform actually does.\n\n**'We already have integrations — why rebuild them as cartels?'**\nExisting integrations are siloed. As a cartel, any AI workflow on the platform can call them. The rebuild is a one-time investment that eliminates all future point-to-point wiring.\n\n**'Is this production-ready?'**\nMCP and AI cartel shapes are production-validated — the platform ships reference cartels for both (Fortigate, Proxmox, Alanis, Freshdesk; anomaly-detection, remediation-cartel). The hybrid shape is architecturally supported but not yet validated in production.\n\n**'What if we want to change LLM providers?'**\nProvider names never appear in cartel code. The Gateway routes to 'light' and 'advanced' model tiers; swapping providers is a platform-level change with zero cartel code changes.\n\n**'Who handles security and auth?'**\nThe Gateway validates JWT on every call and propagates identity before any tool function runs. Teams add domain-level authorization only when behavior depends on caller identity.",
+          "questions": [
+            {
+              "id": "q29",
+              "question": "A customer says: 'We've already integrated Fortigate ourselves. Rebuilding it as a cartel sounds like extra work with no gain.' What is the best response?",
+              "answers": [
+                "Once published as an MCP cartel, your Fortigate integration becomes callable by every AI workflow on the platform — it goes from a silo to a shared asset.",
+                "You are right; if you already have a working integration, there is no reason to migrate it to the cartel model.",
+                "The platform will automatically migrate your existing integration to a cartel without any development work.",
+                "The main benefit is that cartel deployments are cheaper to run than standalone integrations."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The core MCP cartel value proposition is exactly this: an integration built once as a cartel becomes available to all AI workflows via the Gateway tool catalog, multiplying its value across the platform."
+            },
+            {
+              "id": "q30",
+              "question": "A prospect asks: 'Is the hybrid cartel pattern ready for production?' What is the most accurate and honest answer?",
+              "answers": [
+                "The platform supports it architecturally, but no production cartel has validated the hybrid shape end-to-end yet — it is an available option, not a battle-tested reference.",
+                "Yes — the hybrid shape is the recommended starting point for all new cartel projects.",
+                "No — hybrid cartels are scheduled for release in a future version and are not currently available.",
+                "Yes — all three cartel shapes are equally production-validated with multiple reference implementations."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source explicitly states hybrid is 'supported but no production cartel exercises it yet.' Honesty here builds trust and prevents overpromising."
+            },
+            {
+              "id": "q31",
+              "question": "A security-conscious prospect asks: 'Does our team have to implement authentication in our cartel tools?' What is the correct answer?",
+              "answers": [
+                "No — the Gateway validates the caller's JWT before the tool function runs. Teams only add domain authorization if behavior depends on caller identity.",
+                "Yes — each tool function must implement its own authentication layer to comply with platform security policy.",
+                "Authentication is optional; cartels can choose to accept unauthenticated calls for internal use.",
+                "Authentication is only enforced on AI cartels; MCP cartel tools accept any caller."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source states the platform handles 'Authentication on incoming calls — the Gateway validates the caller's JWT and propagates project/user identity before your function runs.' Domain authorization is added only for identity-dependent behavior."
+            },
+            {
+              "id": "q32",
+              "question": "Which objection does the platform's LLM abstraction layer ('light' and 'advanced' tiers, no provider names in code) most directly address?",
+              "answers": [
+                "Vendor lock-in to a specific LLM provider — switching providers requires no cartel code changes.",
+                "Latency concerns — the abstraction layer caches LLM responses automatically.",
+                "Cost unpredictability — the platform bills a flat rate regardless of which provider is used.",
+                "Compliance — the abstraction ensures all LLM calls are logged by default without any configuration."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source describes LLM routing through 'light' and 'advanced' tiers with no provider names in cartel code. This directly addresses vendor lock-in: teams are insulated from provider-level changes."
+            }
+          ]
+        },
+        {
+          "id": "lesson-4-2",
+          "title": "Qualifying Questions and Next Steps for Customers",
+          "content": "Use these questions to identify where a customer fits in the cartel model and guide them to the right starting point.\n\n**Qualifying questions:**\n1. Do you own a system (SaaS, network device, domain service) that other teams' AI workflows should be able to call? → MCP cartel starting point.\n2. Are you building an AI workflow that needs to combine tools from multiple systems with LLM reasoning? → AI cartel starting point.\n3. Do both apply — you own a unique system AND need your own AI automation around it? → Hybrid cartel discussion (with the production-readiness caveat).\n4. Has your team built a Python cartel before? → If not, the platform's prerequisite documentation (Cartels - Python) should be their first read.\n\n**Next steps by use case:**\n- Publishing integrations: review reference MCP cartels (Fortigate, Proxmox, Alanis, Freshdesk).\n- Building AI workflows: review reference AI cartels (anomaly-detection, remediation-cartel).\n- Understanding platform infrastructure: see the Gateway README for auth, routing, tool catalog, and quotas.\n\n**Important prerequisite:** Customers new to the cartel model should read the base Python cartel documentation (Cartels - Python, PLA space) before starting. It covers the mesh_core.Service class, cartel lifecycle, commands, and periodic tasks — the foundation everything else builds on.",
+          "questions": [
+            {
+              "id": "q33",
+              "question": "A customer's team wants to build an AI workflow that uses fleet telemetry data to detect anomalies. Which reference cartel is the most relevant starting point?",
+              "answers": [
+                "cartels/anomaly-detection — an AI cartel that consumes platform tools to detect anomalies.",
+                "cartels/alanis — the MCP cartel that publishes fleet telemetry as tools.",
+                "cartels/fortigate — the MCP cartel for firewall operations.",
+                "cartels/freshdesk — the MCP cartel for support ticket management."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "cartels/anomaly-detection is the reference AI cartel for anomaly detection workflows. The customer could also look at cartels/alanis to understand how the fleet telemetry tools are published, but as an AI workflow developer, anomaly-detection is the most directly relevant reference."
+            },
+            {
+              "id": "q34",
+              "question": "During discovery, a customer says their team has never built a cartel before. What is the most important thing to surface before discussing MCP vs. AI vs. Hybrid?",
+              "answers": [
+                "The prerequisite Python cartel documentation — it covers the mesh_core.Service class, lifecycle, commands, and periodic tasks that all cartel types depend on.",
+                "The Gateway README — it is the most comprehensive document and covers all platform concepts.",
+                "The cartel-gotchas guide — new teams should understand pitfalls before starting.",
+                "A demo of the remediation-cartel, which shows the most features in one example."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source includes a prominent WARNING: 'Read [Cartels - Python] first if you haven't built a cartel before; the rest of this page assumes that foundation.' This prerequisite is explicitly called out as required reading for new teams."
+            },
+            {
+              "id": "q35",
+              "question": "A customer asks: 'What happens if we run into problems during our first cartel build?' Which resource does the source specifically highlight for new teams?",
+              "answers": [
+                "docs/cartel-gotchas.md — a pitfalls field guide recommended to skim before the first PR.",
+                "The Gateway README — it covers all error codes and their resolutions.",
+                "The anomaly-detection reference cartel — it includes inline comments explaining every gotcha.",
+                "The platform does not provide troubleshooting guides; teams rely on community forums."
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source explicitly recommends: 'docs/cartel-gotchas.md — pitfalls field guide. Skim before your first PR; most entries are five minutes of confusion that turn into an hour of debugging.'"
+            },
+            {
+              "id": "q36",
+              "question": "Which qualifying question best identifies whether a customer should start with an MCP cartel rather than an AI cartel?",
+              "answers": [
+                "'Do you own a system that other teams' AI workflows should be able to call?'",
+                "'Are you looking to reduce your LLM API costs?'",
+                "'Do you have an existing Temporal workflow you want to migrate?'",
+                "'Do you need real-time alerting on your current infrastructure?'"
+              ],
+              "correctAnswerIndex": 0,
+              "explanation": "The source's decision guide for MCP cartels is: 'your team owns a system... and other teams want to write AI workflows that call into it.' The qualifying question 'do you own a system that others should be able to call?' maps directly to this."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

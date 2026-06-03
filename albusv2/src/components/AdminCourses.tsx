@@ -61,6 +61,7 @@ export default function AdminCourses({
   const [error, setError] = useState<string | null>(null);
   const [profileFilter, setProfileFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [revise, setRevise] = useState<AdminCourse | null>(null);
   const [edit, setEdit] = useState<AdminCourse | null>(null);
@@ -124,6 +125,7 @@ export default function AdminCourses({
   const profiles = Array.from(new Set(courses.map((c) => c.profile).filter(Boolean))) as string[];
 
   const visible = courses.filter((c) => {
+    if (search.trim() && !(c.title ?? "").toLowerCase().includes(search.toLowerCase())) return false;
     if (profileFilter !== "all" && (c.profile ?? "") !== profileFilter) return false;
     if (statusFilter === "all") return true;
     if (statusFilter === "published") return c.published;
@@ -161,7 +163,16 @@ export default function AdminCourses({
           <h2>Courses</h2>
           <p className="sub">Create, revise and publish catalog courses.</p>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div className="admin-head-right">
+          <div className="picker-search" style={{ width: 220 }}>
+            <Search size={13} className="picker-search-icon" />
+            <input
+              className="picker-search-input"
+              placeholder="Search courses…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <button className="btn btn-secondary btn-sm" onClick={refresh}>
             <RefreshCw size={15} /> Refresh
           </button>
