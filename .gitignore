@@ -24,6 +24,13 @@ dist/
 platform_back/claude-sandbox/
 proyecto_exportacion/backend/claude-sandbox/
 
+# Server script
+server.sh
+.server.pids
+.logs/agents_back.log
+.logs/platform_back.log
+.logs/albusv2.log
+
 # OS / editor
 .DS_Store
 .idea/
