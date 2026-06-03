@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import ReactMarkdown from "react-markdown";
-import { fetchCourse, type Course, type Question } from "../api";
-import { recordProgress, markCompleted, hasSurveyed } from "../progress";
+import ReactMarkdown, { type Components } from "react-markdown";
+import { fetchCourse, mediaUrl, userKey, type Course, type Question, type SessionUser } from "../api";
+import { recordProgress, markCompleted, hasSurveyed, getProgress } from "../progress";
 import { useChat } from "../useChat";
-import type { UserRole } from "./Login";
 import QuizQuestion from "./QuizQuestion";
 import ChatPanel from "./ChatPanel";
 import Survey from "./Survey";
@@ -13,12 +12,61 @@ import {
   ChevronRight,
   ChevronDown,
   ArrowLeft,
+  ArrowRight,
+  AlertTriangle,
   PanelLeft,
   MessageSquare,
   Check,
   CircleDot,
 } from "./icons";
 import AlbusIcon from "./AlbusIcon";
+
+/* Rehype plugin: replace the two symbols that read as "AI-generated" in lesson
+   text with Lucide icons — ⚠️ → AlertTriangle, → → ArrowRight. Walks hast text
+   nodes and swaps matches for custom elements rendered via the `components` map
+   below. Done in the renderer so it covers every existing course with no data
+   change. (Manual tree walk to avoid a transitive unist dependency.) */
+const ICON_TOKEN = /⚠️?|→/g;
+function rehypeLessonIcons() {
+  const splitText = (value: string) => {
+    const parts: unknown[] = [];
+    let last = 0;
+    let m: RegExpExecArray | null;
+    ICON_TOKEN.lastIndex = 0;
+    while ((m = ICON_TOKEN.exec(value))) {
+      if (m.index > last) parts.push({ type: "text", value: value.slice(last, m.index) });
+      const tagName = m[0][0] === "→" ? "icon-arrow" : "icon-warning";
+      parts.push({ type: "element", tagName, properties: {}, children: [] });
+      last = m.index + m[0].length;
+    }
+    if (last < value.length) parts.push({ type: "text", value: value.slice(last) });
+    return parts;
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (tree: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const visit = (node: any) => {
+      if (!node || !Array.isArray(node.children)) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const next: any[] = [];
+      for (const child of node.children) {
+        if (child.type === "text" && /[⚠→]/.test(child.value)) {
+          next.push(...splitText(child.value));
+        } else {
+          visit(child);
+          next.push(child);
+        }
+      }
+      node.children = next;
+    };
+    visit(tree);
+  };
+}
+
+const MARKDOWN_COMPONENTS = {
+  "icon-warning": () => <AlertTriangle size={16} className="md-icon md-warn" />,
+  "icon-arrow": () => <ArrowRight size={14} className="md-icon md-arrow" />,
+} as Components;
 
 type QuizState = Record<string, { selected: number; correct: boolean; unlocked: boolean }>;
 
@@ -45,9 +93,10 @@ export default function CourseViewer({
   onBack,
 }: {
   courseId: string;
-  user: UserRole;
+  user: SessionUser;
   onBack: () => void;
 }) {
+  const pkey = userKey(user);
   const [course, setCourse] = useState<Course | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [active, setActive] = useState(0); // índice lineal sobre todas las lecciones
@@ -70,14 +119,15 @@ export default function CourseViewer({
     fetchCourse(courseId)
       .then((c) => {
         setCourse(c);
-        setActive(0);
+        const saved = getProgress(pkey, courseId);
+        setActive(saved?.furthest ?? 0); // retoma desde donde quedó el usuario
         setView("lesson");
         setQIndex(0);
         setOpenModules(new Set(c.modules.map((_, i) => i)));
         setState("ready");
       })
       .catch(() => setState("error"));
-  }, [courseId]);
+  }, [courseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const flat = useMemo(() => {
     if (!course) return [];
@@ -91,9 +141,9 @@ export default function CourseViewer({
   // Registrar progreso: la lección alcanzada (la más avanzada) para "Mis cursos".
   useEffect(() => {
     if (state === "ready" && flat.length > 0) {
-      recordProgress(user, courseId, active, flat.length);
+      recordProgress(pkey, courseId, active, flat.length, user);
     }
-  }, [state, active, flat.length, user, courseId]);
+  }, [state, active, flat.length, pkey, courseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (state !== "ready" || !course) {
     return (
@@ -177,8 +227,8 @@ export default function CourseViewer({
 
   // Finalizar el curso: marcar acabado y, si no lo ha valorado aún, lanzar el survey.
   const finishCourse = () => {
-    markCompleted(user, courseId, total);
-    if (hasSurveyed(user, courseId)) {
+    markCompleted(pkey, courseId, total, user);
+    if (hasSurveyed(pkey, courseId)) {
       onBack();
     } else {
       setShowSurvey(true);
@@ -322,8 +372,21 @@ export default function CourseViewer({
           <article className="lesson">
             <h2 className="lesson-title">{lesson.title}</h2>
             <div className="lesson-body markdown">
-              <ReactMarkdown>{lesson.content}</ReactMarkdown>
+              <ReactMarkdown rehypePlugins={[rehypeLessonIcons]} components={MARKDOWN_COMPONENTS}>
+                {lesson.content}
+              </ReactMarkdown>
             </div>
+
+            {lesson.images && lesson.images.length > 0 && (
+              <div className="lesson-images">
+                {lesson.images.map((img, i) => (
+                  <figure className="lesson-figure" key={`${img.path}-${i}`}>
+                    <img src={mediaUrl(img.path)} alt={img.caption || lesson.title} loading="lazy" />
+                    {img.caption && <figcaption>{img.caption}</figcaption>}
+                  </figure>
+                ))}
+              </div>
+            )}
 
             <nav className="lesson-nav">
               <button

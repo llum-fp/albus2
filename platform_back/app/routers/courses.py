@@ -7,6 +7,7 @@ from app.database import get_db
 from app.schemas.course import CourseRequest, CourseRead, CourseDetail, CourseUpdateRequest
 from app.crud.course import create_course_record, get_course, get_courses, update_course_record
 from app.services.agents_back import create_course, update_course
+from app.services.course_files import read_course_meta as _read_course_meta
 
 router = APIRouter(prefix="/courses", tags=["courses"])
 
@@ -14,14 +15,6 @@ router = APIRouter(prefix="/courses", tags=["courses"])
 @router.get("/", response_model=list[CourseRead])
 def list_courses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return get_courses(db, skip=skip, limit=limit)
-
-
-def _read_course_meta(path: str | None) -> dict:
-    if not path or not os.path.exists(path):
-        return {}
-    with open(path) as f:
-        data = json.load(f)
-    return {k: data.get(k) for k in ("title", "description", "language")}
 
 
 def _trim_modules(modules: list) -> list:

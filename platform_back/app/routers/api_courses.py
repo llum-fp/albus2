@@ -14,19 +14,28 @@ by the existing ``/courses/`` management router, which is left untouched.
 """
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from app.config import COURSES_DIR
+from app.crud.course import get_published_session_ids
+from app.database import get_db
+from app.services.course_files import stem_to_session
 
 router = APIRouter(prefix="/api", tags=["frontend-courses"])
 
 
 @router.get("/courses")
-def list_courses():
+def list_courses(db: Session = Depends(get_db)):
+    """Learner catalog: only **Published** courses. Publication state lives in the
+    DB (every JSON file gets a row at startup; see services/course_sync.py)."""
     courses: list[dict] = []
     if not COURSES_DIR.exists():
         return courses
+    published = get_published_session_ids(db)
     for path in sorted(COURSES_DIR.glob("*.json")):
+        if stem_to_session(path.stem) not in published:
+            continue  # Draft / unpublished — hidden from learners
         try:
             with open(path, encoding="utf-8") as fh:
                 data = json.load(fh)

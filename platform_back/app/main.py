@@ -1,10 +1,21 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base
-from app.routers import courses, users, api_courses, api_surveys, chat
+from fastapi.staticfiles import StaticFiles
+from app.config import IMAGES_DIR
+from app.database import engine, Base, SessionLocal
+from app.routers import (
+    courses, users, api_courses, api_surveys, api_pages, api_users, api_progress, chat, admin,
+)
 import app.models  # noqa: F401 — ensure models are registered before create_all
+from app.services.course_sync import ensure_published_column, reconcile
 
 Base.metadata.create_all(bind=engine)
+# Add courses.published if missing (create_all never ALTERs existing tables),
+# then reconcile the DB with the JSON files on disk (back-fill rows, fail
+# orphan pending builds). See app/services/course_sync.py.
+ensure_published_column(engine)
+with SessionLocal() as _db:
+    reconcile(_db)
 
 app = FastAPI(title="Platform Back", version="1.0.0")
 
@@ -25,7 +36,18 @@ app.include_router(users.router)
 # surveys, and the Albus chat tutor (SSE).
 app.include_router(api_courses.router)
 app.include_router(api_surveys.router)
+app.include_router(api_pages.router)
+app.include_router(api_users.router)
+app.include_router(api_progress.router)
 app.include_router(chat.router)
+# Admin console surface (/api/admin/*), role-gated.
+app.include_router(admin.router)
+
+# Serve course screenshots over HTTP. A JSON image path "images/<session>/x.png"
+# is served at "/api/media/<session>/x.png" (the frontend strips the leading
+# "images/"; see mediaUrl()). Under /api so the Vite dev proxy forwards it.
+# check_dir=False so a missing folder just 404s instead of failing startup.
+app.mount("/api/media", StaticFiles(directory=str(IMAGES_DIR), check_dir=False), name="media")
 
 
 @app.get("/health")

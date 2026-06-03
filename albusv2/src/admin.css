@@ -1,0 +1,682 @@
+/* Admin console — left-nav layout + table/forms, on the OmniAccess tokens. */
+
+.admin {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  height: 100vh;
+  background: var(--oa-bg);
+  color: var(--oa-text);
+}
+
+/* ── Left nav ─────────────────────────────────────────────────────────── */
+.admin-nav {
+  background: var(--oa-anthracite);
+  border-right: 1px solid var(--oa-border);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0.75rem;
+  gap: 0.25rem;
+}
+.admin-nav .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem 0.6rem 1rem;
+}
+.admin-nav .brand h1 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  border-radius: var(--radius-btn);
+  font-size: 0.9rem;
+  color: var(--oa-text-secondary);
+  transition: background 0.15s, color 0.15s;
+}
+.admin-nav-item:hover {
+  background: var(--oa-card-hover);
+  color: var(--oa-text);
+}
+.admin-nav-item.active {
+  background: var(--oa-card-hover);
+  color: var(--oa-text);
+  box-shadow: inset 3px 0 0 var(--oa-red);
+}
+.admin-nav-spacer {
+  flex: 1;
+}
+
+/* ── Content pane ─────────────────────────────────────────────────────── */
+.admin-content {
+  overflow-y: auto;
+  padding: 1.5rem 2rem 3rem;
+}
+.admin-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.admin-head h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+.admin-head .sub {
+  color: var(--oa-text-secondary);
+  font-size: 0.85rem;
+  margin-top: 0.15rem;
+}
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+/* ── Filter chips ─────────────────────────────────────────────────────── */
+.chip {
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--oa-border);
+  background: transparent;
+  color: var(--oa-text-secondary);
+  font-size: 0.78rem;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.chip:hover {
+  border-color: var(--oa-border-strong);
+  color: var(--oa-text);
+}
+.chip.active {
+  background: var(--oa-red);
+  border-color: var(--oa-red);
+  color: #fff;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────── */
+.admin-table-wrap {
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--oa-card);
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.admin-table th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--oa-text-muted);
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--oa-border);
+  background: var(--oa-anthracite);
+}
+.admin-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--oa-border);
+  vertical-align: middle;
+}
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+.admin-table tr:hover td {
+  background: var(--oa-card-hover);
+}
+.admin-table .cell-title {
+  font-weight: 500;
+  color: var(--oa-text);
+}
+.admin-table .cell-actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+.cell-muted {
+  color: var(--oa-text-muted);
+}
+
+/* ── Status / publish badges ──────────────────────────────────────────── */
+.badge-published {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--oa-success);
+}
+.badge-draft {
+  background: rgba(107, 114, 128, 0.18);
+  color: var(--oa-text-secondary);
+}
+.badge-pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--oa-warning);
+}
+.badge-completed {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--oa-success);
+}
+.badge-failed {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--oa-error);
+}
+.badge-profile {
+  background: rgba(77, 166, 255, 0.12);
+  color: var(--oa-info);
+}
+
+/* small icon-only action button */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--oa-border);
+  color: var(--oa-text-secondary);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.icon-btn:hover:not(:disabled) {
+  background: var(--oa-card-hover);
+  color: var(--oa-text);
+  border-color: var(--oa-border-strong);
+}
+.icon-btn.danger:hover:not(:disabled) {
+  color: var(--oa-error);
+  border-color: var(--oa-error);
+}
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Active builds monitor (top of Courses) ───────────────────────────── */
+.builds-monitor {
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-card);
+  background: var(--oa-card);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.builds-monitor-head {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--oa-text-muted);
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--oa-border);
+  background: var(--oa-anthracite);
+}
+.build-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--oa-border);
+}
+.build-row:last-child {
+  border-bottom: none;
+}
+.build-status {
+  display: inline-flex;
+  width: 18px;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.build-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.build-line {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.build-title {
+  font-weight: 500;
+}
+.build-meta {
+  margin-left: auto;
+  color: var(--oa-text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.build-row .icon-btn {
+  width: 26px;
+  height: 26px;
+}
+
+/* 3-step build progress */
+.build-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+}
+.build-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  color: var(--oa-text-muted);
+}
+.build-step-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--oa-border-strong);
+  font-size: 0.62rem;
+  line-height: 1;
+}
+.build-step.active {
+  color: var(--oa-text);
+  font-weight: 500;
+}
+.build-step.active .build-step-dot {
+  border-color: var(--oa-warning);
+  color: var(--oa-warning);
+}
+.build-step.done {
+  color: var(--oa-text-secondary);
+}
+.build-step.done .build-step-dot {
+  background: var(--oa-success);
+  border-color: var(--oa-success);
+  color: #fff;
+}
+.builds-note {
+  padding: 0.55rem 0.9rem;
+  font-size: 0.76rem;
+  color: var(--oa-text-secondary);
+  border-top: 1px solid var(--oa-border);
+  background: var(--oa-anthracite);
+}
+
+/* ── Spinner ──────────────────────────────────────────────────────────── */
+.spin {
+  animation: admin-spin 0.9s linear infinite;
+  display: inline-flex;
+}
+@keyframes admin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── States ───────────────────────────────────────────────────────────── */
+.admin-empty,
+.admin-loading {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--oa-text-muted);
+  font-size: 0.9rem;
+}
+.admin-error {
+  color: var(--oa-error);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+/* ── Modal (create / revise / new user) ───────────────────────────────── */
+.admin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+.admin-modal {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: var(--oa-card);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-card);
+  padding: 1.5rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.admin-modal.wide {
+  max-width: 720px;
+}
+.admin-modal h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+.admin-modal .modal-sub {
+  color: var(--oa-text-secondary);
+  font-size: 0.82rem;
+  margin-bottom: 1.1rem;
+}
+.modal-close {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+}
+.field label {
+  font-size: 0.8rem;
+  color: var(--oa-text-secondary);
+}
+.input,
+.textarea {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--oa-border);
+  background: var(--oa-bg);
+  color: var(--oa-text);
+  font-family: inherit;
+  font-size: 0.88rem;
+}
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--oa-red);
+}
+.textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* select reused from theme; ensure caret wrapper works inside modal */
+.select-wrap {
+  position: relative;
+}
+.select-wrap .select-caret {
+  position: absolute;
+  right: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--oa-text-muted);
+}
+
+/* ── Confluence page search (New course) ──────────────────────────────── */
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-icon {
+  position: absolute;
+  left: 0.6rem;
+  color: var(--oa-text-muted);
+  pointer-events: none;
+}
+.search-input {
+  padding-left: 2rem;
+}
+.search-spin {
+  position: absolute;
+  right: 0.6rem;
+  color: var(--oa-text-muted);
+}
+.search-hint {
+  font-size: 0.78rem;
+  color: var(--oa-text-muted);
+  margin-top: 0.4rem;
+}
+.page-results {
+  margin-top: 0.5rem;
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-btn);
+  max-height: 230px;
+  overflow-y: auto;
+  background: var(--oa-bg);
+}
+
+/* Results as a panel that unfolds flush from the right edge of the New course
+   modal — same height as the modal, darker than it (so it reads as an extension
+   that slid out), with its own vertical scroll when results exceed that height. */
+.new-course-wrap {
+  position: relative;
+}
+/* Square off the modal's right corners while the panel is attached, so the two
+   read as a single piece. */
+.new-course-wrap.has-panel .admin-modal {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.page-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0; /* match the modal's height exactly */
+  left: 100%; /* flush against the modal's right edge, no gap */
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  background: var(--oa-bg); /* darker than the modal's --oa-card */
+  border: 1px solid var(--oa-border);
+  border-left: none; /* the modal's right border is the divider */
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+  overflow: hidden;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--oa-text-muted);
+  border-bottom: 1px solid var(--oa-border);
+  flex-shrink: 0;
+}
+.page-panel-body {
+  flex: 1;
+  min-height: 0; /* allow the flex child to shrink so overflow scrolls */
+  overflow-y: auto;
+  padding: 0.4rem;
+}
+.page-results.flush {
+  margin-top: 0;
+  border: none;
+  max-height: none;
+  background: transparent;
+}
+/* On narrow screens, drop the panel below the modal instead of off-screen. */
+@media (max-width: 920px) {
+  .new-course-wrap.has-panel .admin-modal {
+    border-bottom-right-radius: var(--radius-card);
+  }
+  .page-panel {
+    position: static;
+    width: auto;
+    max-height: 40vh;
+    border-left: 1px solid var(--oa-border);
+    border-radius: 0 0 var(--radius-card) var(--radius-card);
+  }
+}
+.page-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--oa-border);
+  transition: background 0.12s;
+}
+.page-result:last-child {
+  border-bottom: none;
+}
+.page-result:hover {
+  background: var(--oa-card-hover);
+}
+.page-result.selected {
+  background: rgba(193, 3, 47, 0.08);
+}
+.page-result-check {
+  width: 16px;
+  flex-shrink: 0;
+  color: var(--oa-success);
+  padding-top: 0.1rem;
+}
+.page-result-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.page-result-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--oa-text);
+}
+.page-result-desc {
+  font-size: 0.75rem;
+  color: var(--oa-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.selected-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+.page-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  padding: 0.25rem 0.3rem 0.25rem 0.6rem;
+  border-radius: 9999px;
+  background: var(--oa-card-hover);
+  border: 1px solid var(--oa-border);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.page-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: var(--oa-text-secondary);
+  flex-shrink: 0;
+}
+.page-chip-x:hover {
+  background: var(--oa-border-strong);
+  color: var(--oa-text);
+}
+.link-btn {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--oa-info);
+}
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+/* ── Surveys dashboard ────────────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.stat-card {
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-card);
+  background: var(--oa-card);
+  padding: 1rem 1.1rem;
+}
+.stat-card .stat-course {
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin-bottom: 0.1rem;
+}
+.stat-card .stat-count {
+  font-size: 0.75rem;
+  color: var(--oa-text-muted);
+  margin-bottom: 0.75rem;
+}
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  padding: 0.2rem 0;
+}
+.stat-row .stat-label {
+  color: var(--oa-text-secondary);
+}
+.stat-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--oa-border);
+  overflow: hidden;
+  margin: 0 0.6rem;
+}
+.stat-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--oa-grad);
+}
+.stat-val {
+  min-width: 2.4rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--oa-text);
+}
+.comment-item {
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-btn);
+  background: var(--oa-card);
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.85rem;
+}
+.comment-item .meta {
+  font-size: 0.72rem;
+  color: var(--oa-text-muted);
+  margin-bottom: 0.3rem;
+}

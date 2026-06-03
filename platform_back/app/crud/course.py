@@ -23,6 +23,7 @@ def create_course_record(
     description: str | None = None,
     language: str | None = None,
     status: str = "completed",
+    published: bool = False,
     user_id: int | None = None,
 ) -> Course:
     course = Course(
@@ -36,12 +37,28 @@ def create_course_record(
         language=language,
         json_path=json_path,
         status=status,
+        published=published,
         user_id=user_id,
     )
     db.add(course)
     db.commit()
     db.refresh(course)
     return course
+
+
+def set_course_published(db: Session, course_id: int, published: bool) -> Course | None:
+    course = db.get(Course, course_id)
+    if course:
+        course.published = published
+        db.commit()
+        db.refresh(course)
+    return course
+
+
+def get_published_session_ids(db: Session) -> set[str]:
+    """session_ids of all published courses (for the learner catalog filter)."""
+    rows = db.query(Course.session_id).filter(Course.published.is_(True)).all()
+    return {r[0] for r in rows if r[0]}
 
 
 def update_course_status(db: Session, course_id: int, status: str) -> Course | None:

@@ -20,3 +20,37 @@ def get_surveys(db: Session, skip: int = 0, limit: int = 1000) -> list[Survey]:
         .limit(limit)
         .all()
     )
+
+
+_RATING_FIELDS = ("rating_overall", "rating_content", "rating_albus", "rating_applicability")
+
+
+def survey_stats(db: Session) -> list[dict]:
+    """Per-course aggregates: response count, mean of each rating, and the
+    difficulty/duration distributions. Computed in Python (survey volume is low)."""
+    surveys = db.query(Survey).all()
+    by_course: dict[str, list[Survey]] = {}
+    for s in surveys:
+        by_course.setdefault(s.course_id, []).append(s)
+
+    stats: list[dict] = []
+    for course_id, rows in by_course.items():
+        n = len(rows)
+        averages = {
+            field: round(sum(getattr(r, field) for r in rows) / n, 2)
+            for field in _RATING_FIELDS
+        }
+        difficulty: dict[str, int] = {}
+        duration: dict[str, int] = {}
+        for r in rows:
+            difficulty[r.difficulty] = difficulty.get(r.difficulty, 0) + 1
+            duration[r.duration] = duration.get(r.duration, 0) + 1
+        stats.append({
+            "course_id": course_id,
+            "count": n,
+            "averages": averages,
+            "difficulty": difficulty,
+            "duration": duration,
+        })
+    stats.sort(key=lambda s: s["count"], reverse=True)
+    return stats

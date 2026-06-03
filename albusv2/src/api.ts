@@ -6,11 +6,24 @@ export interface Question {
   explanation: string;
 }
 
+export interface LessonImage {
+  path: string; // relative, e.g. "images/<session>/<file>.png"
+  caption?: string;
+}
+
 export interface Lesson {
   id: string;
   title: string;
   content: string;
+  images?: LessonImage[];
   questions: Question[];
+}
+
+/** Turn a course JSON image path ("images/<session>/x.png") into a served URL
+   ("/api/media/<session>/x.png"). platform_back mounts the images dir at
+   /api/media; the Vite proxy forwards /api → :8001. */
+export function mediaUrl(path: string): string {
+  return `/api/media/${path.replace(/^images\//, "").replace(/^\/+/, "")}`;
 }
 
 export interface Module {
@@ -71,6 +84,78 @@ export async function submitSurvey(payload: SurveyPayload): Promise<void> {
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
 }
 
+/* The signed-in identity (stub auth). Picked on the login screen from the real
+   users, stored as JSON in localStorage["albus_user"]. The role drives admin
+   gating; id keys per-user progress; name labels surveys. */
+export interface SessionUser {
+  id: number;
+  name: string;
+  role: string;
+}
+
+/** Stable localStorage key for a user's progress/surveys (id survives renames). */
+export const userKey = (u: SessionUser) => `u${u.id}`;
+
+/** Real users for the login picker (public; id/name/role only). */
+export async function fetchUsers(): Promise<SessionUser[]> {
+  const r = await fetch("/api/users");
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+/* Confluence page search (backend /api/find-pages — fast, no LLM). Used by the
+   admin "New course" picker so you search by topic instead of typing page ids. */
+export interface ConfluencePage {
+  page_id: number | string;
+  page_title: string;
+  brief_description: string;
+}
+
+export async function findPages(topic: string, limit = 8): Promise<ConfluencePage[]> {
+  const p = new URLSearchParams({ topic, limit: String(limit) });
+  const r = await fetch(`/api/find-pages?${p.toString()}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data = await r.json();
+  return data.pages ?? [];
+}
+
+/** Resolve a single page by its id (returns null if it doesn't exist). */
+export async function findPage(pageId: string): Promise<ConfluencePage | null> {
+  const r = await fetch(`/api/page/${encodeURIComponent(pageId)}`);
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+export interface ProgressRecord {
+  furthest: number;
+  total: number;
+  completed: boolean;
+  updated_at: string;
+}
+
+export type RemoteProgressMap = Record<string, ProgressRecord>;
+
+export async function fetchUserProgress(userId: number): Promise<RemoteProgressMap> {
+  const r = await fetch(`/api/progress/${userId}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+export async function upsertProgress(
+  userId: number,
+  courseId: string,
+  furthest: number,
+  total: number,
+  completed: boolean,
+): Promise<void> {
+  await fetch("/api/progress", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, course_id: courseId, furthest, total, completed }),
+  });
+}
+
 export async function createChatSession(): Promise<number> {
   const r = await fetch("/api/chat/session", { method: "POST" });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -101,3 +186,151 @@ export function chatStreamUrl(o: ChatStreamOpts): string {
   if (o.chosenIndex != null) p.set("chosen_index", String(o.chosenIndex));
   return `/api/chat/stream?${p.toString()}`;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Admin console (/api/admin/*). Every call carries the X-Albus-Role header,
+   read from the same localStorage slot the login stub writes. This is UI
+   gating, not real auth (the header is client-controlled) — see the backend.
+   ────────────────────────────────────────────────────────────────────────── */
+
+const USER_KEY = "albus_user";
+
+/** Role of the signed-in user, read from the stored identity (for the gate). */
+export function storedRole(): string {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? ((JSON.parse(raw) as SessionUser).role ?? "") : "";
+  } catch {
+    return "";
+  }
+}
+
+function adminHeaders(json = false): Record<string, string> {
+  const h: Record<string, string> = { "X-Albus-Role": storedRole() };
+  if (json) h["Content-Type"] = "application/json";
+  return h;
+}
+
+async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const r = await fetch(`/api/admin${path}`, init);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  if (r.status === 204) return undefined as T;
+  return r.json();
+}
+
+export type BuildStatus = "pending" | "completed" | "failed";
+export type CourseProfile = "technical" | "sales";
+
+export interface AdminCourse {
+  id: string; // filename-stem id the learner UI uses
+  db_id: number;
+  session_id: string | null;
+  title: string | null;
+  description: string | null;
+  language: string | null;
+  profile: string | null;
+  status: BuildStatus;
+  published: boolean;
+  module_count: number;
+  lesson_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminCourseDetail extends AdminCourse {
+  content: Course | null;
+}
+
+export type BuildStage = "reading_source" | "writing_course" | "finishing" | "done" | "failed";
+
+export interface BuildJob {
+  db_id: number;
+  session_id: string | null;
+  title: string | null;
+  page_id: string[] | null;
+  profile: string | null;
+  status: BuildStatus;
+  running: boolean;
+  stage?: BuildStage | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  created_at: string;
+}
+
+export interface SurveyRecord {
+  id: number;
+  course_id: string;
+  user: string;
+  rating_overall: number;
+  rating_content: number;
+  rating_albus: number;
+  rating_applicability: number;
+  difficulty: string;
+  duration: string;
+  comments: string | null;
+  submitted_at: string;
+}
+
+export interface SurveyStats {
+  course_id: string;
+  count: number;
+  averages: Record<string, number>;
+  difficulty: Record<string, number>;
+  duration: Record<string, number>;
+}
+
+export interface SurveysResponse {
+  records: SurveyRecord[];
+  stats: SurveyStats[];
+}
+
+export interface NewCourseInput {
+  page_id?: string | string[];
+  topic?: string;
+  profile?: CourseProfile;
+  duration_min?: number;
+  harcoded?: boolean;
+}
+
+// Courses
+export const adminFetchCourses = () => adminFetch<AdminCourse[]>("/courses", { headers: adminHeaders() });
+export const adminFetchCourse = (dbId: number) =>
+  adminFetch<AdminCourseDetail>(`/courses/${dbId}`, { headers: adminHeaders() });
+export const adminCreateCourse = (body: NewCourseInput) =>
+  adminFetch<{ db_id: number; status: BuildStatus }>("/courses", {
+    method: "POST",
+    headers: adminHeaders(true),
+    body: JSON.stringify(body),
+  });
+export const adminReviseCourse = (dbId: number, feedback: string) =>
+  adminFetch<{ db_id: number; status: BuildStatus }>(`/courses/${dbId}`, {
+    method: "PATCH",
+    headers: adminHeaders(true),
+    body: JSON.stringify({ feedback }),
+  });
+export const adminPublish = (dbId: number) =>
+  adminFetch<AdminCourse>(`/courses/${dbId}/publish`, { method: "POST", headers: adminHeaders() });
+export const adminUnpublish = (dbId: number) =>
+  adminFetch<AdminCourse>(`/courses/${dbId}/unpublish`, { method: "POST", headers: adminHeaders() });
+
+// Activity / jobs
+export const adminFetchJobs = () => adminFetch<BuildJob[]>("/jobs", { headers: adminHeaders() });
+
+// Users
+export const adminFetchUsers = () => adminFetch<User[]>("/users", { headers: adminHeaders() });
+export const adminCreateUser = (body: { email: string; name: string; role: string }) =>
+  adminFetch<User>("/users", { method: "POST", headers: adminHeaders(true), body: JSON.stringify(body) });
+export const adminUpdateUser = (id: number, body: { name?: string; email?: string; role?: string }) =>
+  adminFetch<User>(`/users/${id}`, { method: "PATCH", headers: adminHeaders(true), body: JSON.stringify(body) });
+export const adminDeleteUser = (id: number) =>
+  adminFetch<void>(`/users/${id}`, { method: "DELETE", headers: adminHeaders() });
+
+// Surveys
+export const adminFetchSurveys = () => adminFetch<SurveysResponse>("/surveys", { headers: adminHeaders() });

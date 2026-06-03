@@ -25,6 +25,10 @@ from dotenv import load_dotenv
 REPO_ROOT = Path(__file__).resolve().parents[2]
 COURSES_DIR = REPO_ROOT / "agents_back" / "agents_directory" / "json"
 EXTRACTS_DIR = REPO_ROOT / "agents_back" / "agents_directory" / "extract"
+# Course screenshots downloaded by the source-extractor. Course JSONs reference
+# them by the relative path "images/<session>/<file>.png"; we serve this dir over
+# HTTP so the learner UI can load them (see main.py mount + frontend mediaUrl()).
+IMAGES_DIR = REPO_ROOT / "agents_back" / "agents_directory" / "images"
 
 # Load the agents_back .env (Atlassian creds, CONFLUENCE_URL, CLAUDE_MODEL).
 load_dotenv(REPO_ROOT / "agents_back" / ".env")
