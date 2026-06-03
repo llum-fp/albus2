@@ -615,70 +615,249 @@
 }
 
 /* ── Surveys dashboard ────────────────────────────────────────────────── */
-.stat-grid {
+
+/* KPI row */
+.survey-kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
   margin-bottom: 1.5rem;
 }
-.stat-card {
+.survey-kpi {
   border: 1px solid var(--oa-border);
   border-radius: var(--radius-card);
   background: var(--oa-card);
   padding: 1rem 1.1rem;
-}
-.stat-card .stat-course {
-  font-weight: 600;
-  font-size: 0.92rem;
-  margin-bottom: 0.1rem;
-}
-.stat-card .stat-count {
-  font-size: 0.75rem;
-  color: var(--oa-text-muted);
-  margin-bottom: 0.75rem;
-}
-.stat-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.82rem;
-  padding: 0.2rem 0;
+  flex-direction: column;
+  gap: 0.25rem;
 }
-.stat-row .stat-label {
-  color: var(--oa-text-secondary);
-}
-.stat-bar {
-  flex: 1;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--oa-border);
-  overflow: hidden;
-  margin: 0 0.6rem;
-}
-.stat-bar > span {
-  display: block;
-  height: 100%;
-  background: var(--oa-grad);
-}
-.stat-val {
-  min-width: 2.4rem;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+.kpi-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
   color: var(--oa-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.comment-item {
-  border: 1px solid var(--oa-border);
-  border-radius: var(--radius-btn);
-  background: var(--oa-card);
-  padding: 0.7rem 0.9rem;
-  margin-bottom: 0.6rem;
+.kpi-value.kpi-title {
+  font-size: 0.95rem;
+  letter-spacing: 0;
+}
+.kpi-of {
   font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--oa-text-muted);
 }
-.comment-item .meta {
+.kpi-label {
   font-size: 0.72rem;
   color: var(--oa-text-muted);
-  margin-bottom: 0.3rem;
+}
+
+/* Table */
+.survey-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 2rem;
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-card);
+}
+.survey-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.survey-table thead th {
+  padding: 0.65rem 0.9rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--oa-text-secondary);
+  border-bottom: 1px solid var(--oa-border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  background: var(--oa-card);
+}
+.survey-table thead th:hover { color: var(--oa-text); }
+.survey-table thead th.active { color: var(--oa-red); }
+.survey-table tbody tr { border-bottom: 1px solid var(--oa-border); }
+.survey-table tbody tr:last-child { border-bottom: none; }
+.survey-row {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.survey-row:hover { background: var(--oa-card-hover); }
+.survey-row.expanded { background: var(--oa-card-hover); }
+.survey-table td {
+  padding: 0.65rem 0.9rem;
+  vertical-align: middle;
+}
+.survey-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.survey-expand-icon {
+  flex-shrink: 0;
+  color: var(--oa-text-muted);
+  display: flex;
+}
+.num-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--oa-text-secondary);
+}
+.rating-cell {
+  white-space: nowrap;
+}
+.rating-cell > span:first-child {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-right: 6px;
+}
+.rating-track {
+  display: inline-block;
+  width: 44px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--oa-border);
+  vertical-align: middle;
+  overflow: hidden;
+}
+.rating-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.dist-pill {
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Expanded row */
+.expand-row td { padding: 0; }
+.expand-content {
+  display: flex;
+  gap: 0;
+  border-top: 1px solid var(--oa-border);
+  background: var(--oa-bg);
+}
+.expand-section {
+  flex: 1;
+  padding: 1rem 1.2rem;
+  border-right: 1px solid var(--oa-border);
+}
+.expand-section:last-child { border-right: none; }
+.expand-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--oa-text-muted);
+  margin-bottom: 0.65rem;
+}
+.dist-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  margin-bottom: 0.35rem;
+  color: var(--oa-text-secondary);
+}
+.dist-bar-row > span:first-child {
+  min-width: 80px;
+}
+.dist-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--oa-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.dist-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  min-width: 2px;
+}
+.dist-count {
+  min-width: 2rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Comments */
+.survey-comments-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.5rem 0 0.75rem;
+}
+.survey-comments-head .eyebrow { margin: 0; }
+.comment-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.comment-item {
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-card);
+  background: var(--oa-card);
+  padding: 0.85rem 1rem;
+}
+.comment-meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.55rem;
+  flex-wrap: wrap;
+}
+.comment-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.comment-course {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--oa-text);
+}
+.comment-user {
+  font-size: 0.78rem;
+  color: var(--oa-text-secondary);
+}
+.comment-date {
+  font-size: 0.72rem;
+  color: var(--oa-text-muted);
+}
+.comment-meta-left > span + span::before {
+  content: "·";
+  margin-right: 0.5rem;
+  color: var(--oa-border-strong);
+}
+.comment-ratings {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.comment-rating {
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.comment-text {
+  font-size: 0.85rem;
+  color: var(--oa-text);
+  line-height: 1.5;
+  font-style: italic;
 }
 
 /* ── Two-column course picker (Manage courses in path) ────────────────────── */
