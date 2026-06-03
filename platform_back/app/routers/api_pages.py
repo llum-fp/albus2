@@ -1,9 +1,17 @@
 """Frontend-facing Confluence page search — fast, no LLM.
 
-`GET /api/find-pages?topic=...&limit=...` queries Confluence's own search index
-via the REST API (CQL `text ~`) and returns candidate pages in the shape
-`{"pages": [{"page_id", "page_title", "brief_description"}, ...]}`. The
-`brief_description` is Confluence's own relevance excerpt for the page.
+`GET /api/find-pages?topic=...&limit=...` returns candidate pages in the shape
+`{"pages": [{"page_id", "page_title", "brief_description"}, ...]}` using a
+3-step cascade, stopping at the first step that yields a hit:
+
+  1. **By page id (prefix)** — if `topic` is all digits, return pages whose id
+     *begins with* those digits, via a local page-id index (`services.page_index`);
+     Confluence CQL has no prefix operator for ids, so this is served locally.
+  2. **By title** — CQL `title ~ "topic"`.
+  3. **By full text** — CQL `text ~ "topic"` (the original behavior).
+
+The `brief_description` is Confluence's own relevance excerpt for the page
+(or, for the id lookup, the page's space name).
 
 Credentials stay server-side (CONFLUENCE_URL + ATLASSIAN_*/CONFLUENCE_* from
 agents_back/.env, loaded by app.config). Typical latency ~0.5s — one HTTP
@@ -17,6 +25,7 @@ import requests
 from fastapi import APIRouter, HTTPException, Query
 
 import app.config  # noqa: F401 — ensures agents_back/.env is loaded + CONFLUENCE_* back-filled
+from app.services import page_index
 
 router = APIRouter(prefix="/api", tags=["confluence-pages"])
 
@@ -53,22 +62,13 @@ def _coerce_id(pid):
         return pid  # keep as a string if a future id is non-numeric
 
 
-@router.get("/find-pages")
-def find_pages(
-    topic: str = Query(..., min_length=1, description="Topic to search Confluence for"),
-    limit: int = Query(8, ge=1, le=50, description="Max pages to return"),
-):
-    base, email, token = _creds()
-
-    # Relevance text match restricted to pages. Double-quotes would break the CQL
-    # string literal, so neutralize them.
-    safe_topic = topic.replace('"', " ").strip()
-    cql = f'type = page AND text ~ "{safe_topic}"'
+def _cql_search(base: str, auth: tuple[str, str], cql: str, limit: int) -> list[dict]:
+    """Run a CQL search and map results into the find-pages page shape."""
     try:
         r = requests.get(
             f"{base.rstrip('/')}/wiki/rest/api/search",
             params={"cql": cql, "limit": limit, "excerpt": "highlight"},
-            auth=(email, token),
+            auth=auth,
             timeout=CONFLUENCE_TIMEOUT_S,
         )
         r.raise_for_status()
@@ -86,7 +86,66 @@ def find_pages(
             "page_title": _clean(content.get("title") or res.get("title") or ""),
             "brief_description": _clean(res.get("excerpt") or ""),
         })
-    return {"pages": pages}
+    return pages
+
+
+def _lookup_by_id(base: str, auth: tuple[str, str], page_id: str) -> dict | None:
+    """Exact page-id lookup. Returns a find-pages page dict, or None if there is
+    no page with that id (404)."""
+    try:
+        r = requests.get(
+            f"{base.rstrip('/')}/wiki/rest/api/content/{page_id}",
+            params={"expand": "space"},
+            auth=auth,
+            timeout=CONFLUENCE_TIMEOUT_S,
+        )
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Confluence lookup failed: {exc}")
+
+    if r.status_code == 404:
+        return None
+    try:
+        r.raise_for_status()
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Confluence lookup failed: {exc}")
+
+    data = r.json()
+    if data.get("type") != "page":
+        return None
+    space = (data.get("space") or {}).get("name") or ""
+    return {
+        "page_id": _coerce_id(data.get("id") or page_id),
+        "page_title": _clean(data.get("title") or ""),
+        "brief_description": _clean(f"Space: {space}" if space else ""),
+    }
+
+
+@router.get("/find-pages")
+def find_pages(
+    topic: str = Query(..., min_length=1, description="Topic to search Confluence for"),
+    limit: int = Query(8, ge=1, le=50, description="Max pages to return"),
+):
+    base, email, token = _creds()
+    auth = (email, token)
+    topic = topic.strip()
+
+    # 1) Numeric input → page-id prefix match via the local index.
+    if topic.isdigit():
+        id_hits = page_index.prefix_search(base, auth, topic, limit)
+        if id_hits:
+            return {"pages": id_hits}
+
+    # Double-quotes would break the CQL string literal, so neutralize them.
+    safe_topic = topic.replace('"', " ").strip()
+
+    # 2) Title match.
+    title_pages = _cql_search(base, auth, f'type = page AND title ~ "{safe_topic}"', limit)
+    if title_pages:
+        return {"pages": title_pages}
+
+    # 3) Full-text match (original behavior).
+    text_pages = _cql_search(base, auth, f'type = page AND text ~ "{safe_topic}"', limit)
+    return {"pages": text_pages}
 
 
 @router.get("/page/{page_id}")
@@ -96,29 +155,16 @@ def get_page(page_id: str):
     reuse it; ``brief_description`` carries the space name. 404 if it doesn't
     exist (or isn't a page)."""
     base, email, token = _creds()
-    try:
-        r = requests.get(
-            f"{base.rstrip('/')}/wiki/rest/api/content/{page_id}",
-            params={"expand": "space"},
-            auth=(email, token),
-            timeout=CONFLUENCE_TIMEOUT_S,
-        )
-    except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"Confluence lookup failed: {exc}")
-
-    if r.status_code == 404:
+    page = _lookup_by_id(base, (email, token), page_id)
+    if page is None:
         raise HTTPException(status_code=404, detail=f"Page {page_id} not found")
-    try:
-        r.raise_for_status()
-    except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"Confluence lookup failed: {exc}")
+    return page
 
-    data = r.json()
-    if data.get("type") != "page":
-        raise HTTPException(status_code=404, detail=f"{page_id} is not a page")
-    space = (data.get("space") or {}).get("name") or ""
-    return {
-        "page_id": _coerce_id(data.get("id") or page_id),
-        "page_title": _clean(data.get("title") or ""),
-        "brief_description": _clean(f"Space: {space}" if space else ""),
-    }
+
+@router.post("/page-index/refresh")
+def refresh_page_index():
+    """Force a rebuild of the local page-id index (used for prefix search) by
+    re-crawling every Confluence page. Returns how many pages were indexed."""
+    base, email, token = _creds()
+    data = page_index.build_index(base, (email, token))
+    return {"indexed": len(data.get("pages", [])), "built_at": data.get("built_at")}

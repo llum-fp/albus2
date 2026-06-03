@@ -20,6 +20,9 @@ dist/
 
 # Data — keep sample courses, ignore generated ones
 
+# Local Confluence page-id index (rebuilt on demand; cache only)
+platform_back/page_index.json
+
 # Albus chat tutor sandbox (temp system-prompt files written per request)
 platform_back/claude-sandbox/
 proyecto_exportacion/backend/claude-sandbox/
