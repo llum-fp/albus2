@@ -27,25 +27,84 @@ the **frontend** and the **API contract** it relies on.
 
 ## Run it
 
-### First time only — seed the database
+### Fresh server setup (first time on a new machine)
 
-After cloning, the SQLite database is empty (no users). Run the seed script once to create the default users:
+#### 1. Install Node.js 20+ and npm
+
+```bash
+# Using nvm (recommended — works on Linux/macOS/WSL)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc          # or restart your terminal
+nvm install 20
+nvm use 20
+node -v && npm -v         # should print v20.x.x and 10.x.x
+```
+
+Alternatively on Debian/Ubuntu:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+#### 2. Create the Python virtual environment and install dependencies
+
+```bash
+# From the repo root
+python3.12 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+
+# Optional: OpenAI TTS for podcast generation
+.venv/bin/pip install openai
+```
+
+#### 3. Configure credentials
+
+```bash
+cp agents_back/.env.example agents_back/.env
+# Edit agents_back/.env and fill in:
+#   ATLASSIAN_EMAIL   — your Atlassian account email
+#   ATLASSIAN_API_TOKEN — API token from id.atlassian.com
+#   CONFLUENCE_URL    — e.g. https://yourorg.atlassian.net
+#   ANTHROPIC_API_KEY — for the course-generation agents
+#   OPENAI_API_KEY    — only needed for podcast TTS
+```
+
+#### 4. Initialize the database
+
+The SQLite file is created automatically on first server start, but it starts empty.
+Run the seed script once to create roles, default users, and register any existing
+course JSON files:
 
 ```bash
 cd platform_back && ../.venv/bin/python seed.py
 ```
 
-This creates three users:
+This creates four users:
 
 | Email | Name | Role |
 |-------|------|------|
 | `test1@example.com` | Severus | **Admin** |
 | `test2@example.com` | Hermione | Technical |
 | `admin@example.com` | Dobby | Sales |
+| `enduser@example.com` | Luna | End-user |
+
+`seed.py` is **idempotent** — safe to re-run; existing users are updated to match,
+existing courses are skipped.
+
+> **Existing database (upgrading).** If you pulled new code onto an existing install,
+> run `migrate.py` before starting the server:
+> ```bash
+> cd platform_back && ../.venv/bin/python migrate.py
+> ```
+> It applies schema changes (new columns, FK migrations) without touching data and is
+> safe to run on an already-up-to-date database.
 
 Select **Severus** at login to access the Admin panel.
 
-> If you already ran the backends and can't reach the Admin panel, clear `localStorage["albus_user"]` in your browser's DevTools (Application → Local Storage) and reload.
+> If you already ran the backends and can't reach the Admin panel, clear
+> `localStorage["albus_user"]` in your browser's DevTools (Application → Local Storage)
+> and reload.
 
 ### Three processes (each in its own terminal), from the repo root
 
@@ -69,8 +128,7 @@ Production build: `cd albusv2 && npm run build` → outputs `dist/`; `npm run pr
 ### Toolchain / external deps
 - **Node.js 20+** + npm, **Python 3.12** (shared `.venv` at the repo root).
 - The frontend pins **React 19, Vite 8, TypeScript 6** — internally consistent. `node_modules/` and
-  `dist/` are gitignored; if you re-copy the package, run `rm -rf node_modules && npm ci` (the
-  original export shipped `node_modules` with broken, non-symlink `.bin` shims).
+  `dist/` are gitignored; run `npm install` (or `npm ci`) if the folder is missing.
 - **Atlassian/Confluence credentials** (`ATLASSIAN_EMAIL`, `ATLASSIAN_API_TOKEN`, `CONFLUENCE_URL`) in
   `agents_back/.env` (gitignored): used for course generation and the chat tutor's optional Confluence
   reference retrieval. The tutor degrades to course-only answers if they're absent.
@@ -96,10 +154,9 @@ course `id` is the JSON filename stem (a string), injected by the backend.
 rating_applicability (1-5), difficulty (muy_facil|facil|adecuada|dificil|muy_dificil),
 duration (corta|adecuada|larga), comments?`.
 
-> Course **authoring** (Confluence browse + generation) is **not** part of this `/api/*` surface and
-> the UI has no authoring screen. New courses are produced by the agents pipeline (`POST /courses/` on
-> platform_back → agents_back → headless Claude) and land as JSON files that `GET /api/courses` then
-> lists. See [`CLAUDE.md`](CLAUDE.md).
+> Course **authoring** (Confluence browse + generation) is handled by the admin surface
+> (`POST /api/admin/courses` → agents_back → headless Claude). New courses land as JSON files that
+> `GET /api/courses` then lists for learners. See [`CLAUDE.md`](CLAUDE.md).
 
 ---
 
