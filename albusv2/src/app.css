@@ -1845,7 +1845,11 @@
 
 /* ── Responsive ── */
 @media (max-width: 1100px) {
-  .viewer.with-chat,
+  /* El chat se oculta; la columna del sidebar sigue al estado real
+     (expandido/colapsado) en vez de forzarse a 64px con contenido expandido. */
+  .viewer.with-chat {
+    grid-template-columns: var(--sidebar-w) 1fr;
+  }
   .viewer.with-chat:has(.sidebar.collapsed) {
     grid-template-columns: var(--sidebar-w-collapsed) 1fr;
   }

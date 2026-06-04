@@ -119,6 +119,15 @@ export default function CourseViewer({
 
   const chat = useChat(courseId);
 
+  // Auto-colapsa el índice en ventanas estrechas (y lo re-expande al volver a ancho).
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1100px)");
+    const apply = (e: MediaQueryList | MediaQueryListEvent) => setSidebarOpen(!e.matches);
+    apply(mq);
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
   useEffect(() => {
     setState("loading");
     Promise.all([
