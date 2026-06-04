@@ -21,6 +21,11 @@ class Course(Base):
     # Publication state for the learner-facing catalog. Distinct from `status`
     # (which is the build state: pending|completed|failed). False = Draft.
     published: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0", nullable=False)
+    # Podcast (NotebookLM-style audio overview) generation state, independent of
+    # `status` (the course build state). podcast_status: none|pending|completed|
+    # failed; podcast_path is the synthesized audio file once completed.
+    podcast_status: Mapped[str] = mapped_column(String(20), default="none", server_default="none", nullable=False)
+    podcast_path: Mapped[str | None] = mapped_column(String(1000))
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now(), server_default=func.now())

@@ -251,3 +251,9 @@ export const AlertTriangle = (p: P) => (
     <path d="M12 9v4M12 17h.01" />
   </Base>
 );
+
+export const Headphones = (p: P) => (
+  <Base {...p}>
+    <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H4a1 1 0 0 1-1-1v-7a9 9 0 0 1 18 0v7a1 1 0 0 1-1 1h-2a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" />
+  </Base>
+);

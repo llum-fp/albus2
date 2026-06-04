@@ -184,6 +184,17 @@
   color: var(--oa-info);
 }
 
+/* Podcast status pill that doubles as a control (generate / listen / retry). */
+.podcast-pill {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.podcast-pill:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 /* small icon-only action button */
 .icon-btn {
   display: inline-flex;

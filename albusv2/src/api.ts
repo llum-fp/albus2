@@ -50,6 +50,9 @@ export interface Course {
   source?: string;
   language?: string;
   modules: Module[];
+  /** Served URL of the generated two-host podcast, or null/absent if none yet.
+     The learner viewer shows a player only when this is present. */
+  podcast_url?: string | null;
 }
 
 export async function fetchCourses(): Promise<CourseSummary[]> {
@@ -250,6 +253,7 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export type BuildStatus = "pending" | "completed" | "failed";
+export type PodcastStatus = "none" | "pending" | "completed" | "failed";
 // A profile is now any department/role slug created at runtime (no longer a
 // fixed union). Dropdowns populate from fetchProfiles().
 export type CourseProfile = string;
@@ -265,6 +269,8 @@ export interface AdminCourse {
   duration_min: number | null;
   status: BuildStatus;
   published: boolean;
+  podcast_status: PodcastStatus;
+  podcast_url: string | null;
   module_count: number;
   lesson_count: number;
   created_at: string;
@@ -357,6 +363,11 @@ export const adminUpdateCourseDetails = (
     method: "PATCH",
     headers: adminHeaders(true),
     body: JSON.stringify(body),
+  });
+export const adminGeneratePodcast = (dbId: number) =>
+  adminFetch<{ db_id: number; podcast_status: PodcastStatus }>(`/courses/${dbId}/podcast`, {
+    method: "POST",
+    headers: adminHeaders(),
   });
 export const adminPublish = (dbId: number) =>
   adminFetch<AdminCourse>(`/courses/${dbId}/publish`, { method: "POST", headers: adminHeaders() });

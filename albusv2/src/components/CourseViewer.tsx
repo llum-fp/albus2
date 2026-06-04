@@ -17,10 +17,12 @@ import {
   AlertTriangle,
   PanelLeft,
   MessageSquare,
+  Headphones,
   Check,
   CircleDot,
 } from "./icons";
 import AlbusIcon from "./AlbusIcon";
+import PodcastPlayer from "./PodcastPlayer";
 
 /* Rehype plugin: replace the two symbols that read as "AI-generated" in lesson
    text with Lucide icons — ⚠️ → AlertTriangle, → → ArrowRight. Walks hast text
@@ -113,6 +115,7 @@ export default function CourseViewer({
   const [quizPick, setQuizPick] = useState<Record<string, Question[]>>({});
   const [showSurvey, setShowSurvey] = useState(false);
   const [alreadySurveyed, setAlreadySurveyed] = useState(false);
+  const [showPodcast, setShowPodcast] = useState(false);
 
   const chat = useChat(courseId);
 
@@ -359,6 +362,15 @@ export default function CourseViewer({
             </span>
           </div>
           <div className="header-actions">
+            {course.podcast_url && (
+              <button
+                className="icon-btn"
+                onClick={() => setShowPodcast(true)}
+                title="Listen to the podcast"
+              >
+                <Headphones size={18} />
+              </button>
+            )}
             <ThemeToggle />
             {!chatOpen && (
               <button
@@ -506,6 +518,14 @@ export default function CourseViewer({
             setShowSurvey(false);
             onBack();
           }}
+        />
+      )}
+
+      {showPodcast && course.podcast_url && (
+        <PodcastPlayer
+          audioUrl={course.podcast_url}
+          title={course.title}
+          onClose={() => setShowPodcast(false)}
         />
       )}
     </div>

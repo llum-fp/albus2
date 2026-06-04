@@ -56,12 +56,36 @@ def ensure_published_column(engine) -> bool:
     return True
 
 
+def ensure_podcast_columns(engine) -> bool:
+    """Add ``courses.podcast_status`` / ``courses.podcast_path`` if missing
+    (``create_all`` never ALTERs an existing table). Returns True if a column was
+    just created."""
+    insp = inspect(engine)
+    cols = {c["name"] for c in insp.get_columns("courses")}
+    missing = [c for c in ("podcast_status", "podcast_path") if c not in cols]
+    if not missing:
+        return False
+    with engine.begin() as conn:
+        if "podcast_status" in missing:
+            conn.execute(text("ALTER TABLE courses ADD COLUMN podcast_status VARCHAR(20) NOT NULL DEFAULT 'none'"))
+        if "podcast_path" in missing:
+            conn.execute(text("ALTER TABLE courses ADD COLUMN podcast_path VARCHAR(1000)"))
+    log.info("Migrated: added courses.%s", ", ".join(missing))
+    return True
+
+
 def reconcile(db: Session) -> dict:
     """Mark orphan pending builds failed and back-fill rows for on-disk courses."""
     # 1. Orphan pending builds: their subprocess died with the previous process.
     orphaned = db.query(Course).filter(Course.status == "pending").all()
     for course in orphaned:
         course.status = "failed"
+
+    # 1b. Orphan podcast generations: their TTS worker thread died with the
+    # previous process. Reset so the admin can retry (independent of `status`).
+    orphan_podcasts = db.query(Course).filter(Course.podcast_status == "pending").all()
+    for course in orphan_podcasts:
+        course.podcast_status = "failed"
 
     # 2. Back-fill a row for every JSON file that has none (published by default).
     existing = {c.session_id for c in db.query(Course.session_id).all() if c.session_id}
@@ -82,6 +106,10 @@ def reconcile(db: Session) -> dict:
             backfilled += 1
 
     db.commit()
-    result = {"orphaned_failed": len(orphaned), "backfilled": backfilled}
+    result = {
+        "orphaned_failed": len(orphaned),
+        "orphan_podcasts_failed": len(orphan_podcasts),
+        "backfilled": backfilled,
+    }
     log.info("Course reconcile: %s", result)
     return result

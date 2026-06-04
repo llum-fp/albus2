@@ -29,6 +29,11 @@ EXTRACTS_DIR = REPO_ROOT / "agents_back" / "agents_directory" / "extract"
 # them by the relative path "images/<session>/<file>.png"; we serve this dir over
 # HTTP so the learner UI can load them (see main.py mount + frontend mediaUrl()).
 IMAGES_DIR = REPO_ROOT / "agents_back" / "agents_directory" / "images"
+# Podcast artifacts: the agents pipeline writes the dialogue script
+# (script_<sid>.json) here, and platform_back's TTS service writes the synthesized
+# audio (podcast_<sid>.wav) alongside it. Served over HTTP via the /api/podcasts
+# mount in main.py (mirrors the IMAGES_DIR / /api/media setup).
+PODCASTS_DIR = REPO_ROOT / "agents_back" / "agents_directory" / "podcast"
 LOGS_DIR = REPO_ROOT / ".logs"
 
 # Load the agents_back .env (Atlassian creds, CONFLUENCE_URL, CLAUDE_MODEL).

@@ -11,6 +11,7 @@ Auth: a lightweight ``X-Albus-Role: Admin`` header check, consistent with the
 client-side login stub. NOTE: the header is client-controlled — this is UI
 gating, not real security. Real auth is out of scope until the login is real.
 """
+import logging
 import os
 import threading
 import uuid
@@ -20,13 +21,14 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
-from app.config import COURSES_DIR, EXTRACTS_DIR, LOGS_DIR
+from app.config import COURSES_DIR, EXTRACTS_DIR, LOGS_DIR, PODCASTS_DIR
 from app.database import SessionLocal, get_db
 from app.models.course import Course
 from app.crud.course import (
     get_course,
     get_courses,
     set_course_published,
+    set_podcast,
     update_course_details,
 )
 from app.crud.user import create_user, delete_user, get_user_by_email, get_users, update_user
@@ -45,9 +47,10 @@ from app.schemas.course import CourseRequest, CourseUpdateRequest
 from app.schemas.survey import SurveyRead
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.services.agents_back import create_course as agents_create
+from app.services.agents_back import create_podcast as agents_create_podcast
 from app.services.agents_back import create_role as agents_create_role
 from app.services.agents_back import update_course as agents_update
-from app.services import profile_builds
+from app.services import profile_builds, tts
 from app.util.slug import slugify
 from app.services.course_files import (
     course_counts,
@@ -55,6 +58,9 @@ from app.services.course_files import (
     session_to_stem,
     update_course_json,
 )
+
+
+log = logging.getLogger("platform_back.admin")
 
 
 def require_admin(x_albus_role: str | None = Header(default=None)) -> None:
@@ -74,6 +80,13 @@ def _local_json_path(raw: str | None) -> str | None:
     if not raw:
         return None
     return str(COURSES_DIR / os.path.basename(raw))
+
+
+def _local_podcast_path(raw: str | None) -> str | None:
+    """Map an agents_back podcast artifact path onto our PODCASTS_DIR by basename."""
+    if not raw:
+        return None
+    return str(PODCASTS_DIR / os.path.basename(raw))
 
 
 def _finish_build(db_id: int, result: dict) -> None:
@@ -131,6 +144,38 @@ def _revise_worker(db_id: int, session_id: str, feedback: str) -> None:
     _finish_build(db_id, result)
 
 
+def _podcast_worker(db_id: int, session_id: str) -> None:
+    """Generate a course's podcast in the background: agents_back writes the
+    dialogue script, then the TTS service renders it to one audio file. Updates the
+    Course.podcast_* columns when done (or marks it failed). Runs in its own thread
+    like the build/revise workers, so the request returns immediately."""
+    import json
+    log.info("[podcast %s] starting generation (course db_id=%s)", session_id, db_id)
+    try:
+        result = agents_create_podcast({"session_id": session_id})
+        script_path = _local_podcast_path(result.get("script_path")) or str(
+            PODCASTS_DIR / f"script_{session_id}.json"
+        )
+        if not result.get("script_exists") or not os.path.exists(script_path):
+            raise RuntimeError(f"podcast script was not produced (agents_back result={result})")
+        with open(script_path, encoding="utf-8") as fh:
+            script = json.load(fh)
+        out_path = PODCASTS_DIR / f"podcast_{session_id}.wav"
+        log.info("[podcast %s] script ready (%d turns); synthesizing audio…",
+                 session_id, len(script.get("turns", [])))
+        tts.synthesize_podcast(script, out_path)
+    except Exception:
+        # Log the real cause (the worker runs in a thread; without this the failure
+        # was invisible — only podcast_status flipped to "failed").
+        log.exception("[podcast %s] generation FAILED", session_id)
+        with SessionLocal() as db:
+            set_podcast(db, db_id, status="failed")
+        return
+    log.info("[podcast %s] completed -> %s", session_id, out_path)
+    with SessionLocal() as db:
+        set_podcast(db, db_id, status="completed", path=str(out_path))
+
+
 def _spawn(target, *args) -> None:
     threading.Thread(target=target, args=args, daemon=True).start()
 
@@ -144,6 +189,16 @@ def _course_stem(course: Course) -> str:
     if course.session_id:
         return session_to_stem(course.session_id)
     return ""
+
+
+def _podcast_url(course: Course) -> str | None:
+    """Served URL for a course's podcast audio when the file exists on disk, else
+    None. Derived from the session id (the file is podcast_<sid>.wav under the
+    /api/podcasts mount)."""
+    sid = course.session_id
+    if sid and (PODCASTS_DIR / f"podcast_{sid}.wav").exists():
+        return f"/api/podcasts/podcast_{sid}.wav"
+    return None
 
 
 def _build_stage(course: Course) -> str | None:
@@ -178,6 +233,8 @@ def _admin_course_dict(course: Course) -> dict:
         "profile": course.profile,
         "status": course.status,
         "published": bool(course.published),
+        "podcast_status": course.podcast_status,
+        "podcast_url": _podcast_url(course),
         "module_count": modules,
         "lesson_count": lessons,
         "created_at": course.created_at,
@@ -302,6 +359,30 @@ def admin_unpublish(db_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Course not found")
     course = set_course_published(db, db_id, False)
     return _admin_course_dict(course)
+
+
+@router.post("/courses/{db_id}/podcast", status_code=202)
+def admin_generate_podcast(db_id: int, db: Session = Depends(get_db)):
+    """Kick off a NotebookLM-style two-host podcast for a course in the background:
+    agents_back writes the dialogue script, then the TTS service renders the audio.
+    Returns immediately; poll the courses list/detail for ``podcast_status``
+    (pending -> completed/failed) and ``podcast_url`` once ready."""
+    course = get_course(db, db_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if course.status != "completed":
+        raise HTTPException(status_code=409, detail="Only a completed course can have a podcast")
+    if not course.session_id:
+        raise HTTPException(status_code=400, detail="Course has no session_id — cannot generate a podcast")
+    if not (COURSES_DIR / f"course_{course.session_id}.json").exists():
+        raise HTTPException(status_code=409, detail="Course content file is missing — cannot generate a podcast")
+    if course.podcast_status == "pending":
+        raise HTTPException(status_code=409, detail="A podcast is already being generated for this course")
+    course.podcast_status = "pending"
+    course.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    _spawn(_podcast_worker, course.id, course.session_id)
+    return {"db_id": course.id, "podcast_status": "pending"}
 
 
 # --------------------------------------------------------------------------- #

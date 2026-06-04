@@ -107,6 +107,20 @@ def build_course_prompt(ids, profile, topic, duration_min, extract_path,
     )
 
 
+def build_podcast_prompt(course_path: str, out_path: str, language: str,
+                         target_min: str) -> str:
+    """Build the /create-podcast skill invocation string. Mirrors
+    build_course_prompt: one deterministic slash-command line naming the course to
+    adapt, the script output path, and optional language/target-length steering.
+    `language` is omitted when empty so the skill falls back to the course's own
+    language field."""
+    lang_token = f' language="{language}"' if language else ""
+    return (
+        f"/create-podcast course_path={course_path} out_path={out_path}"
+        f"{lang_token} target_min={target_min or '8'}"
+    )
+
+
 def slugify(name: str) -> str:
     """Turn a profile display name into a filesystem-safe slug: lowercase,
     whitespace/underscores -> hyphens, drop anything else, collapse repeats.

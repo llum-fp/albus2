@@ -17,7 +17,7 @@ import json
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
-from app.config import COURSES_DIR
+from app.config import COURSES_DIR, PODCASTS_DIR
 from app.crud.course import get_visible_session_ids
 from app.database import get_db
 from app.models.course import Course
@@ -73,4 +73,10 @@ def get_course(course_id: str):
     with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
     data["id"] = course_id  # id derived from the filename, overriding any in-file id
+    # Expose the podcast audio URL when one has been generated (admin-triggered);
+    # the learner UI shows a player only when this is non-null. Cheap existence
+    # check against the shared podcast dir — no DB round-trip.
+    sid = stem_to_session(course_id)
+    audio = PODCASTS_DIR / f"podcast_{sid}.wav"
+    data["podcast_url"] = f"/api/podcasts/podcast_{sid}.wav" if audio.exists() else None
     return data

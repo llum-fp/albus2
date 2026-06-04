@@ -27,6 +27,14 @@ omitted), and a free-text `description` of the audience. It runs the create-role
 skill, which writes `.claude/agents/<slug>-course-creator.md`, and returns:
     { "session_id": "<uuid>", "agent_path": "<abs path>", "agent_exists": true }
 
+POST /create-podcast — generate a two-host podcast SCRIPT from an existing course
+(NotebookLM-style audio overview). Pass the `session_id` of the course (it reads
+json/course_<session_id>.json) or an explicit `course_path`; optional `language`
+and `target_min`. It runs the create-podcast skill, which writes
+podcast/script_<session_id>.json, and returns:
+    { "session_id": "<uuid>", "script_path": "<abs path>", "script_exists": true }
+Audio synthesis from that script happens downstream in platform_back, not here.
+
 Run (use the project venv that has FastAPI + uvicorn):
     ./.venv/bin/python api.py            # listens on 0.0.0.0:8000 (override with PORT)
     ./.venv/bin/uvicorn api:app --host 0.0.0.0 --port 8000   # or run uvicorn directly
@@ -51,6 +59,7 @@ from create_course import (
     AGENTS_DIR,
     DEFAULT_MODEL,
     build_course_prompt,
+    build_podcast_prompt,
     build_role_prompt,
     normalize_page_ids,
     run_claude,
@@ -118,6 +127,21 @@ class RoleResponse(BaseModel):
     session_id: str
     agent_path: str
     agent_exists: bool
+
+
+class CreatePodcastRequest(BaseModel):
+    # Either session_id (the build derives json/course_<sid>.json) or an explicit
+    # course_path is required to locate the source course.
+    session_id: str | None = None
+    course_path: str | None = None
+    language: str = ""
+    target_min: str | int = ""
+
+
+class PodcastResponse(BaseModel):
+    session_id: str
+    script_path: str
+    script_exists: bool
 
 
 def _run(session_id: str, prompt: str, resume: bool) -> dict:
@@ -253,6 +277,43 @@ def create_new_role(req: CreateRoleRequest) -> dict:
     }
 
 
+def build_new_podcast(req: CreatePodcastRequest) -> dict:
+    """Generate a two-host podcast script from an existing course via the
+    create-podcast skill. The skill reads the course JSON and writes a dialogue
+    script to podcast/script_<course_id>.json; audio synthesis happens downstream
+    (in platform_back), not here.
+
+    The headless `claude` session id is always FRESH: the course's session id is
+    already a claude session (from the course build), and `claude --session-id
+    <existing>` would collide. Output paths instead key off the course id (`key`)
+    so platform_back can locate the script/audio."""
+    claude_session = str(uuid.uuid4())
+    if req.session_id:
+        key = req.session_id
+        course_rel = req.course_path or f"json/course_{key}.json"
+    elif req.course_path:
+        stem = Path(req.course_path).stem  # e.g. "course_<id>"
+        key = stem[len("course_"):] if stem.startswith("course_") else stem
+        course_rel = req.course_path
+    else:  # neither given — endpoint guards against this, but stay safe
+        key = claude_session
+        course_rel = f"json/course_{key}.json"
+    out_rel = f"podcast/script_{key}.json"
+    log.info(
+        "[%s] new podcast: course=%s key=%s language=%r target_min=%r",
+        claude_session, course_rel, key, req.language, req.target_min,
+    )
+    prompt = build_podcast_prompt(
+        course_rel, out_rel, str(req.language), str(req.target_min)
+    )
+    exists, out_path = _run_for_output(claude_session, prompt, out_rel, resume=False)
+    return {
+        "session_id": key,
+        "script_path": str(out_path),
+        "script_exists": exists,
+    }
+
+
 # Endpoints are sync `def` so Starlette runs them in a threadpool — the blocking
 # `claude` subprocess never stalls the event loop.
 @app.post("/create-course", response_model=CourseResponse)
@@ -300,9 +361,22 @@ def create_role(req: CreateRoleRequest):
         raise HTTPException(status_code=500, detail=str(exc))
 
 
+@app.post("/create-podcast", response_model=PodcastResponse)
+def create_podcast(req: CreatePodcastRequest):
+    log.info("POST /create-podcast: %s", req.model_dump())
+    if not (req.session_id or req.course_path):
+        log.warning("rejected request: missing 'session_id' or 'course_path' (required to locate the course)")
+        raise HTTPException(status_code=400, detail="missing 'session_id' or 'course_path' (required to locate the course)")
+    try:
+        return build_new_podcast(req)
+    except Exception as exc:  # noqa: BLE001 - surface any failure as JSON
+        log.exception("build_new_podcast failed: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
 if __name__ == "__main__":
     log.info(
-        "Listening on http://0.0.0.0:%s  (POST /create-course, /update-course, /create-role)",
+        "Listening on http://0.0.0.0:%s  (POST /create-course, /update-course, /create-role, /create-podcast)",
         PORT,
     )
     uvicorn.run(app, host="0.0.0.0", port=PORT)

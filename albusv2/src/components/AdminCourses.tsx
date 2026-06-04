@@ -3,6 +3,7 @@ import {
   adminCreateCourse,
   adminFetchCourse,
   adminFetchCourses,
+  adminGeneratePodcast,
   adminPublish,
   adminReviseCourse,
   adminUnpublish,
@@ -18,7 +19,8 @@ import {
   type Profile,
 } from "../api";
 import { useAdminJobs } from "../useAdminJobs";
-import { Check, ChevronDown, ExternalLink, Eye, Globe, GraduationCap, Pencil, Plus, RefreshCw, Search, Sparkles, X } from "./icons";
+import { AlertTriangle, Check, ChevronDown, ExternalLink, Eye, Globe, GraduationCap, Headphones, Pencil, Plus, RefreshCw, Search, Sparkles, X } from "./icons";
+import PodcastPlayer from "./PodcastPlayer";
 import { elapsedSince, formatLocalDateTime as fmtDate, timeAgo } from "../format";
 
 const STATUS_FILTERS = ["all", "published", "draft", "pending", "failed"] as const;
@@ -53,6 +55,63 @@ function BuildStepper({ stage }: { stage?: BuildStage | null }) {
   );
 }
 
+/* Podcast generation state shown as a clear, labeled control in its own column:
+   course not built yet -> "—"; never requested -> "Generate"; in progress ->
+   "Generating…"; done -> "Ready" (click to listen); failed -> "Failed · retry". */
+function PodcastCell({
+  c,
+  busy,
+  onGenerate,
+  onListen,
+}: {
+  c: AdminCourse;
+  busy: boolean;
+  onGenerate: (c: AdminCourse) => void;
+  onListen: (c: AdminCourse) => void;
+}) {
+  if (c.status !== "completed") return <span className="cell-muted">—</span>;
+  switch (c.podcast_status) {
+    case "pending":
+      return (
+        <span className="badge badge-pending">
+          <span className="spin"><RefreshCw size={11} /></span> Generating…
+        </span>
+      );
+    case "completed":
+      return (
+        <button
+          className="badge badge-published podcast-pill"
+          title="Listen to the podcast"
+          onClick={() => onListen(c)}
+        >
+          <Headphones size={11} /> Ready
+        </button>
+      );
+    case "failed":
+      return (
+        <button
+          className="badge badge-failed podcast-pill"
+          title="Generation failed — click to retry"
+          disabled={busy}
+          onClick={() => onGenerate(c)}
+        >
+          <AlertTriangle size={11} /> Failed · retry
+        </button>
+      );
+    default: // "none" — never requested
+      return (
+        <button
+          className="badge badge-draft podcast-pill"
+          title="Generate a podcast for this course"
+          disabled={busy}
+          onClick={() => onGenerate(c)}
+        >
+          <Headphones size={11} /> Generate
+        </button>
+      );
+  }
+}
+
 export default function AdminCourses({
   onOpenCourse,
 }: {
@@ -68,6 +127,7 @@ export default function AdminCourses({
   const [revise, setRevise] = useState<AdminCourse | null>(null);
   const [edit, setEdit] = useState<AdminCourse | null>(null);
   const [preview, setPreview] = useState<AdminCourseDetail | null>(null);
+  const [podcastPreview, setPodcastPreview] = useState<{ url: string; title: string } | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   // Builds launched from this browser session — kept in the monitor (so the
   // finished result lingers) until dismissed.
@@ -107,6 +167,16 @@ export default function AdminCourses({
     const id = setInterval(() => setNowTick((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, [runningKey]);
+
+  // Podcast generation isn't a build "job", so the jobs poll doesn't track it —
+  // refresh the courses table every 4s while any podcast is still generating so
+  // its status flips from pending to completed/failed without a manual refresh.
+  const podcastPending = courses.some((c) => c.podcast_status === "pending");
+  useEffect(() => {
+    if (!podcastPending) return;
+    const id = setInterval(() => refresh(), 4000);
+    return () => clearInterval(id);
+  }, [podcastPending, refresh]);
 
   const watch = (dbId: number) => {
     setWatched((s) => new Set(s).add(dbId));
@@ -156,6 +226,27 @@ export default function AdminCourses({
     } finally {
       setBusyId(null);
     }
+  };
+
+  // Kick off (or retry) podcast generation. The pending poll above flips the row
+  // to completed/failed when the background worker finishes.
+  const startPodcast = async (c: AdminCourse) => {
+    setBusyId(c.db_id);
+    try {
+      await adminGeneratePodcast(c.db_id);
+      setCourses((cur) =>
+        cur.map((x) => (x.db_id === c.db_id ? { ...x, podcast_status: "pending" } : x)),
+      );
+    } catch {
+      setError("Couldn't start podcast generation.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  // Open the player for an already-generated podcast.
+  const listenPodcast = (c: AdminCourse) => {
+    if (c.podcast_url) setPodcastPreview({ url: c.podcast_url, title: c.title ?? "Podcast" });
   };
 
   return (
@@ -279,6 +370,7 @@ export default function AdminCourses({
                 <th>Department</th>
                 <th>Build</th>
                 <th>Published</th>
+                <th>Podcast</th>
                 <th>Mod / Les</th>
                 <th>Updated</th>
                 <th style={{ textAlign: "right" }}>Actions</th>
@@ -300,6 +392,14 @@ export default function AdminCourses({
                     <span className={`badge ${c.published ? "badge-published" : "badge-draft"}`}>
                       {c.published ? "Published" : "Draft"}
                     </span>
+                  </td>
+                  <td>
+                    <PodcastCell
+                      c={c}
+                      busy={busyId === c.db_id}
+                      onGenerate={startPodcast}
+                      onListen={listenPodcast}
+                    />
                   </td>
                   <td className="cell-muted">{c.module_count} / {c.lesson_count}</td>
                   <td className="cell-muted">{fmtDate(c.updated_at)}</td>
@@ -368,6 +468,13 @@ export default function AdminCourses({
         />
       )}
       {preview && <PreviewModal detail={preview} onClose={() => setPreview(null)} />}
+      {podcastPreview && (
+        <PodcastPlayer
+          audioUrl={podcastPreview.url}
+          title={podcastPreview.title}
+          onClose={() => setPodcastPreview(null)}
+        />
+      )}
     </>
   );
 }

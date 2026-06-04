@@ -16,6 +16,8 @@ class AdminCourseRead(BaseModel):
     profile: str | None
     status: str          # build state: pending | completed | failed
     published: bool
+    podcast_status: str = "none"          # none | pending | completed | failed
+    podcast_url: str | None = None        # served audio URL when completed
     module_count: int
     lesson_count: int
     created_at: datetime

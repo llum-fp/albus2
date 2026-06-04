@@ -139,6 +139,43 @@ ls -lt ~/.claude/projects/-home-lfuster-projects-hackathon20/*.jsonl   # newest 
 /resume          # resume a session inside Claude (or: claude --resume)
 ```
 
+## Podcast (audio overview)
+
+Turn a finished course into a NotebookLM-style **two-host audio "deep dive"**. The
+generate button lives in the **admin** course panel (`albusv2` `AdminCourses`);
+learners get a read-only player in the course viewer when a podcast exists.
+
+Flow (mirrors course creation): admin `POST /api/admin/courses/{db_id}/podcast`
+→ platform_back background worker → agents_back `POST /create-podcast` (the
+`create-podcast` skill delegates to the `podcast-scriptwriter` agent, which writes
+`agents_directory/podcast/script_<sid>.json`) → platform_back's TTS service
+(`platform_back/app/services/tts.py`, **OpenAI TTS**: each turn synthesized with
+one of two voices, stitched into one WAV via the stdlib `wave` module — no ffmpeg)
+writes `agents_directory/podcast/podcast_<sid>.wav` → served at
+`/api/podcasts/podcast_<sid>.wav` (a `StaticFiles` mount, like `/api/media`).
+State lives on the `Course` row (`podcast_status` none|pending|completed|failed,
+`podcast_path`); `GET /api/courses/{id}` injects `podcast_url` when the audio file
+exists, which is what gates the learner player.
+
+- **agents_back:** `agents_directory/.claude/skills/create-podcast/`,
+  `.claude/agents/podcast-scriptwriter.md`, `.claude/podcast-schema.md` (the script
+  JSON contract); `POST /create-podcast` (needs `session_id` or `course_path`;
+  optional `language`, `target_min`) writes `podcast/script_<sid>.json`.
+- **platform_back:** `app/services/tts.py`; `PODCASTS_DIR` in `app/config.py`; the
+  `/api/podcasts` mount + `ensure_podcast_columns` migration in `app/main.py`;
+  `_podcast_worker` + `POST /api/admin/courses/{id}/podcast` in `app/routers/admin.py`.
+- **Setup:** put `OPENAI_API_KEY` in `agents_back/.env` (see `.env.example`); course
+  build + chat work without it. Optional `PODCAST_TTS_MODEL` (default
+  `gpt-4o-mini-tts`), `PODCAST_VOICE_HOST` (`onyx`), `PODCAST_VOICE_COHOST` (`nova`).
+  Install the SDK once: `.venv/bin/pip install openai`.
+
+Generate just the script (skip audio) for quick testing:
+
+```bash
+curl -s -X POST http://localhost:8000/create-podcast \
+     -H 'Content-Type: application/json' -d '{"session_id": "<course session id>"}'
+```
+
 ## Notes
 
 - The Atlassian (Confluence) connection only works reliably in an interactive

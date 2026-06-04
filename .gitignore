@@ -30,6 +30,8 @@ platform_back/platform.pre-*.db
 agents_back/agents_directory/json/
 agents_back/agents_directory/extract/
 agents_back/agents_directory/images/
+# Generated podcast artifacts (dialogue script JSON + synthesized audio)
+agents_back/agents_directory/podcast/
 # Transient staging dir for /create-role (agent files are moved into .claude/agents/)
 agents_back/agents_directory/agents_staging/
 

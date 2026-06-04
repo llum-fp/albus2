@@ -318,6 +318,75 @@
   box-shadow: none;
 }
 
+/* ====================== PODCAST PLAYER ====================== */
+.podcast-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: dropdown-in 0.15s ease-out;
+}
+.podcast-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background: var(--oa-card);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--radius-card);
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+.podcast-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+.podcast-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.podcast-mark {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: var(--oa-grad);
+}
+.podcast-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.25;
+}
+.podcast-sub {
+  font-size: 0.82rem;
+  color: var(--oa-text-secondary);
+  margin: 4px 0 0;
+}
+.podcast-audio {
+  width: 100%;
+  margin-bottom: 16px;
+}
+.podcast-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+/* Courses table: tint the podcast action green when an episode is ready to play. */
+.icon-btn--ready {
+  color: var(--oa-success, #16a34a);
+}
+
 /* ====================== SURVEY (fin de curso) ====================== */
 .survey-overlay {
   position: fixed;

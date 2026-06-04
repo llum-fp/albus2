@@ -118,6 +118,23 @@ def update_course_status(db: Session, course_id: int, status: str) -> Course | N
     return course
 
 
+def set_podcast(
+    db: Session, course_id: int, *, status: str, path: str | None = None
+) -> Course | None:
+    """Set a course's podcast generation state. `status` is one of
+    none|pending|completed|failed; `path` is the synthesized audio file (set on
+    completion). Mirrors update_course_status but for the podcast_* columns."""
+    course = db.get(Course, course_id)
+    if course:
+        course.podcast_status = status
+        if path is not None:
+            course.podcast_path = path
+        course.updated_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(course)
+    return course
+
+
 def update_course_record(
     db: Session,
     course_id: int,
