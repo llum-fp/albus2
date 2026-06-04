@@ -14,7 +14,7 @@ from textwrap import shorten
 
 DB = Path(__file__).parent / "platform.db"
 
-TABLES = ["users", "courses", "surveys"]
+TABLES = ["users", "roles", "courses", "surveys", "user_course_progress"]
 
 # Columns to truncate to keep rows readable
 TRUNCATE = {

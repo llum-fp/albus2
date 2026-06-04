@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import IMAGES_DIR, PODCASTS_DIR
 from app.database import engine, Base, SessionLocal
 from app.routers import (
-    courses, users, api_courses, api_surveys, api_pages, api_users, api_progress, chat, admin,
+    api_courses, api_surveys, api_pages, api_users, api_progress, chat, admin,
 )
 from app.routers import admin_paths, api_paths, api_profiles
 import app.models  # noqa: F401 — ensure models are registered before create_all
@@ -35,9 +35,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Internal management + generation surface (integer course ids).
-app.include_router(courses.router)
-app.include_router(users.router)
 # Frontend-facing /api/* surface (the albusv2 contract): courses (string ids),
 # surveys, and the Albus chat tutor (SSE).
 app.include_router(api_courses.router)
