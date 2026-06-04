@@ -42,10 +42,7 @@ mock backend (`proyecto_exportacion/backend/`) has been **removed** — its chat
   - `app/models/` — SQLAlchemy models: `Course`, `User`, `Survey`.
   - `app/schemas/` — Pydantic v2 schemas (course, user, survey).
   - `app/crud/` — DB operations for courses, users, surveys.
-  - **Internal/management surface (integer course ids):**
-    - `app/routers/courses.py` — `GET/POST /courses/`, `GET/PATCH /courses/{id}`.
-    - `app/routers/users.py` — `GET/POST /users/`, `GET /users/{id}`.
-    - `app/services/agents_back.py` — httpx client → agents_back `/create-course`, `/update-course`.
+  - `app/services/agents_back.py` — httpx client → agents_back `/create-course`, `/update-course`.
   - **Frontend-facing `/api/*` surface (the albusv2 contract; string filename-stem ids):**
     - `app/routers/api_courses.py` — `GET /api/courses` (summaries), `GET /api/courses/{id}`
       (full course JSON served verbatim from `COURSES_DIR` with `id` injected from the filename).
@@ -94,30 +91,38 @@ PATH (it streams it for quiz feedback) and runs platform_back as a single proces
 
 ## Call the API
 
-```bash
-# New course (page_id required; topic/profile/duration_min optional)
-curl -s -X POST http://localhost:8001/courses/ \
-     -H 'Content-Type: application/json' --data @example.json
+All course management goes through the admin surface (`/api/admin/*`). The frontend
+sends an `X-Albus-Role: Admin` header; the backend validates the role.
 
-# Revise an existing course (use the db id returned at creation)
-curl -s -X PATCH http://localhost:8001/courses/<db_id> \
+```bash
+# Trigger a new course build (page_id required; topic/profile/duration_min optional)
+curl -s -X POST http://localhost:8001/api/admin/courses \
      -H 'Content-Type: application/json' \
+     -H 'X-Albus-Role: Admin' \
+     -d '{"page_id": "1727332382", "profile": "technical"}'
+
+# Revise a course (use the db_id returned at creation)
+curl -s -X PATCH http://localhost:8001/api/admin/courses/<db_id> \
+     -H 'Content-Type: application/json' \
+     -H 'X-Albus-Role: Admin' \
      -d '{"feedback": "make the quiz harder"}'
 
-# Get course detail (full content)
-curl -s http://localhost:8001/courses/<db_id>
+# Publish / unpublish
+curl -s -X POST http://localhost:8001/api/admin/courses/<db_id>/publish \
+     -H 'X-Albus-Role: Admin'
 
-# Get course detail (compact preview, first 2 modules only)
-curl -s 'http://localhost:8001/courses/<db_id>?preview=true&max_modules=2'
+# List active build jobs
+curl -s http://localhost:8001/api/admin/jobs -H 'X-Albus-Role: Admin'
 
-# Instant canned response, no build
-curl -s -X POST http://localhost:8001/courses/ -H 'Content-Type: application/json' \
-     -d '{"harcoded": true}'
+# List all courses (admin view)
+curl -s http://localhost:8001/api/admin/courses -H 'X-Albus-Role: Admin'
+
+# Learner-facing: published courses only (no auth header needed)
+curl -s http://localhost:8001/api/courses
+curl -s http://localhost:8001/api/courses/<filename-stem-id>
 ```
 
-Response (POST): `{ "session_id": "...", "json_path": "...", "json_exists": true, "db_id": 1 }`
-
-Docs interactivas: `http://localhost:8001/docs`
+Interactive docs: `http://localhost:8001/docs`
 
 Call agents_back directly on `:8000` to skip platform_back:
 - `POST /create-course` (needs `page_id`) — new course
