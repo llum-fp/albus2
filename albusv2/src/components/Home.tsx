@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { fetchCourses, fetchUserProgress, fetchPaths, userKey, type CourseSummary, type PathSummary, type SessionUser } from "../api";
-import { BookOpen, GraduationCap, ArrowRight, Check, Search, X } from "./icons";
+import { BookOpen, GraduationCap, ArrowRight, Check, Search, Sparkles, X } from "./icons";
 import { formatDuration } from "../format";
 import AlbusIcon from "./AlbusIcon";
 import ThemeToggle from "./ThemeToggle";
@@ -268,9 +268,26 @@ export default function Home({
             </div>
 
             {enrolled.length === 0 ? (
-              <p className="muted">
-                You haven't started any course yet. Go to the catalog and open one to see it here.
-              </p>
+              <div className="empty-mine">
+                <span className="spark" style={{ top: "12%",  left: "8%",  animationDelay: "0s"   }}>✦</span>
+                <span className="spark" style={{ top: "18%",  left: "88%", animationDelay: "0.7s" }}>✧</span>
+                <span className="spark" style={{ top: "55%",  left: "5%",  animationDelay: "1.1s" }}>✦</span>
+                <span className="spark" style={{ top: "70%",  left: "92%", animationDelay: "0.4s" }}>✧</span>
+                <span className="spark" style={{ top: "85%",  left: "22%", animationDelay: "1.6s" }}>✦</span>
+                <span className="spark" style={{ top: "80%",  left: "75%", animationDelay: "0.9s" }}>✧</span>
+                <div className="empty-mine-icon">
+                  <BookOpen size={44} />
+                </div>
+                <h2 className="empty-mine-title">Your grimoire awaits</h2>
+                <p className="empty-mine-text">
+                  No spell has been cast yet.<br />
+                  The catalog holds countless secrets —<br />
+                  venture forth and begin your studies.
+                </p>
+                <button className="empty-mine-cta" onClick={() => setTab("catalogo")}>
+                  <Sparkles size={15} /> Explore the catalog
+                </button>
+              </div>
             ) : mine.length === 0 ? (
               <p className="muted">You have no courses in this category.</p>
             ) : (
@@ -278,6 +295,17 @@ export default function Home({
                 {mine.map((c) => (
                   <CourseCard key={c.id} c={c} p={progress[c.id]} onOpen={onOpen} />
                 ))}
+                <button className="course-card discover-card" onClick={() => setTab("catalogo")}>
+                  <span className="discover-spark" style={{ top: "14%", left: "12%",  animationDelay: "0s"   }}>✦</span>
+                  <span className="discover-spark" style={{ top: "20%", right: "10%", animationDelay: "0.8s" }}>✧</span>
+                  <span className="discover-spark" style={{ bottom: "18%", left: "18%", animationDelay: "1.3s" }}>✧</span>
+                  <span className="discover-spark" style={{ bottom: "14%", right: "14%", animationDelay: "0.5s" }}>✦</span>
+                  <div className="discover-icon">
+                    <Sparkles size={28} />
+                  </div>
+                  <div className="discover-title">Discover more</div>
+                  <div className="discover-text">Explore the catalog and find your next course</div>
+                </button>
               </div>
             )}
           </>
