@@ -5,7 +5,7 @@ import {
   type AgentStatus,
   type Profile,
 } from "../api";
-import { Check, Plus, RefreshCw, X } from "./icons";
+import { Check, Plus, RefreshCw, Trash, X } from "./icons";
 
 /* Profiles = departments / learner roles. Creating one adds a roles row (so it
    can be assigned to users and filtered in the catalog) and asks agents_back to
@@ -107,6 +107,9 @@ export default function AdminProfiles() {
                         <RefreshCw size={13} /> {p.agent_status === "failed" ? "Retry" : "Generate agent"}
                       </button>
                     )}
+                    <button className="icon-btn danger" title="Delete profile" onClick={() => {}}>
+                      <Trash size={14} />
+                    </button>
                   </td>
                 </tr>
               ))}

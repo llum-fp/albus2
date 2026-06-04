@@ -197,6 +197,7 @@ export default function Home({
               <CatalogFilters
                 courses={courses}
                 progress={progress}
+                search={search}
                 statusFilter={statusFilter}
                 setStatusFilter={setStatusFilter}
                 durationFilter={durationFilter}
@@ -316,6 +317,7 @@ export default function Home({
 function CatalogFilters({
   courses,
   progress,
+  search,
   statusFilter,
   setStatusFilter,
   durationFilter,
@@ -330,6 +332,7 @@ function CatalogFilters({
 }: {
   courses: CourseSummary[];
   progress: Record<string, CourseProgress>;
+  search: string;
   statusFilter: StatusFilter;
   setStatusFilter: (f: StatusFilter) => void;
   durationFilter: DurationFilter;
@@ -342,31 +345,54 @@ function CatalogFilters({
   hasActiveFilters: boolean;
   onClearAll: () => void;
 }) {
-  const total = courses.length;
-  const statusCounts: Record<StatusFilter, number> = {
-    all: total,
-    "not-started": courses.filter((c) => !progress[c.id]).length,
-    "in-progress": courses.filter((c) => progress[c.id] && !progress[c.id].completed).length,
-    completed: courses.filter((c) => !!progress[c.id]?.completed).length,
-  };
-  const durationCounts: Record<DurationFilter, number> = {
-    all: total,
-    short: courses.filter((c) => c.duration_min != null && c.duration_min <= 30).length,
-    medium: courses.filter((c) => c.duration_min != null && c.duration_min > 30 && c.duration_min <= 60).length,
-    long: courses.filter((c) => c.duration_min != null && c.duration_min > 60).length,
-  };
-  const sizeCounts: Record<SizeFilter, number> = {
-    all: total,
-    small: courses.filter((c) => c.module_count <= 2).length,
-    medium: courses.filter((c) => c.module_count >= 3 && c.module_count <= 5).length,
-    large: courses.filter((c) => c.module_count >= 6).length,
-  };
-
   const profiles = isAdmin
     ? ([...new Set(courses.map((c) => c.profile).filter(Boolean))] as string[]).sort()
     : [];
-  const profileCounts: Record<string, number> = { all: total };
-  for (const p of profiles) profileCounts[p] = courses.filter((c) => c.profile === p).length;
+
+  function countWhere(
+    st: StatusFilter = "all",
+    dur: DurationFilter = "all",
+    sz: SizeFilter = "all",
+    prof: string = "all"
+  ): number {
+    return courses.filter((c) => {
+      const p = progress[c.id];
+      if (search && !`${c.title} ${c.description}`.toLowerCase().includes(search.toLowerCase())) return false;
+      if (st === "not-started" && p) return false;
+      if (st === "in-progress" && (!p || p.completed)) return false;
+      if (st === "completed" && (!p || !p.completed)) return false;
+      if (dur === "short" && (c.duration_min == null || c.duration_min > 30)) return false;
+      if (dur === "medium" && (c.duration_min == null || c.duration_min <= 30 || c.duration_min > 60)) return false;
+      if (dur === "long" && (c.duration_min == null || c.duration_min <= 60)) return false;
+      if (sz === "small" && c.module_count > 2) return false;
+      if (sz === "medium" && (c.module_count < 3 || c.module_count > 5)) return false;
+      if (sz === "large" && c.module_count < 6) return false;
+      if (prof !== "all" && c.profile !== prof) return false;
+      return true;
+    }).length;
+  }
+
+  const statusCounts: Record<StatusFilter, number> = {
+    all: countWhere("all", durationFilter, sizeFilter, profileFilter),
+    "not-started": countWhere("not-started", durationFilter, sizeFilter, profileFilter),
+    "in-progress": countWhere("in-progress", durationFilter, sizeFilter, profileFilter),
+    completed: countWhere("completed", durationFilter, sizeFilter, profileFilter),
+  };
+  const durationCounts: Record<DurationFilter, number> = {
+    all: countWhere(statusFilter, "all", sizeFilter, profileFilter),
+    short: countWhere(statusFilter, "short", sizeFilter, profileFilter),
+    medium: countWhere(statusFilter, "medium", sizeFilter, profileFilter),
+    long: countWhere(statusFilter, "long", sizeFilter, profileFilter),
+  };
+  const sizeCounts: Record<SizeFilter, number> = {
+    all: countWhere(statusFilter, durationFilter, "all", profileFilter),
+    small: countWhere(statusFilter, durationFilter, "small", profileFilter),
+    medium: countWhere(statusFilter, durationFilter, "medium", profileFilter),
+    large: countWhere(statusFilter, durationFilter, "large", profileFilter),
+  };
+
+  const profileCounts: Record<string, number> = { all: countWhere(statusFilter, durationFilter, sizeFilter, "all") };
+  for (const p of profiles) profileCounts[p] = countWhere(statusFilter, durationFilter, sizeFilter, p);
 
   function FilterOption<T extends string>({
     value,
@@ -384,7 +410,7 @@ function CatalogFilters({
     return (
       <button
         className={`filter-option ${current === value ? "active" : ""}`}
-        onClick={() => onChange(value)}
+        onClick={() => onChange(current === value ? "all" as unknown as T : value)}
       >
         <span>{label}</span>
         <span className="filter-option-count">{count}</span>
@@ -435,13 +461,13 @@ function CatalogFilters({
             onClick={() => setProfileFilter("all")}
           >
             <span>All</span>
-            <span className="filter-option-count">{total}</span>
+            <span className="filter-option-count">{profileCounts.all}</span>
           </button>
           {profiles.map((p) => (
             <button
               key={p}
               className={`filter-option ${profileFilter === p ? "active" : ""}`}
-              onClick={() => setProfileFilter(p)}
+              onClick={() => setProfileFilter(profileFilter === p ? "all" : p)}
             >
               <span style={{ textTransform: "capitalize" }}>{p}</span>
               <span className="filter-option-count">{profileCounts[p]}</span>
