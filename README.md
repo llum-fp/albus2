@@ -158,6 +158,23 @@ duration (corta|adecuada|larga), comments?`.
 > (`POST /api/admin/courses` → agents_back → headless Claude). New courses land as JSON files that
 > `GET /api/courses` then lists for learners. See [`CLAUDE.md`](CLAUDE.md).
 
+### Course creation time estimates
+
+Measured from JSONL session logs across 7 real builds (page 344195112 × 5, two-page run × 1, page 998899716 × 1):
+
+| Confluence pages | Estimated time | Observed range |
+|-----------------|---------------|----------------|
+| 1 | ~2 min | 1–4 min |
+| 2 | ~4–5 min | 3–6 min |
+| 3 | ~7 min | 5–9 min |
+| 4+ | ~9–10 min | 7–13 min |
+
+Formula: `~1.5 + (N_pages − 1) × 2.5` minutes.
+
+Add ~1–2 min if the source extract is not already cached (fresh page, first build for that page_id) or if the page contains many images. One session hit 12.8 min on a single page (API retry/timeout) — treat ~15 % of builds as potential outliers.
+
+The `duration_min` target has negligible effect on wall-clock build time; it shapes output length, not execution speed.
+
 ---
 
 ## Course JSON schema
