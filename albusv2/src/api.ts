@@ -41,6 +41,7 @@ export interface CourseSummary {
   module_count: number;
   lesson_count: number;
   duration_min?: number | null;
+  profile?: string | null;
 }
 
 export interface Course {

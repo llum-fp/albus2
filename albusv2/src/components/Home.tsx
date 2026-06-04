@@ -10,6 +10,9 @@ import { progressPct, type CourseProgress } from "../progress";
 type Tab = "catalogo" | "mios" | "paths";
 type MineFilter = "all" | "active" | "done";
 type SortBy = "title-asc" | "title-desc" | "modules-desc" | "modules-asc";
+type StatusFilter = "all" | "not-started" | "in-progress" | "completed";
+type DurationFilter = "all" | "short" | "medium" | "long";
+type SizeFilter = "all" | "small" | "medium" | "large";
 
 export default function Home({
   user,
@@ -31,6 +34,10 @@ export default function Home({
   const [mineFilter, setMineFilter] = useState<MineFilter>("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("title-asc");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [durationFilter, setDurationFilter] = useState<DurationFilter>("all");
+  const [sizeFilter, setSizeFilter] = useState<SizeFilter>("all");
+  const [profileFilter, setProfileFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchCourses()
@@ -66,19 +73,38 @@ export default function Home({
 
   const displayedCourses = useMemo(() => {
     return courses
-      .filter((c) =>
-        !search ||
-        `${c.title} ${c.description}`.toLowerCase().includes(search.toLowerCase())
-      )
+      .filter((c) => {
+        if (search && !`${c.title} ${c.description}`.toLowerCase().includes(search.toLowerCase())) return false;
+        const p = progress[c.id];
+        if (statusFilter === "not-started" && p) return false;
+        if (statusFilter === "in-progress" && (!p || p.completed)) return false;
+        if (statusFilter === "completed" && (!p || !p.completed)) return false;
+        if (durationFilter === "short" && (c.duration_min == null || c.duration_min > 30)) return false;
+        if (durationFilter === "medium" && (c.duration_min == null || c.duration_min <= 30 || c.duration_min > 60)) return false;
+        if (durationFilter === "long" && (c.duration_min == null || c.duration_min <= 60)) return false;
+        if (sizeFilter === "small" && c.module_count > 2) return false;
+        if (sizeFilter === "medium" && (c.module_count < 3 || c.module_count > 5)) return false;
+        if (sizeFilter === "large" && c.module_count < 6) return false;
+        if (profileFilter !== "all" && c.profile !== profileFilter) return false;
+        return true;
+      })
       .sort((a, b) => {
         if (sortBy === "title-asc") return a.title.localeCompare(b.title);
         if (sortBy === "title-desc") return b.title.localeCompare(a.title);
         if (sortBy === "modules-desc") return b.module_count - a.module_count;
         return a.module_count - b.module_count;
       });
-  }, [courses, search, sortBy]);
+  }, [courses, search, sortBy, statusFilter, durationFilter, sizeFilter, profileFilter, progress]);
 
-  const hasActiveFilters = search !== "";
+  const hasActiveFilters = search !== "" || statusFilter !== "all" || durationFilter !== "all" || sizeFilter !== "all" || profileFilter !== "all";
+
+  function clearAllFilters() {
+    setSearch("");
+    setStatusFilter("all");
+    setDurationFilter("all");
+    setSizeFilter("all");
+    setProfileFilter("all");
+  }
 
   const enrolled = courses.filter((c) => progress[c.id]);
   const mine = enrolled.filter((c) => {
@@ -167,31 +193,48 @@ export default function Home({
               </select>
             </div>
 
-            <div className="catalog-meta">
-              <span className="catalog-count">
-                {hasActiveFilters
-                  ? `${displayedCourses.length} of ${courses.length} courses`
-                  : `${courses.length} course${courses.length !== 1 ? "s" : ""}`}
-              </span>
-            </div>
+            <div className="catalog-layout">
+              <CatalogFilters
+                courses={courses}
+                progress={progress}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                durationFilter={durationFilter}
+                setDurationFilter={setDurationFilter}
+                sizeFilter={sizeFilter}
+                setSizeFilter={setSizeFilter}
+                profileFilter={profileFilter}
+                setProfileFilter={setProfileFilter}
+                isAdmin={user.role === "Admin"}
+                hasActiveFilters={hasActiveFilters}
+                onClearAll={clearAllFilters}
+              />
 
-            {displayedCourses.length === 0 ? (
-              <div className="catalog-empty">
-                <p>No courses match your search.</p>
-                <button
-                  className="chip active"
-                  onClick={() => setSearch("")}
-                >
-                  Clear filters
-                </button>
+              <div>
+                <div className="catalog-meta">
+                  <span className="catalog-count">
+                    {hasActiveFilters
+                      ? `${displayedCourses.length} of ${courses.length} courses`
+                      : `${courses.length} course${courses.length !== 1 ? "s" : ""}`}
+                  </span>
+                </div>
+
+                {displayedCourses.length === 0 ? (
+                  <div className="catalog-empty">
+                    <p>No courses match your filters.</p>
+                    <button className="chip active" onClick={clearAllFilters}>
+                      Clear filters
+                    </button>
+                  </div>
+                ) : (
+                  <div className="course-grid">
+                    {displayedCourses.map((c) => (
+                      <CourseCard key={c.id} c={c} p={progress[c.id]} onOpen={onOpen} />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="course-grid">
-                {displayedCourses.map((c) => (
-                  <CourseCard key={c.id} c={c} p={progress[c.id]} onOpen={onOpen} />
-                ))}
-              </div>
-            )}
+            </div>
           </>
         )}
 
@@ -266,6 +309,146 @@ export default function Home({
       </main>
 
       <footer className="home-footer">OmniAccess Albus — Training Platform</footer>
+    </div>
+  );
+}
+
+function CatalogFilters({
+  courses,
+  progress,
+  statusFilter,
+  setStatusFilter,
+  durationFilter,
+  setDurationFilter,
+  sizeFilter,
+  setSizeFilter,
+  profileFilter,
+  setProfileFilter,
+  isAdmin,
+  hasActiveFilters,
+  onClearAll,
+}: {
+  courses: CourseSummary[];
+  progress: Record<string, CourseProgress>;
+  statusFilter: StatusFilter;
+  setStatusFilter: (f: StatusFilter) => void;
+  durationFilter: DurationFilter;
+  setDurationFilter: (f: DurationFilter) => void;
+  sizeFilter: SizeFilter;
+  setSizeFilter: (f: SizeFilter) => void;
+  profileFilter: string;
+  setProfileFilter: (f: string) => void;
+  isAdmin: boolean;
+  hasActiveFilters: boolean;
+  onClearAll: () => void;
+}) {
+  const total = courses.length;
+  const statusCounts: Record<StatusFilter, number> = {
+    all: total,
+    "not-started": courses.filter((c) => !progress[c.id]).length,
+    "in-progress": courses.filter((c) => progress[c.id] && !progress[c.id].completed).length,
+    completed: courses.filter((c) => !!progress[c.id]?.completed).length,
+  };
+  const durationCounts: Record<DurationFilter, number> = {
+    all: total,
+    short: courses.filter((c) => c.duration_min != null && c.duration_min <= 30).length,
+    medium: courses.filter((c) => c.duration_min != null && c.duration_min > 30 && c.duration_min <= 60).length,
+    long: courses.filter((c) => c.duration_min != null && c.duration_min > 60).length,
+  };
+  const sizeCounts: Record<SizeFilter, number> = {
+    all: total,
+    small: courses.filter((c) => c.module_count <= 2).length,
+    medium: courses.filter((c) => c.module_count >= 3 && c.module_count <= 5).length,
+    large: courses.filter((c) => c.module_count >= 6).length,
+  };
+
+  const profiles = isAdmin
+    ? ([...new Set(courses.map((c) => c.profile).filter(Boolean))] as string[]).sort()
+    : [];
+  const profileCounts: Record<string, number> = { all: total };
+  for (const p of profiles) profileCounts[p] = courses.filter((c) => c.profile === p).length;
+
+  function FilterOption<T extends string>({
+    value,
+    current,
+    label,
+    count,
+    onChange,
+  }: {
+    value: T;
+    current: T;
+    label: string;
+    count: number;
+    onChange: (v: T) => void;
+  }) {
+    return (
+      <button
+        className={`filter-option ${current === value ? "active" : ""}`}
+        onClick={() => onChange(value)}
+      >
+        <span>{label}</span>
+        <span className="filter-option-count">{count}</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="catalog-filters">
+      <div className="filter-panel-head">
+        <span className="filter-panel-title">Filters</span>
+        {hasActiveFilters && (
+          <button className="filter-clear-all" onClick={onClearAll}>
+            Clear all
+          </button>
+        )}
+      </div>
+
+      <div className="filter-section">
+        <div className="filter-section-title">Status</div>
+        <FilterOption value="all" current={statusFilter} label="All" count={statusCounts.all} onChange={setStatusFilter} />
+        <FilterOption value="not-started" current={statusFilter} label="Not started" count={statusCounts["not-started"]} onChange={setStatusFilter} />
+        <FilterOption value="in-progress" current={statusFilter} label="In progress" count={statusCounts["in-progress"]} onChange={setStatusFilter} />
+        <FilterOption value="completed" current={statusFilter} label="Completed" count={statusCounts.completed} onChange={setStatusFilter} />
+      </div>
+
+      <div className="filter-section">
+        <div className="filter-section-title">Duration</div>
+        <FilterOption value="all" current={durationFilter} label="All" count={durationCounts.all} onChange={setDurationFilter} />
+        <FilterOption value="short" current={durationFilter} label="≤ 30 min" count={durationCounts.short} onChange={setDurationFilter} />
+        <FilterOption value="medium" current={durationFilter} label="30 – 60 min" count={durationCounts.medium} onChange={setDurationFilter} />
+        <FilterOption value="long" current={durationFilter} label="> 1 hour" count={durationCounts.long} onChange={setDurationFilter} />
+      </div>
+
+      <div className="filter-section">
+        <div className="filter-section-title">Size</div>
+        <FilterOption value="all" current={sizeFilter} label="All" count={sizeCounts.all} onChange={setSizeFilter} />
+        <FilterOption value="small" current={sizeFilter} label="1–2 modules" count={sizeCounts.small} onChange={setSizeFilter} />
+        <FilterOption value="medium" current={sizeFilter} label="3–5 modules" count={sizeCounts.medium} onChange={setSizeFilter} />
+        <FilterOption value="large" current={sizeFilter} label="6+ modules" count={sizeCounts.large} onChange={setSizeFilter} />
+      </div>
+
+      {isAdmin && profiles.length > 0 && (
+        <div className="filter-section">
+          <div className="filter-section-title">Department</div>
+          <button
+            className={`filter-option ${profileFilter === "all" ? "active" : ""}`}
+            onClick={() => setProfileFilter("all")}
+          >
+            <span>All</span>
+            <span className="filter-option-count">{total}</span>
+          </button>
+          {profiles.map((p) => (
+            <button
+              key={p}
+              className={`filter-option ${profileFilter === p ? "active" : ""}`}
+              onClick={() => setProfileFilter(p)}
+            >
+              <span style={{ textTransform: "capitalize" }}>{p}</span>
+              <span className="filter-option-count">{profileCounts[p]}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

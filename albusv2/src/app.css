@@ -570,7 +570,7 @@
 .home-main {
   flex: 1;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1300px;
   margin: 0 auto;
   padding: 56px 48px;
 }
@@ -579,7 +579,7 @@
 }
 .course-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
   gap: 18px;
 }
 .course-card {
@@ -753,6 +753,103 @@
   padding: 60px 0;
   color: var(--oa-text-secondary);
   font-size: 0.9rem;
+}
+
+/* ====================== CATALOG FILTER SIDEBAR ====================== */
+.catalog-layout {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+.catalog-filters {
+  padding: 0 20px 0 0;
+  border-right: 1px solid var(--oa-border);
+  position: sticky;
+  top: 24px;
+}
+.filter-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding: 0 4px;
+}
+.filter-panel-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--oa-text-secondary);
+}
+.filter-clear-all {
+  font-size: 0.75rem;
+  color: var(--oa-red);
+  font-weight: 500;
+  transition: opacity 0.12s;
+}
+.filter-clear-all:hover {
+  opacity: 0.75;
+}
+.filter-section {
+  margin-bottom: 18px;
+}
+.filter-section:last-child {
+  margin-bottom: 0;
+}
+.filter-section-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--oa-text-muted);
+  padding: 0 8px;
+  margin-bottom: 4px;
+}
+.filter-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: var(--radius-btn);
+  font-size: 0.83rem;
+  color: var(--oa-text-secondary);
+  transition: background 0.12s, color 0.12s;
+  text-align: left;
+  gap: 6px;
+}
+.filter-option:hover {
+  background: var(--oa-card-hover);
+  color: var(--oa-text);
+}
+.filter-option.active {
+  color: var(--oa-red);
+  font-weight: 500;
+  background: rgba(193, 3, 47, 0.08);
+}
+.filter-option-count {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--oa-text-muted);
+  background: var(--oa-bg);
+  padding: 1px 6px;
+  border-radius: 9999px;
+  min-width: 20px;
+  text-align: center;
+}
+.filter-option.active .filter-option-count {
+  background: rgba(193, 3, 47, 0.12);
+  color: var(--oa-red);
+}
+@media (max-width: 800px) {
+  .catalog-layout {
+    grid-template-columns: 1fr;
+  }
+  .catalog-filters {
+    position: static;
+  }
 }
 
 /* ====================== PATH VIEWER ====================== */

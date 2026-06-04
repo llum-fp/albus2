@@ -38,11 +38,9 @@ def list_courses(
     if not COURSES_DIR.exists():
         return courses
     visible = get_visible_session_ids(db, x_albus_role)
-    duration_map = {
-        r.session_id: r.duration_min
-        for r in db.query(Course.session_id, Course.duration_min).all()
-        if r.session_id
-    }
+    rows = db.query(Course.session_id, Course.duration_min, Course.profile).all()
+    duration_map = {r.session_id: r.duration_min for r in rows if r.session_id}
+    profile_map = {r.session_id: r.profile for r in rows if r.session_id}
     for path in sorted(COURSES_DIR.glob("*.json")):
         session_id = stem_to_session(path.stem)
         if session_id not in visible:
@@ -61,6 +59,7 @@ def list_courses(
             "module_count": len(modules),
             "lesson_count": sum(len(m.get("lessons", [])) for m in modules),
             "duration_min": duration_map.get(session_id),
+            "profile": profile_map.get(session_id),
         })
     return courses
 
