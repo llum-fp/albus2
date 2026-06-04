@@ -403,7 +403,24 @@ export default function CourseViewer({
               <div className="lesson-images">
                 {lesson.images.map((img, i) => (
                   <figure className="lesson-figure" key={`${img.path}-${i}`}>
-                    <img src={mediaUrl(img.path)} alt={img.caption || lesson.title} loading="lazy" />
+                    <img
+                      src={mediaUrl(img.path)}
+                      alt={img.caption || lesson.title}
+                      loading="lazy"
+                      onLoad={(e) => {
+                        // La figure (width: fit-content) calcula su ancho con el
+                        // intrínseco de la imagen e ignora el tope max-height:70vh
+                        // del CSS -> en imágenes altas queda una banda vacía lateral.
+                        // Trasladamos el tope de alto a un tope de ancho equivalente
+                        // para que caja e imagen midan siempre lo mismo.
+                        const t = e.currentTarget;
+                        const fig = t.closest("figure");
+                        if (fig && t.naturalWidth && t.naturalHeight) {
+                          const wAt70vh = (70 * t.naturalWidth) / t.naturalHeight;
+                          fig.style.maxWidth = `min(100%, ${wAt70vh.toFixed(2)}vh)`;
+                        }
+                      }}
+                    />
                     {img.caption && <figcaption>{img.caption}</figcaption>}
                   </figure>
                 ))}
