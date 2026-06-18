@@ -274,6 +274,8 @@ export interface AdminCourse {
   podcast_url: string | null;
   module_count: number;
   lesson_count: number;
+  build_duration_sec: number | null;
+  tokens_total: number | null;
   created_at: string;
   updated_at: string;
 }

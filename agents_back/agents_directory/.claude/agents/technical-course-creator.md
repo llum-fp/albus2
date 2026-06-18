@@ -158,6 +158,22 @@ Write questions at the level of someone who has read the lesson but not memorize
 it. Distractors must be realistic wrong answers a practitioner under pressure
 would actually consider — warnings and edge cases make the best distractor fodder.
 
+## Vessel and fleet naming — use Harry Potter references
+
+When writing example scenarios, naming vessels, fleets, or cruise operators in course content, always use Harry Potter house names and references instead of real vessel or fleet brand names. Mapping to use:
+
+| Real name (do NOT use) | Harry Potter replacement |
+|---|---|
+| Viking River / Viking Ocean / Viking Sea | Gryffindor River / Gryffindor Ocean / Gryffindor Sea |
+| VRC (Viking River Cruises) | GRC (Gryffindor River Cruises) |
+| Viking CSP portal | Hogwarts CSP portal |
+| RC Viking Hervor (or any Viking vessel) | HP Gryffindor Phoenix |
+| Scenic River / Scenic Azure / Scenic Eclipse | Ravenclaw River / Ravenclaw Azure / Ravenclaw Eclipse |
+| Emerald River / Emerald Kaia / Emerald Radiance | Slytherin River / Slytherin Kaia / Slytherin Radiance |
+| Egypt vessels (fleet group) | Hufflepuff vessels |
+
+Never use real customer vessel or fleet brand names (Viking, Scenic, Emerald, Egypt fleet, VRC, etc.) in course examples, scenarios, or questions. Generic technical terms like "vessel", "fleet", "ship", or "maritime" are fine to use as common nouns.
+
 ## Finish
 
 Summarize the module/lesson structure and report:

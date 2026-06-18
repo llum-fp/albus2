@@ -58,6 +58,7 @@ from app.services.course_files import (
     session_to_stem,
     update_course_json,
 )
+from app.services.session_stats import read_session_stats
 
 
 log = logging.getLogger("platform_back.admin")
@@ -113,6 +114,11 @@ def _finish_build(db_id: int, result: dict) -> None:
             if value is not None:
                 setattr(course, key, value)
         course.status = "completed" if result.get("json_exists") else "failed"
+        if course.status == "completed" and course.session_id:
+            stats = read_session_stats(course.session_id)
+            if stats:
+                course.build_duration_sec = stats["duration_sec"]
+                course.tokens_total = stats["tokens_total"]
         course.updated_at = datetime.now(timezone.utc)
         db.commit()
 
@@ -237,6 +243,8 @@ def _admin_course_dict(course: Course) -> dict:
         "podcast_url": _podcast_url(course),
         "module_count": modules,
         "lesson_count": lessons,
+        "build_duration_sec": course.build_duration_sec,
+        "tokens_total": course.tokens_total,
         "created_at": course.created_at,
         "updated_at": course.updated_at,
     }

@@ -25,6 +25,7 @@ from app.crud.role import get_or_create_role
 from app.models.course import Course
 from app.models.role import VALID_ROLES
 from app.services.course_files import read_course_meta, stem_to_session
+from app.services.session_stats import read_session_stats
 
 log = logging.getLogger("platform_back.course_sync")
 
@@ -72,6 +73,53 @@ def ensure_podcast_columns(engine) -> bool:
             conn.execute(text("ALTER TABLE courses ADD COLUMN podcast_path VARCHAR(1000)"))
     log.info("Migrated: added courses.%s", ", ".join(missing))
     return True
+
+
+def ensure_build_stats_columns(engine) -> bool:
+    """Add ``courses.build_duration_sec`` and ``courses.tokens_total`` if missing.
+
+    Returns True if any column was just created.
+    """
+    insp = inspect(engine)
+    cols = {c["name"] for c in insp.get_columns("courses")}
+    missing = [c for c in ("build_duration_sec", "tokens_total") if c not in cols]
+    if not missing:
+        return False
+    with engine.begin() as conn:
+        for col in missing:
+            conn.execute(text(f"ALTER TABLE courses ADD COLUMN {col} INTEGER"))
+    log.info("Migrated: added courses.%s", ", ".join(missing))
+    return True
+
+
+def backfill_build_stats(db: Session) -> int:
+    """Populate build_duration_sec and tokens_total for completed courses that lack them.
+
+    Runs once at startup; reads each course's session JSONL from
+    ``~/.claude/projects/``.  Idempotent: skips rows that already have both
+    fields set.
+    """
+    courses = (
+        db.query(Course)
+        .filter(
+            Course.status == "completed",
+            Course.session_id.isnot(None),
+            Course.tokens_total.is_(None),
+        )
+        .all()
+    )
+    updated = 0
+    for course in courses:
+        stats = read_session_stats(course.session_id)
+        if not stats:
+            continue
+        course.build_duration_sec = stats["duration_sec"]
+        course.tokens_total = stats["tokens_total"]
+        updated += 1
+    if updated:
+        db.commit()
+        log.info("Backfilled build stats for %d course(s)", updated)
+    return updated
 
 
 def reconcile(db: Session) -> dict:

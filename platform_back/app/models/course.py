@@ -26,6 +26,8 @@ class Course(Base):
     # failed; podcast_path is the synthesized audio file once completed.
     podcast_status: Mapped[str] = mapped_column(String(20), default="none", server_default="none", nullable=False)
     podcast_path: Mapped[str | None] = mapped_column(String(1000))
+    build_duration_sec: Mapped[int | None] = mapped_column()
+    tokens_total: Mapped[int | None] = mapped_column()
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now(), server_default=func.now())

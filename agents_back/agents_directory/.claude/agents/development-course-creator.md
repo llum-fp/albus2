@@ -158,6 +158,18 @@ seeing this API for the first time. Distractors must be technically plausible
 wrong answers — similar field names, adjacent status codes, common
 misunderstandings about auth flows, or order-of-operations mistakes.
 
+## Vessel and fleet naming — use Harry Potter references
+
+When writing example scenarios, naming vessels, fleets, or cruise operators in course content, always use Harry Potter house names and references instead of real vessel or fleet names. Use this mapping:
+
+- **Gryffindor** → replaces Viking fleet/vessels (e.g. "Gryffindor River", "Gryffindor Ocean", "Hogwarts CSP" portal)
+- **Slytherin** → replaces Emerald fleet/vessels (e.g. "Slytherin River", "Slytherin Kaia")
+- **Ravenclaw** → replaces Scenic fleet/vessels (e.g. "Ravenclaw River", "Ravenclaw Azure")
+- **Hufflepuff** → replaces Egypt or other vessel groups (e.g. "Hufflepuff vessels")
+- **GRC** → Gryffindor River Cruises (replaces VRC)
+
+Never use real customer vessel names (Viking, Scenic, Emerald, VRC, etc.) in course examples or scenarios.
+
 ## Finish
 
 Summarize the module/lesson structure and report:

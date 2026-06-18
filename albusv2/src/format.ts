@@ -35,6 +35,23 @@ export function formatDuration(min: number | null | undefined): string | null {
   return rem > 0 ? `${h}h ${rem}min` : `${h}h`;
 }
 
+/** Format build duration from seconds, e.g. 319 → "5m 19s", 45 → "45s". */
+export function formatBuildDuration(sec: number | null | undefined): string {
+  if (sec == null) return "—";
+  if (sec < 60) return `${sec}s`;
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
+
+/** Compact token count, e.g. 226675 → "227K", 1500000 → "1.5M". */
+export function formatTokens(n: number | null | undefined): string {
+  if (n == null) return "—";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
+  return String(n);
+}
+
 /** Compact relative time, e.g. "just now", "3 min ago", "2 h ago", "4 d ago". */
 export function timeAgo(s: string): string {
   const diffMs = Date.now() - new Date(asUtc(s)).getTime();

@@ -9,7 +9,8 @@ from app.routers import (
 from app.routers import admin_paths, api_paths, api_profiles
 import app.models  # noqa: F401 — ensure models are registered before create_all
 from app.services.course_sync import (
-    ensure_base_roles, ensure_podcast_columns, ensure_published_column, reconcile,
+    ensure_base_roles, ensure_build_stats_columns, ensure_podcast_columns,
+    ensure_published_column, reconcile, backfill_build_stats,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -19,9 +20,11 @@ Base.metadata.create_all(bind=engine)
 # orphan pending builds + podcast generations). See course_sync.py.
 ensure_published_column(engine)
 ensure_podcast_columns(engine)
+ensure_build_stats_columns(engine)
 with SessionLocal() as _db:
     ensure_base_roles(_db)
     reconcile(_db)
+    backfill_build_stats(_db)
 
 app = FastAPI(title="Platform Back", version="1.0.0")
 

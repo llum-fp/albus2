@@ -20,6 +20,8 @@ class AdminCourseRead(BaseModel):
     podcast_url: str | None = None        # served audio URL when completed
     module_count: int
     lesson_count: int
+    build_duration_sec: int | None = None
+    tokens_total: int | None = None
     created_at: datetime
     updated_at: datetime
 

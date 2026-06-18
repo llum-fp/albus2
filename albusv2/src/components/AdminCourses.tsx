@@ -21,7 +21,7 @@ import {
 import { useAdminJobs } from "../useAdminJobs";
 import { AlertTriangle, Check, ChevronDown, ExternalLink, Eye, Globe, GraduationCap, Headphones, Pencil, Plus, RefreshCw, Search, Sparkles, X } from "./icons";
 import PodcastPlayer from "./PodcastPlayer";
-import { elapsedSince, formatLocalDateTime as fmtDate, timeAgo } from "../format";
+import { elapsedSince, formatBuildDuration, formatLocalDateTime as fmtDate, formatTokens, timeAgo } from "../format";
 
 const STATUS_FILTERS = ["all", "published", "draft", "pending", "failed"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -372,6 +372,8 @@ export default function AdminCourses({
                 <th>Published</th>
                 <th>Podcast</th>
                 <th>Mod / Les</th>
+                <th>Build time</th>
+                <th>Tokens</th>
                 <th>Updated</th>
                 <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
@@ -402,6 +404,8 @@ export default function AdminCourses({
                     />
                   </td>
                   <td className="cell-muted">{c.module_count} / {c.lesson_count}</td>
+                  <td className="cell-muted">{formatBuildDuration(c.build_duration_sec)}</td>
+                  <td className="cell-muted">{formatTokens(c.tokens_total)}</td>
                   <td className="cell-muted">{fmtDate(c.updated_at)}</td>
                   <td className="cell-actions">
                     <button
