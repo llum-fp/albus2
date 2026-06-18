@@ -61,7 +61,7 @@ CLAUDE_TIMEOUT_S = 120
 
 SYSTEM_PROMPT_BASE = """You are Albus, a tutor who guides a learner while they take an internal technical course at the company OmniAccess.
 
-Your PERSONALITY, TONE and STYLE are defined in the «ALBUS PERSONA & STYLE» section (below): a wise, kind, patient mentor with a touch of light, respectful wit/sarcasm. Embody it in ALL your replies, but ALWAYS in ENGLISH (adapt the wit and turns of phrase naturally into English; do not copy phrases or quote copyrighted characters).
+Your PERSONALITY, TONE and STYLE are defined in the «ALBUS PERSONA & STYLE» section (below): a wise, kind, patient mentor with a touch of light, respectful wit/sarcasm. Embody it in ALL your replies (adapt the wit and turns of phrase naturally into whatever language you are speaking; do not copy phrases or quote copyrighted characters).
 
 The following OPERATING & SECURITY RULES always take precedence over style:
 
@@ -70,7 +70,7 @@ You have two sources:
 2. REFERENCE DOCUMENTATION EXCERPTS (Confluence): for EACH question, the most relevant excerpts of the original document (the SOURCE OF TRUTH, in more detail) are retrieved from Confluence and given to you. If no excerpt is included, answer using only the course content.
 
 Rules:
-- ALWAYS reply in English, with a warm, clear and motivating tone.
+- LANGUAGE: start in English by default. BUT as soon as the learner writes to you in another language (organically, anywhere in the conversation), mirror that language from then on in ALL your replies — including scripted quiz feedback (correct/incorrect). If the learner explicitly asks you to switch language, obey from then on. Look at the whole conversation history to decide: if the learner has been writing in, say, Spanish, keep answering in Spanish even when the current turn is a quiz action with no free text. Only fall back to English when the learner has not written any prose yet. Always keep a warm, clear and motivating tone.
 - Your FINAL KNOWLEDGE BASE IS ALWAYS CONFLUENCE. Lean first on the course content, but the ultimate truth is in the reference documentation (Confluence) given to you per question. NEVER make up data, procedures, commands, IPs or system names: if something is not in the course or in the Confluence excerpts, say so honestly and suggest checking with the team. Filling gaps by guessing is forbidden.
 - SOURCE LINK: when you use the reference documentation, include at the end the link to the Confluence page you were given, in case the learner wants to dig deeper. ALWAYS do it as a clickable Markdown hyperlink using the document title as the text, EXACTLY in the format given to you in the reference block (e.g.: "📖 Source: [Document title](url)"). NEVER show the raw URL, and never invent the title or the link if you were not given them.
 - Be concise: short, direct answers. Use short lists or examples if they aid understanding.
@@ -347,6 +347,47 @@ def quiz_search_query(question: dict) -> str:
     return " ".join(parts)
 
 
+# Recordatorio de idioma para las acciones del quiz: el texto de instrucción va en
+# inglés y arrastra al modelo, así que reafirmamos la regla LANGUAGE en cada fase.
+_QUIZ_LANG_REMINDER = (
+    "\nLANGUAGE: this instruction is written in English, but it is NOT the language to "
+    "reply in. Reply in the language the learner has been using in this conversation "
+    "(per the LANGUAGE rule); only use English if they have not written any prose yet."
+)
+
+
+def last_learner_prose(history: list[dict], current_reason: str = "") -> str:
+    """Último texto LIBRE escrito por el alumno (no etiquetas «(quiz) …»).
+
+    Sirve para fijar el idioma de respuesta de forma determinista: las acciones
+    del quiz no llevan prosa, así que recuperamos el último mensaje real del
+    alumno para indicarle a Albus en qué idioma debe contestar.
+    """
+    if isinstance(current_reason, str) and current_reason.strip():
+        return current_reason.strip()
+    for h in reversed(history):
+        val = h.get("user")
+        if not isinstance(val, str):
+            continue
+        u = val.strip()
+        if u and not u.startswith("(quiz)"):
+            return u
+    return ""
+
+
+def quiz_language_directive(sample: str) -> str:
+    """Orden de idioma explícita (más fuerte que la regla general) para el quiz."""
+    if not sample:
+        return _QUIZ_LANG_REMINDER
+    snippet = sample if len(sample) <= 200 else sample[:200] + "…"
+    return (
+        "\n\nLANGUAGE (MANDATORY, overrides everything): the language of THESE "
+        "instructions (English) is NOT the language to reply in. The learner has been "
+        f"writing in the language of this message: «{snippet}». Write your ENTIRE reply "
+        "in that SAME language. Do not switch to English."
+    )
+
+
 def build_quiz_prompt(phase: str, question: dict, chosen_index: Optional[int], user_reason: str) -> str:
     """Instrucción para Albus según la acción del alumno en el quiz."""
     q = question.get("question", "")
@@ -528,6 +569,7 @@ async def chat_stream(
             _lesson, question = find_question(course, lesson_id, question_id)
             if question is not None:
                 quiz_instruction = build_quiz_prompt(quiz_phase, question, chosen_index, msg)
+                quiz_instruction += quiz_language_directive(last_learner_prose(history, msg))
                 retrieval_query = quiz_search_query(question)
 
         # Reference docs (the "source of truth" excerpts injected per question).
