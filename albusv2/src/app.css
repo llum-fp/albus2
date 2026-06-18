@@ -1630,10 +1630,20 @@
 .bubble.bot ul,
 .bubble.bot ol { margin: 0 0 0.6em; padding-left: 1.25em; }
 .bubble.bot li { margin: 0.15em 0; }
+.bubble.bot h1,
+.bubble.bot h2,
 .bubble.bot h3,
 .bubble.bot h4,
 .bubble.bot h5,
 .bubble.bot h6 { margin: 0.4em 0 0.3em; font-size: 0.95rem; line-height: 1.3; }
+.bubble.bot del { opacity: 0.7; }
+.bubble.bot hr {
+  border: none;
+  border-top: 1px solid var(--oa-border);
+  margin: 0.7em 0;
+}
+.bubble.bot input[type="checkbox"] { margin-right: 0.4em; }
+.bubble.bot ul:has(input[type="checkbox"]) { list-style: none; padding-left: 0.2em; }
 .bubble.bot a { color: var(--oa-red); text-decoration: underline; }
 .bubble.bot code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -1654,6 +1664,39 @@
   background: none;
   padding: 0;
   font-size: 0.8em;
+}
+.bubble.bot blockquote {
+  margin: 0 0 0.6em;
+  padding: 0.3em 0.8em;
+  border-left: 3px solid var(--oa-red);
+  background: rgba(127, 127, 127, 0.1);
+  border-radius: 0 6px 6px 0;
+  color: inherit;
+  opacity: 0.92;
+}
+.bubble.bot blockquote > :last-child { margin-bottom: 0; }
+.md-table-wrap {
+  margin: 0 0 0.6em;
+  overflow-x: auto;
+}
+.bubble.bot .md-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.8em;
+}
+.bubble.bot .md-table th,
+.bubble.bot .md-table td {
+  border: 1px solid var(--oa-border);
+  padding: 5px 9px;
+  text-align: left;
+  vertical-align: top;
+}
+.bubble.bot .md-table th {
+  background: rgba(127, 127, 127, 0.16);
+  font-weight: 600;
+}
+.bubble.bot .md-table tr:nth-child(even) td {
+  background: rgba(127, 127, 127, 0.06);
 }
 
 /* Cursor de streaming (parpadeo) */
@@ -1764,6 +1807,36 @@
   to   { transform: scale(1); }
 }
 
+.chat-scroll-down {
+  position: absolute;
+  right: 16px;
+  bottom: 84px;
+  z-index: 20;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--oa-border);
+  background: var(--oa-card);
+  color: var(--oa-text, inherit);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease, background 0.12s ease;
+  animation: chat-scroll-down-in 0.16s ease-out;
+}
+.chat-scroll-down:hover {
+  transform: translateY(-1px);
+  background: var(--oa-anthracite);
+}
+.chat-scroll-down.streaming {
+  border-color: var(--oa-red, #c1032f);
+}
+@keyframes chat-scroll-down-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .chat-input {
   display: flex;
   gap: 8px;

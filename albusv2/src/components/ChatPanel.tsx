@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Send, X } from "./icons";
+import { Send, X, ChevronDown } from "./icons";
 import type { ChatMsg } from "../useChat";
 import Markdown from "./Markdown";
 
@@ -29,11 +29,28 @@ export default function ChatPanel({
   const [draft, setDraft] = useState("");
   const [dragging, setDragging] = useState(false);
   const [flashing, setFlashing] = useState(false);
+  const [atBottom, setAtBottom] = useState(true);
   const bodyRef = useRef<HTMLDivElement>(null);
 
+  // ¿Está el chat pegado al fondo? (con margen para no exigir el píxel exacto)
+  const isNearBottom = (el: HTMLDivElement) =>
+    el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const el = bodyRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  }, []);
+
+  // Solo auto-scrollea si el usuario ya estaba al fondo; si subió a leer, se respeta.
   useEffect(() => {
-    bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+    if (atBottom) scrollToBottom();
+  }, [messages, atBottom, scrollToBottom]);
+
+  const onBodyScroll = useCallback(() => {
+    const el = bodyRef.current;
+    if (el) setAtBottom(isNearBottom(el));
+  }, []);
 
   useEffect(() => {
     if (!wrongFlashKey) return;
@@ -93,7 +110,7 @@ export default function ChatPanel({
         )}
       </div>
 
-      <div className="chat-body" ref={bodyRef}>
+      <div className="chat-body" ref={bodyRef} onScroll={onBodyScroll}>
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.from} ${m.error ? "error" : ""}`}>
             {m.from === "bot" && m.text ? <Markdown text={m.text} /> : m.text}
@@ -109,6 +126,16 @@ export default function ChatPanel({
         ))}
         {notice && <div className="chat-notice">{notice}</div>}
       </div>
+
+      {!atBottom && (
+        <button
+          className={`chat-scroll-down${streaming ? " streaming" : ""}`}
+          onClick={() => scrollToBottom()}
+          title="Scroll to latest"
+        >
+          <ChevronDown size={18} />
+        </button>
+      )}
 
       <div className="chat-input">
         <input
